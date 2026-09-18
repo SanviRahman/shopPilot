@@ -1,38 +1,38 @@
-@if(!empty($standalone))
-    @extends('layouts.admin')
-    @section('meta_title', 'Admin Details')
-    @section('page_content')
-        <div class="card card-outline card-info">
-            <div class="card-header"><h3 class="card-title">Admin Details</h3></div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Name</dt><dd class="col-sm-9">{{ $admin->name }}</dd>
-                    <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ $admin->email }}</dd>
-                    <dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ ucfirst($admin->status) }}</dd>
-                    <dt class="col-sm-3">Roles</dt><dd class="col-sm-9">{{ $admin->roles->pluck('name')->join(', ') ?: 'No role' }}</dd>
-                    <dt class="col-sm-3">Created At</dt><dd class="col-sm-9">{{ optional($admin->created_at)->format('d M Y, h:i A') }}</dd>
-                </dl>
+<div class="modal fade" id="adminShowModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="adminShowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-white border-bottom">
+                <h5 class="modal-title font-weight-bold" id="adminShowModalLabel">
+                    <i class="fas fa-user-circle text-info mr-2"></i>Admin Details
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-        </div>
-    @endsection
-@else
-    <div class="modal fade" id="showAdminModal{{ $admin->id }}" tabindex="-1" role="dialog" aria-labelledby="showAdminModalLabel{{ $admin->id }}" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title" id="showAdminModalLabel{{ $admin->id }}"><i class="fas fa-user mr-1"></i>Admin Details</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div id="show-avatar" class="avatar bg-primary text-white font-weight-bold rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2" style="width: 55px; height: 55px; font-size: 22px;"></div>
+                    <h5 class="font-weight-bold mb-0" id="show-name"></h5>
+                    <p class="text-muted small mb-0" id="show-email"></p>
                 </div>
-                <div class="modal-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4">Name</dt><dd class="col-sm-8">{{ $admin->name }}</dd>
-                        <dt class="col-sm-4">Email</dt><dd class="col-sm-8">{{ $admin->email }}</dd>
-                        <dt class="col-sm-4">Status</dt><dd class="col-sm-8">{{ ucfirst($admin->status) }}</dd>
-                        <dt class="col-sm-4">Roles</dt><dd class="col-sm-8">{{ $admin->roles->pluck('name')->join(', ') ?: 'No role' }}</dd>
-                        <dt class="col-sm-4">Created</dt><dd class="col-sm-8">{{ optional($admin->created_at)->format('d M Y, h:i A') }}</dd>
-                    </dl>
-                </div>
+                <ul class="list-group list-group-flush border-top">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Account Status:</span>
+                        <span class="font-weight-bold" id="show-status"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Assigned Roles:</span>
+                        <span class="font-weight-bold" id="show-roles"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Joined On:</span>
+                        <span class="text-dark" id="show-created"></span>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer bg-light border-top py-2">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
-@endif
+</div>

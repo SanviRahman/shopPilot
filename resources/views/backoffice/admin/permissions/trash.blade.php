@@ -8,7 +8,7 @@
         <a href="{{ route('admin.permissions.index') }}" class="btn btn-primary mr-2 mb-2"><i class="fas fa-arrow-left mr-1"></i>Back to Permissions</a>
         <form action="{{ route('admin.permissions.bulk-action') }}" method="POST" class="form-inline mb-2" data-confirm-permission-bulk>
             @csrf
-            <select name="action" class="form-control mr-2" required><option value="">-- Bulk Actions --</option>@if(auth('admin')->user()?->can('permissions.manage'))<option value="restore">Restore</option><option value="force-delete">Permanent Delete</option>@endif</select>
+            <select name="action" class="form-control mr-2" required><option value="">-- Bulk Actions --</option>@can('permissions.manage')<option value="restore">Restore</option><option value="force-delete">Permanent Delete</option>@endcan</select>
             <button class="btn btn-secondary">Apply</button>
         </form>
     </div>

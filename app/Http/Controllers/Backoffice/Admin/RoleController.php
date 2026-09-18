@@ -66,9 +66,8 @@ class RoleController extends Controller
 
         abort_unless($role->guard_name === 'admin', 404);
 
-        return view('backoffice.admin.roles.partials.show', [
+        return view('backoffice.admin.roles.show', [
             'role' => $role->load('permissions'),
-            'standalone' => true,
         ]);
     }
 

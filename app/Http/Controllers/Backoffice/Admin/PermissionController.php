@@ -62,9 +62,8 @@ class PermissionController extends Controller
         $this->authorizeAction('permissions.view');
         abort_unless($permission->guard_name === 'admin', 404);
 
-        return view('backoffice.admin.permissions.partials.show', [
+        return view('backoffice.admin.permissions.show', [
             'permission' => $permission,
-            'standalone' => true,
         ]);
     }
 

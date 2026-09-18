@@ -11,10 +11,10 @@
             @csrf
             <select name="action" class="form-control mr-2" required>
                 <option value="">-- Bulk Actions --</option>
-                @if(auth('admin')->user()?->can('roles.manage'))
+                @can('roles.manage')
                     <option value="restore">Restore</option>
                     <option value="force-delete">Permanent Delete</option>
-                @endif
+                @endcan
             </select>
             <button type="submit" class="btn btn-secondary">Apply</button>
         </form>

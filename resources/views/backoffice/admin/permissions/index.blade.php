@@ -12,7 +12,7 @@
             @csrf
             <select name="action" class="form-control mr-2" required>
                 <option value="">-- Bulk Actions --</option>
-                @if(auth('admin')->user()?->can('permissions.manage'))<option value="delete">Move to Trash</option><option value="restore">Restore</option><option value="force-delete">Permanent Delete</option>@endif
+                @can('permissions.manage')<option value="delete">Move to Trash</option><option value="restore">Restore</option><option value="force-delete">Permanent Delete</option>@endcan
             </select>
             <button type="submit" class="btn btn-secondary">Apply</button>
         </form>
