@@ -31,7 +31,7 @@
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb float-md-right shadow-sm border-0 px-3 py-2 bg-white rounded-pill">
                                 <li class="breadcrumb-item">
-                                    <a href="{{ route('admin.dashboard') }}" class="text-primary">
+                                    <a href="{{ route('admin.redirect') }}" class="text-primary">
                                         <i class="fas fa-home"></i>
                                     </a>
                                 </li>
@@ -59,13 +59,13 @@
 @stop
 
 @section('footer')
-    @include('admin.includes.footer')
+    @include('backoffice.admin.includes.footer')
 @stop
 
 @push('js')
-    @include('admin.includes.custom_js')
+    @include('backoffice.admin.includes.custom_js')
 @endpush
 
 @push('css')
-    @include('admin.includes.custom_css')
+    @include('backoffice.admin.includes.custom_css')
 @endpush

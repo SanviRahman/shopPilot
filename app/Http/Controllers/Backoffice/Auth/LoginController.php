@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Http\Controllers\Backoffice\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+
+class LoginController extends Controller
+{
+    public function create(): View
+    {
+        return view('adminlte::auth.login');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        $request->session()->regenerate();
+
+        $user = $request->user();
+
+        if (! $user instanceof User || ! $user->isStaff()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => 'Only Admin, Manager, or Agent can sign in here.',
+            ]);
+        }
+
+        return redirect()->to($this->homeUrl($user));
+    }
+
+    public function destroy(Request $request): RedirectResponse
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('admin.login');
+    }
+
+    public function redirect(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User || ! $user->isStaff()) {
+            Auth::logout();
+
+            return redirect()->route('admin.login');
+        }
+
+        return redirect()->to($this->homeUrl($user));
+    }
+
+    private function homeUrl(User $user): string
+    {
+        return match (true) {
+            $user->hasRole('Admin') => route('admin.dashboard'),
+            $user->hasRole('Manager') => route('manager.dashboard'),
+            $user->hasRole('Agent') => route('agent.dashboard'),
+            default => route('admin.login'),
+        };
+    }
+}

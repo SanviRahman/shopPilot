@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Agent;
 
 use App\Http\Controllers\Controller;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        return response('ShopPilot Agent dashboard');
+        $title = 'Agent Dashboard';
+        $breadcrumb = [
+            ['text' => 'Dashboard', 'url' => null],
+        ];
+
+        return view('backoffice.agent.dashboard', compact('title', 'breadcrumb'));
     }
 }
