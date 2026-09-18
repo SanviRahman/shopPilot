@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
 class Permission extends SpatiePermission
 {
-    public function isSystem(): bool
-    {
-        return true;
-    }
+    use SoftDeletes;
+
+    protected $fillable = [
+        'name',
+        'guard_name',
+        'group_name',
+    ];
 }

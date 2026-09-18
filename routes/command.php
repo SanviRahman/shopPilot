@@ -26,7 +26,7 @@ $redirectWithToast = function (string $type, string $message) {
 
 Route::prefix('command')
     ->name('command.')
-    ->middleware(['auth', 'role:Admin'])
+    ->middleware(['auth:admin', 'role:admin|super_admin,admin'])
     ->group(function () use ($redirectWithToast) {
         Route::get('/clear-cache', function () use ($redirectWithToast) {
             Artisan::call('cache:clear');

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
@@ -13,138 +13,91 @@ class RolePermissionSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $guard = 'web';
-
         $permissionGroups = [
-            'Dashboard' => [
-                'dashboard.view',
-            ],
-            'Users' => [
-                'users.view',
-                'users.update',
-                'users.delete',
-                'users.restore',
-                'users.force-delete',
-            ],
-            'Customers' => [
-                'customers.view',
-            ],
+            'Dashboard' => ['dashboard.view'],
+            'Users' => ['users.view', 'users.update'],
+            'Customers' => ['customers.view'],
             'Staff' => [
-                'staff.view',
-                'staff.create',
-                'staff.update',
-                'staff.delete',
-                'staff.restore',
-                'staff.force-delete',
+                'staff.view', 'staff.create', 'staff.update', 'staff.delete',
+                'staff.restore', 'staff.force-delete',
             ],
-            'Roles' => [
-                'roles.view',
-                'roles.manage',
-            ],
-            'Permissions' => [
-                'permissions.view',
-                'permissions.manage',
-            ],
+            'Roles' => ['roles.view', 'roles.manage'],
+            'Permissions' => ['permissions.view', 'permissions.manage'],
             'Categories' => [
-                'categories.view',
-                'categories.create',
-                'categories.update',
-                'categories.delete',
-                'categories.restore',
-                'categories.force-delete',
+                'categories.view', 'categories.create', 'categories.update',
+                'categories.delete', 'categories.restore', 'categories.force-delete',
             ],
             'Products' => [
-                'products.view',
-                'products.create',
-                'products.update',
-                'products.delete',
-                'products.restore',
-                'products.force-delete',
+                'products.view', 'products.create', 'products.update',
+                'products.delete', 'products.restore', 'products.force-delete',
             ],
-            'Stock' => [
-                'stock.view',
-                'stock.update',
-            ],
+            'Stock' => ['stock.view', 'stock.update'],
             'Coupons' => [
-                'coupons.view',
-                'coupons.create',
-                'coupons.update',
-                'coupons.delete',
-                'coupons.restore',
-                'coupons.force-delete',
+                'coupons.view', 'coupons.create', 'coupons.update',
+                'coupons.delete', 'coupons.restore', 'coupons.force-delete',
             ],
             'Orders' => [
-                'orders.view',
-                'orders.update',
-                'orders.assign',
-                'orders.cancel',
-                'orders.restore',
-                'orders.force-delete',
+                'orders.view', 'orders.update', 'orders.assign', 'orders.cancel',
+                'orders.restore', 'orders.force-delete',
             ],
             'Payments' => [
-                'payments.view',
-                'payments.verify',
-                'payments.reject',
-                'payments.restore',
-                'payments.force-delete',
+                'payments.view', 'payments.verify', 'payments.reject',
+                'payments.restore', 'payments.force-delete',
             ],
             'Payment Methods' => [
-                'payment-methods.view',
-                'payment-methods.manage',
-                'payment-methods.delete',
-                'payment-methods.restore',
+                'payment-methods.view', 'payment-methods.manage',
+                'payment-methods.delete', 'payment-methods.restore',
                 'payment-methods.force-delete',
             ],
-            'Reports' => [
-                'reports.view',
-            ],
-            'Settings' => [
-                'settings.view',
-                'settings.update',
-            ],
+            'Reports' => ['reports.view'],
+            'Settings' => ['settings.view', 'settings.update'],
         ];
 
         $allPermissionNames = [];
 
-        foreach ($permissionGroups as $permissions) {
+        foreach ($permissionGroups as $groupName => $permissions) {
             foreach ($permissions as $permissionName) {
-                Permission::findOrCreate($permissionName, $guard);
+                $permission = Permission::withTrashed()->firstOrNew([
+                    'name' => $permissionName,
+                    'guard_name' => 'admin',
+                ]);
+                $permission->group_name = $groupName;
+                $permission->save();
+                $permission->restore();
                 $allPermissionNames[] = $permissionName;
             }
         }
 
-        $adminRole = Role::findOrCreate('Admin', $guard);
-        $managerRole = Role::findOrCreate('Manager', $guard);
-        $agentRole = Role::findOrCreate('Agent', $guard);
-        $customerRole = Role::findOrCreate('Customer', $guard);
+        $superAdminRole = $this->findOrRestoreRole('super_admin', 'admin');
+        $adminRole = $this->findOrRestoreRole('admin', 'admin');
+        $managerRole = $this->findOrRestoreRole('manager', 'admin');
+        $agentRole = $this->findOrRestoreRole('agent', 'admin');
+        $this->findOrRestoreRole('customer', 'web');
 
+        $superAdminRole->syncPermissions($allPermissionNames);
         $adminRole->syncPermissions($allPermissionNames);
-
         $managerRole->syncPermissions([
-            'dashboard.view',
-            'customers.view',
-            'products.view',
-            'products.create',
-            'products.update',
-            'stock.view',
-            'stock.update',
-            'orders.view',
-            'orders.update',
-            'orders.assign',
-            'payments.view',
-            'payments.verify',
+            'dashboard.view', 'customers.view', 'products.view', 'products.create',
+            'products.update', 'stock.view', 'stock.update', 'orders.view',
+            'orders.update', 'orders.assign', 'payments.view', 'payments.verify',
             'reports.view',
         ]);
-
         $agentRole->syncPermissions([
-            'dashboard.view',
-            'orders.view',
-            'orders.update',
-            'orders.cancel',
+            'dashboard.view', 'orders.view', 'orders.update', 'orders.cancel',
         ]);
 
-        $customerRole->syncPermissions([]);
-
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function findOrRestoreRole(string $name, string $guard): Role
+    {
+        $role = Role::withTrashed()->firstOrNew([
+            'name' => $name,
+            'guard_name' => $guard,
+        ]);
+        $role->save();
+        $role->restore();
+
+        return $role;
     }
 }

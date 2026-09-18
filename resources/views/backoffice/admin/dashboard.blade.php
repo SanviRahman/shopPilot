@@ -2,7 +2,7 @@
 
 @section('meta_title', 'Admin Dashboard')
 
-@section('content')
+@section('page_content')
     <div class="card">
         <div class="card-body">
             Welcome, {{ auth()->user()->name }}.

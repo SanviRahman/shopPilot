@@ -309,7 +309,81 @@ return [
             'text'  => 'Dashboard',
             'route' => 'admin.redirect',
             'icon'  => 'fas fa-fw fa-tachometer-alt',
-            'can'   => 'dashboard.view',
+        ],
+        [
+            'header' => 'ACCESS CONTROL',
+        ],
+        [
+            'text'   => 'Admins',
+            'route'  => 'admin.admins.index',
+            'icon'   => 'fas fa-fw fa-user-shield',
+            'active' => ['admin/admins*'],
+        ],
+        [
+            'text'   => 'Roles',
+            'route'  => 'admin.roles.index',
+            'icon'   => 'fas fa-fw fa-user-tag',
+            'active' => ['admin/roles*'],
+        ],
+        [
+            'text'   => 'Permissions',
+            'route'  => 'admin.permissions.index',
+            'icon'   => 'fas fa-fw fa-key',
+            'active' => ['admin/permissions*'],
+        ],
+        [
+            'header' => 'SYSTEM COMMANDS',
+        ],
+        [
+            'text'  => 'Commands',
+            'icon'  => 'fas fa-fw fa-terminal',
+            'submenu' => [
+                [
+                    'text'  => 'Clear Cache',
+                    'route' => 'admin.command.clear-cache',
+                    'icon'  => 'fas fa-fw fa-broom',
+                ],
+                [
+                    'text'  => 'Clear Config',
+                    'route' => 'admin.command.clear-config',
+                    'icon'  => 'fas fa-fw fa-cog',
+                ],
+                [
+                    'text'  => 'Clear Route',
+                    'route' => 'admin.command.clear-route',
+                    'icon'  => 'fas fa-fw fa-route',
+                ],
+                [
+                    'text'  => 'Clear View',
+                    'route' => 'admin.command.clear-view',
+                    'icon'  => 'fas fa-fw fa-eye-slash',
+                ],
+                [
+                    'text'  => 'Optimize Clear',
+                    'route' => 'admin.command.optimize-clear',
+                    'icon'  => 'fas fa-fw fa-bolt',
+                ],
+                [
+                    'text'  => 'Migrate',
+                    'route' => 'admin.command.migrate',
+                    'icon'  => 'fas fa-fw fa-database',
+                ],
+                [
+                    'text'  => 'Seed Database',
+                    'route' => 'admin.command.seed',
+                    'icon'  => 'fas fa-fw fa-seedling',
+                ],
+                [
+                    'text'  => 'Migrate Fresh',
+                    'route' => 'admin.command.migrate-fresh',
+                    'icon'  => 'fas fa-fw fa-sync-alt',
+                ],
+                [
+                    'text'  => 'Migrate Fresh & Seed',
+                    'route' => 'admin.command.migrate-fresh-seed',
+                    'icon'  => 'fas fa-fw fa-database',
+                ],
+            ],
         ],
     ],
 

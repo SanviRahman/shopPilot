@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Backoffice\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,32 +24,33 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        $guard = Auth::guard('admin');
+
+        if (! $guard->attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
         }
 
         $request->session()->regenerate();
+        $admin = $guard->user();
 
-        $user = $request->user();
-
-        if (! $user instanceof User || ! $user->isStaff()) {
-            Auth::logout();
+        if (! $admin instanceof Admin || ! $admin->isActive()) {
+            $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             throw ValidationException::withMessages([
-                'email' => 'Only Admin, Manager, or Agent can sign in here.',
+                'email' => 'This admin account is inactive or invalid.',
             ]);
         }
 
-        return redirect()->to($this->homeUrl($user));
+        return redirect()->route('admin.redirect');
     }
 
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::logout();
+        Auth::guard('admin')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -59,24 +60,19 @@ class LoginController extends Controller
 
     public function redirect(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $admin = $request->user('admin');
 
-        if (! $user instanceof User || ! $user->isStaff()) {
-            Auth::logout();
+        if (! $admin instanceof Admin || ! $admin->isActive()) {
+            Auth::guard('admin')->logout();
 
             return redirect()->route('admin.login');
         }
 
-        return redirect()->to($this->homeUrl($user));
-    }
-
-    private function homeUrl(User $user): string
-    {
         return match (true) {
-            $user->hasRole('Admin') => route('admin.dashboard'),
-            $user->hasRole('Manager') => route('manager.dashboard'),
-            $user->hasRole('Agent') => route('agent.dashboard'),
-            default => route('admin.login'),
+            $admin->hasAnyRole(['super_admin', 'admin']) => redirect()->route('admin.dashboard'),
+            $admin->hasRole('manager') => redirect()->route('manager.dashboard'),
+            $admin->hasRole('agent') => redirect()->route('agent.dashboard'),
+            default => redirect()->route('admin.login'),
         };
     }
 }

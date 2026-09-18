@@ -55,7 +55,7 @@
 @stop
 
 @section('content')
-    @yield('content')
+    @yield('page_content')
 @stop
 
 @section('footer')

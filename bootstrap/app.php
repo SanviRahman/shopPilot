@@ -21,17 +21,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('admin.login'));
 
         $middleware->redirectUsersTo(function (Request $request) {
-            $user = $request->user();
+            $user = $request->user('admin') ?: $request->user();
 
-            if ($user?->hasRole('Admin')) {
+            if ($user?->hasAnyRole(['super_admin', 'admin'])) {
                 return route('admin.dashboard');
             }
 
-            if ($user?->hasRole('Manager')) {
+            if ($user?->hasRole('manager')) {
                 return route('manager.dashboard');
             }
 
-            if ($user?->hasRole('Agent')) {
+            if ($user?->hasRole('agent')) {
                 return route('agent.dashboard');
             }
 

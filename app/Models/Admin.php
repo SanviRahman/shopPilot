@@ -2,21 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class Admin extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes, HasRoles;
+
+    protected $guard_name = 'admin';
 
     protected $fillable = [
         'name',
         'email',
         'password',
+        'status',
     ];
 
     protected $hidden = [
@@ -32,18 +34,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function isStaff(): bool
+    public function isActive(): bool
     {
-        return $this->hasAnyRole(['admin', 'manager', 'agent']);
+        return $this->status === 'active';
     }
 
-    public function scopeStaff(Builder $query): Builder
+    public function isSuperAdmin(): bool
     {
-        return $query->role(['admin', 'manager', 'agent']);
-    }
-
-    public function scopeCustomers(Builder $query): Builder
-    {
-        return $query->role('customer');
+        return $this->hasRole('super_admin');
     }
 }
