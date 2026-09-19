@@ -19,7 +19,6 @@
                 </div>
 
                 <div class="modal-body p-4">
-                    <div id="modalAlertContainer"></div>
 
                     <div class="form-group mb-4">
                         <label for="role-name" class="font-weight-600">Role Name (Slug format) <span class="text-danger">*</span></label>

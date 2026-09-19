@@ -15,7 +15,6 @@
                 </div>
 
                 <div class="modal-body p-4">
-                    <div id="modalAlertContainer"></div>
 
                     <div class="form-group mb-3">
                         <label for="permission-name" class="font-weight-600">Permission Name (Slug format) <span class="text-danger">*</span></label>

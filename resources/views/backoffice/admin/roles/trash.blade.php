@@ -3,8 +3,6 @@
 @section('meta_title', 'Role Trash')
 
 @section('page_content')
-    <div id="ajaxAlertContainer"></div>
-
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-12 col-md-auto mb-2 mb-md-0">
             <a href="{{ route('admin.roles.index') }}" class="btn btn-light border shadow-sm">

@@ -15,7 +15,6 @@
                 </div>
 
                 <div class="modal-body p-4">
-                    <div id="modalAlertContainer"></div>
 
                     <div class="row">
                         <div class="form-group col-md-6 mb-3">

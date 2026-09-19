@@ -3,8 +3,6 @@
 @section('meta_title', 'Roles')
 
 @section('page_content')
-    <div id="ajaxAlertContainer"></div>
-
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-12 col-md-auto mb-2 mb-md-0 d-flex flex-wrap gap-2">
             @can('roles.manage')

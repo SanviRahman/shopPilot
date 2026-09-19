@@ -3,21 +3,6 @@ $(function () {
     const fetchUrl = '{{ $fetchUrl }}';
 
     // Helper: Show Alert Box
-    function showAlert(message, type = 'success', container = '#ajaxAlertContainer') {
-        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
-        const html = `
-            <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
-                <i class="fas fa-${icon} mr-1"></i> ${message}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>`;
-        $(container).html(html);
-        if (type === 'success') {
-            setTimeout(() => { $(container).find('.alert').alert('close'); }, 4000);
-        }
-    }
-
     // Reload Table via AJAX
     function reloadTable(url = fetchUrl) {
         $('#tableOverlay').removeClass('d-none');
@@ -72,7 +57,6 @@ $(function () {
     function clearFormErrors() {
         $('.invalid-feedback').text('');
         $('.form-control').removeClass('is-invalid');
-        $('#modalAlertContainer').html('');
     }
 
     // Permissions check toggles
@@ -168,7 +152,7 @@ $(function () {
                         $(`[name="${key}"]`).addClass('is-invalid');
                     });
                 } else {
-                    showAlert(xhr.responseJSON?.message || 'Something went wrong.', 'danger', '#modalAlertContainer');
+                    showAlert(xhr.responseJSON?.message || 'Something went wrong.', 'danger');
                 }
             },
             complete: function () {

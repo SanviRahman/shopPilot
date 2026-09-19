@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('plugins.Sweetalert2', true)
+
 @section('title')
     @hasSection('meta_title')
         @yield('meta_title') |
@@ -68,4 +70,54 @@
 
 @push('css')
     @include('backoffice.admin.includes.custom_css')
+@endpush
+
+@push('js')
+    <script>
+        window.showAlert = function (message, type = 'success') {
+            const normalizedType = type === 'danger' ? 'error' : type;
+            const text = Array.isArray(message) ? message.join('\n') : String(message);
+            const options = {
+                toast: true,
+                position: 'top-end',
+                type: normalizedType,
+                title: text,
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true
+            };
+
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                return window.Swal.fire(options);
+            }
+
+            if (typeof window.swal === 'function') {
+                return window.swal(options);
+            }
+        };
+
+        window.addEventListener('load', function () {
+            const flashMessage = @json(session('success') ?? session('error'));
+            const flashType = @json(session()->has('error') ? 'error' : 'success');
+            const validationErrors = @json($errors->all());
+            const query = new URLSearchParams(window.location.search);
+            const queryMessage = query.get('toast_message');
+            const queryType = query.get('toast_type') || 'success';
+
+            if (flashMessage && typeof showAlert === 'function') {
+                showAlert(flashMessage, flashType);
+            } else if (queryMessage && typeof showAlert === 'function') {
+                showAlert(queryMessage, queryType);
+                query.delete('toast_message');
+                query.delete('toast_type');
+                const cleanQuery = query.toString();
+                const cleanUrl = window.location.pathname + (cleanQuery ? '?' + cleanQuery : '') + window.location.hash;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+
+            if (validationErrors.length && typeof showAlert === 'function') {
+                showAlert(validationErrors, 'error');
+            }
+        });
+    </script>
 @endpush
