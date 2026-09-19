@@ -6,9 +6,11 @@
     aria-labelledby="mediaPickerModalTitle"
     aria-hidden="true"
 >
-    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+    <div
+        class="modal-dialog modal-xl modal-dialog-centered"
+        role="document"
+    >
         <div class="modal-content border-0 shadow">
-            {{-- Header --}}
             <div class="modal-header bg-white">
                 <div>
                     <h5
@@ -20,7 +22,7 @@
                     </h5>
 
                     <small class="text-muted">
-                        Select one image to use in the current field.
+                        Select an image to use in the current field.
                     </small>
                 </div>
 
@@ -34,14 +36,15 @@
                 </button>
             </div>
 
-            {{-- Body --}}
             <div class="modal-body bg-light">
-                {{-- Search and Filters --}}
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body">
                         <div class="form-row align-items-end">
                             <div class="col-12 col-md-5 mb-2 mb-md-0">
-                                <label class="small font-weight-bold text-muted">
+                                <label
+                                    class="small font-weight-bold text-muted"
+                                    for="mediaPickerSearch"
+                                >
                                     Search Media
                                 </label>
 
@@ -62,7 +65,10 @@
                             </div>
 
                             <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                <label class="small font-weight-bold text-muted">
+                                <label
+                                    class="small font-weight-bold text-muted"
+                                    for="mediaPickerCollection"
+                                >
                                     Collection
                                 </label>
 
@@ -70,14 +76,15 @@
                                     id="mediaPickerCollection"
                                     class="custom-select custom-select-sm"
                                 >
-                                    <option value="">
-                                        All Collections
-                                    </option>
+                                    <option value="">All Collections</option>
                                 </select>
                             </div>
 
                             <div class="col-6 col-md-2 mb-2 mb-md-0">
-                                <label class="small font-weight-bold text-muted">
+                                <label
+                                    class="small font-weight-bold text-muted"
+                                    for="mediaPickerDisk"
+                                >
                                     Disk
                                 </label>
 
@@ -85,9 +92,7 @@
                                     id="mediaPickerDisk"
                                     class="custom-select custom-select-sm"
                                 >
-                                    <option value="">
-                                        All Disks
-                                    </option>
+                                    <option value="">All Disks</option>
                                 </select>
                             </div>
 
@@ -116,7 +121,6 @@
                     </div>
                 </div>
 
-                {{-- Selection Toolbar --}}
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body py-2">
                         <div class="d-flex flex-wrap align-items-center">
@@ -131,6 +135,24 @@
                                 <span id="mediaPickerBulkCount">0</span>
                                 selected
                             </span>
+
+                            <button
+                                type="button"
+                                id="mediaPickerSelectAll"
+                                class="btn btn-light border btn-sm mr-1"
+                            >
+                                <i class="fas fa-check-double mr-1"></i>
+                                Select All
+                            </button>
+
+                            <button
+                                type="button"
+                                id="mediaPickerClearSelection"
+                                class="btn btn-light border btn-sm mr-2"
+                            >
+                                <i class="fas fa-times mr-1"></i>
+                                Clear
+                            </button>
 
                             <button
                                 type="button"
@@ -150,52 +172,45 @@
                                     disabled
                                 >
                                     <i class="fas fa-trash-alt mr-1"></i>
-                                    Delete Selected
+                                    Move Selected to Trash
                                 </button>
                             @endcan
                         </div>
                     </div>
                 </div>
 
-                {{-- Loading --}}
                 <div
                     id="mediaPickerLoading"
                     class="text-center py-5 d-none"
                 >
                     <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-
                     <p class="text-muted mt-2 mb-0">
                         Loading media library...
                     </p>
                 </div>
 
-                {{-- Empty State --}}
                 <div
                     id="mediaPickerEmpty"
                     class="text-center text-muted py-5 d-none"
                 >
                     <i class="fas fa-images fa-3x mb-3 d-block"></i>
-
                     <h6 class="font-weight-bold">
                         No reusable images found
                     </h6>
-
                     <small>
                         Try another search keyword or filter.
                     </small>
                 </div>
 
-                {{-- Media Grid --}}
                 <div
                     id="mediaPickerGrid"
                     class="row"
                 ></div>
             </div>
 
-            {{-- Footer --}}
             <div class="modal-footer bg-white">
                 <small class="text-muted mr-auto">
-                    Click an image to select it. Use checkboxes for bulk actions.
+                    Select one image to use it. Selected media can be moved to Trash.
                 </small>
 
                 <button
@@ -210,7 +225,6 @@
     </div>
 </div>
 
-{{-- Bulk Delete Form --}}
 @can('media.delete')
     <form
         id="mediaPickerBulkForm"
@@ -230,10 +244,23 @@
 
 @push('css')
     <style>
+        #mediaPickerModal .modal-dialog {
+            max-width: 1100px;
+        }
+
+        #mediaPickerModal .modal-content {
+            max-height: calc(100vh - 2rem);
+        }
+
+        #mediaPickerModal .modal-body {
+            overflow-y: auto;
+        }
+
         .media-picker-card {
             cursor: pointer;
             transition: all .2s ease;
             border: 2px solid transparent !important;
+            overflow: hidden;
         }
 
         .media-picker-card:hover {
@@ -247,37 +274,29 @@
             box-shadow: 0 0 0 3px rgba(40, 167, 69, .15);
         }
 
-        .media-picker-image-wrapper {
-            height: 145px;
-            background: #f8f9fa;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .media-picker-image-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .media-picker-card img {
+            display: block;
         }
 
         .media-picker-checkbox {
             position: absolute;
             top: 10px;
             left: 10px;
+            z-index: 3;
             width: 18px;
             height: 18px;
-            z-index: 2;
+            cursor: pointer;
         }
 
-        .media-picker-selected-badge {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            display: none;
-        }
+        @media (max-width: 767.98px) {
+            #mediaPickerModal .modal-dialog {
+                width: calc(100% - 1rem);
+                margin: .5rem auto;
+            }
 
-        .media-picker-card.is-active .media-picker-selected-badge {
-            display: inline-block;
+            #mediaPickerModal .modal-content {
+                max-height: calc(100vh - 1rem);
+            }
         }
     </style>
 @endpush
