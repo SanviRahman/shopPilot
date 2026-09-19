@@ -4,6 +4,8 @@ use App\Http\Controllers\Backoffice\Admin\AdminController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\RoleController;
+use App\Http\Controllers\Backoffice\Admin\CategoryController;
+
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,8 +19,8 @@ Route::prefix('admin')
                 ->name('login.store');
         });
 
-        if (is_file(__DIR__.'/command.php')) {
-            require __DIR__.'/command.php';
+        if (is_file(__DIR__ . '/command.php')) {
+            require __DIR__ . '/command.php';
         }
 
         Route::middleware('auth:admin')->group(function () {
@@ -68,6 +70,21 @@ Route::prefix('admin')
                 Route::put('{admin}', [AdminController::class, 'update'])->name('update');
                 Route::delete('{admin}', [AdminController::class, 'destroy'])->name('destroy');
                 Route::get('/', [AdminController::class, 'index'])->name('index');
+            });
+
+            Route::prefix('categories')->name('categories.')->group(function () {
+                Route::get('trash', [CategoryController::class, 'trash'])->name('trash');
+                Route::get('create', [CategoryController::class, 'create'])->name('create');
+                Route::post('bulk-action', [CategoryController::class, 'bulkAction'])->name('bulk-action');
+                Route::post('reorder', [CategoryController::class, 'reorder'])->name('reorder');
+                Route::patch('{category}/restore', [CategoryController::class, 'restore'])->name('restore');
+                Route::delete('{category}/force-delete', [CategoryController::class, 'forceDelete'])->name('force-delete');
+                Route::get('{category}/edit', [CategoryController::class, 'edit'])->name('edit');
+                Route::get('{category}', [CategoryController::class, 'show'])->name('show');
+                Route::post('/', [CategoryController::class, 'store'])->name('store');
+                Route::put('{category}', [CategoryController::class, 'update'])->name('update');
+                Route::delete('{category}', [CategoryController::class, 'destroy'])->name('destroy');
+                Route::get('/', [CategoryController::class, 'index'])->name('index');
             });
         });
     });

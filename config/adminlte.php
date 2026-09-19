@@ -310,6 +310,20 @@ return [
             'route' => 'admin.redirect',
             'icon'  => 'fas fa-fw fa-tachometer-alt',
         ],
+                [
+            'text'    => 'Ecommerce',
+            'icon'    => 'fas fa-fw fa-shopping-bag',
+            'submenu' => [
+                [
+                    'text'   => 'Categories',
+                    'icon'   => 'fas fa-fw fa-tags',
+                    'route'  => 'admin.categories.index',
+                    'active' => ['admin/categories*'],
+                    'can'    => 'categories.view',
+                ],
+                // ভবিষ্যতে Products, Coupons ইত্যাদি এখানে যুক্ত হবে
+            ],
+        ],
         [
             'header' => 'ACCESS CONTROL',
         ],
