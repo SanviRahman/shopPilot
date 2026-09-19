@@ -82,6 +82,12 @@
     </div>
 @endsection
 
+
+@section('plugins.Sweetalert2', true)
+@section('plugins.Select2', true)
+
+
+
 @push('js')
     @include('backoffice.admin.admins.partials.script', ['fetchUrl' => route('admin.admins.trash')])
 @endpush
