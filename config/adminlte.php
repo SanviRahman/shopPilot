@@ -256,8 +256,6 @@ return [
     |
     */
 
-    
-
     'use_route_url'                           => true,
     'dashboard_url'                           => 'admin.redirect',
     'logout_url'                              => 'admin.logout',
@@ -310,7 +308,20 @@ return [
             'route' => 'admin.redirect',
             'icon'  => 'fas fa-fw fa-tachometer-alt',
         ],
-                [
+        [
+            'header' => 'MEDIA MANAGEMENT',
+        ],
+        [
+            'text'   => 'Media',
+            'route'  => 'admin.media.index',
+            'icon'   => 'fas fa-fw fa-photo-video',
+            'active' => ['admin/media*'],
+            'can'    => 'media.view',
+        ],
+        [
+            'header' => 'E-COMMERCE MANAGEMENT',
+        ],
+        [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
             'submenu' => [
@@ -323,6 +334,24 @@ return [
                 ],
                 // ভবিষ্যতে Products, Coupons ইত্যাদি এখানে যুক্ত হবে
             ],
+        ],
+
+        [
+            'header' => 'ACCOUNT',
+        ],
+
+        [
+            'text'   => 'Profile',
+            'route'  => 'admin.profile',
+            'icon'   => 'fas fa-fw fa-user-circle',
+            'active' => ['admin/profile*'],
+        ],
+
+        [
+            'text'   => 'Change Password',
+            'route'  => 'admin.password',
+            'icon'   => 'fas fa-fw fa-key',
+            'active' => ['admin/password*'],
         ],
         [
             'header' => 'ACCESS CONTROL',
@@ -349,8 +378,8 @@ return [
             'header' => 'SYSTEM COMMANDS',
         ],
         [
-            'text'  => 'Commands',
-            'icon'  => 'fas fa-fw fa-terminal',
+            'text'    => 'Commands',
+            'icon'    => 'fas fa-fw fa-terminal',
             'submenu' => [
                 [
                     'text'  => 'Clear Cache',

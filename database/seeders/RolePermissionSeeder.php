@@ -27,6 +27,9 @@ class RolePermissionSeeder extends Seeder
                 'categories.view', 'categories.create', 'categories.update',
                 'categories.delete', 'categories.restore', 'categories.force-delete',
             ],
+            'Media' => [
+                'media.view', 'media.delete', 'media.restore', 'media.force-delete',
+            ],
             'Products' => [
                 'products.view', 'products.create', 'products.update',
                 'products.delete', 'products.restore', 'products.force-delete',

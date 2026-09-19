@@ -3,8 +3,6 @@
 @section('meta_title', 'Category Management')
 
 @section('page_content')
-    <div id="ajaxAlertContainer"></div>
-
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-12 col-md-auto mb-2 mb-md-0 d-flex flex-wrap gap-2">
             @can('categories.create')
@@ -83,24 +81,6 @@
     @include('backoffice.admin.categories.partials.form')
     @include('backoffice.admin.categories.partials.show')
 
-    {{-- Universal Confirmation Modal --}}
-    <div class="modal fade" id="confirmModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-body text-center p-4">
-                    <div class="text-warning mb-3">
-                        <i class="fas fa-exclamation-circle fa-3x"></i>
-                    </div>
-                    <h5 class="font-weight-bold mb-2" id="confirmModalTitle">Are you sure?</h5>
-                    <p class="text-muted small mb-4" id="confirmModalText">This action cannot be undone.</p>
-                    <div class="d-flex justify-content-center">
-                        <button type="button" class="btn btn-light btn-sm px-3 mr-2" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger btn-sm px-4" id="confirmModalBtn">Confirm</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('js')

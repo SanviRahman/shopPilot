@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Media;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class CategoryService
@@ -20,7 +22,7 @@ class CategoryService
                 $data['sort_order'] = (Category::max('sort_order') ?? 0) + 1;
             }
 
-            $category = Category::create($data);
+            $category = Category::create($this->withoutMediaFields($data));
             $this->handleMediaUploads($category, $data);
 
             return $category;
@@ -34,7 +36,7 @@ class CategoryService
                 ? Str::slug($data['name'])
                 : Str::slug($data['slug']);
 
-            $category->update($data);
+            $category->update($this->withoutMediaFields($data));
             $this->handleMediaUploads($category, $data);
 
             return $category->refresh();
@@ -99,16 +101,52 @@ class CategoryService
 
     private function handleMediaUploads(Category $category, array $data): void
     {
-        if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-            $category->addMedia($data['image'])->toMediaCollection('category_image');
-        }
+        $mediaFields = [
+            'image' => 'category_image',
+            'og_image' => 'category_og_image',
+            'twitter_image' => 'category_twitter_image',
+        ];
 
-        if (isset($data['og_image']) && $data['og_image'] instanceof UploadedFile) {
-            $category->addMedia($data['og_image'])->toMediaCollection('category_og_image');
-        }
+        foreach ($mediaFields as $field => $collection) {
+            if (($data[$field] ?? null) instanceof UploadedFile) {
+                // A new upload always wins over an existing picker selection.
+                $category->addMedia($data[$field])->toMediaCollection($collection);
+                continue;
+            }
 
-        if (isset($data['twitter_image']) && $data['twitter_image'] instanceof UploadedFile) {
-            $category->addMedia($data['twitter_image'])->toMediaCollection('category_twitter_image');
+            $selectedMediaId = $data[$field . '_media_id'] ?? null;
+            if ($selectedMediaId) {
+                $source = Media::query()
+                    ->whereKey($selectedMediaId)
+                    ->where('mime_type', 'like', 'image/%')
+                    ->firstOrFail();
+
+                // Clone the source file so the original library item remains reusable.
+                $category->addMedia($source->getPath())
+                    ->usingName($source->name)
+                    ->usingFileName($source->file_name)
+                    ->toMediaCollection($collection);
+                continue;
+            }
+
+            if (filter_var($data['remove_' . $field] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                $category->clearMediaCollection($collection);
+            }
         }
+    }
+
+    private function withoutMediaFields(array $data): array
+    {
+        return Arr::except($data, [
+            'image',
+            'image_media_id',
+            'og_image',
+            'og_image_media_id',
+            'twitter_image',
+            'twitter_image_media_id',
+            'remove_image',
+            'remove_og_image',
+            'remove_twitter_image',
+        ]);
     }
 }

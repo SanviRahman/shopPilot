@@ -131,6 +131,8 @@ class CategoryController extends Controller
                     'status' => $category->status,
                     'sort_order' => $category->sort_order,
                     'image_url' => $category->getImageUrlAttribute(),
+                    'image_media_id' => $category->getFirstMedia('category_image')?->id,
+                    'image_media_name' => $category->getFirstMedia('category_image')?->name,
                     'meta_title' => $category->meta_title,
                     'meta_description' => $category->meta_description,
                     'meta_keywords' => $category->meta_keywords,
@@ -138,9 +140,13 @@ class CategoryController extends Controller
                     'og_title' => $category->og_title,
                     'og_description' => $category->og_description,
                     'og_image_url' => $category->getFirstMediaUrl('category_og_image'),
+                    'og_image_media_id' => $category->getFirstMedia('category_og_image')?->id,
+                    'og_image_media_name' => $category->getFirstMedia('category_og_image')?->name,
                     'twitter_title' => $category->twitter_title,
                     'twitter_description' => $category->twitter_description,
                     'twitter_image_url' => $category->getFirstMediaUrl('category_twitter_image'),
+                    'twitter_image_media_id' => $category->getFirstMedia('category_twitter_image')?->id,
+                    'twitter_image_media_name' => $category->getFirstMedia('category_twitter_image')?->name,
                 ],
             ]);
         }

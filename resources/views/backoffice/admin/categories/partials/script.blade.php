@@ -3,22 +3,6 @@
 $(function () {
     const fetchUrl = '{{ $fetchUrl }}';
 
-    // Show Alert Box
-    function showAlert(message, type = 'success', container = '#ajaxAlertContainer') {
-        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
-        const html = `
-            <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
-                <i class="fas fa-${icon} mr-1"></i> ${message}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>`;
-        $(container).html(html);
-        if (type === 'success') {
-            setTimeout(() => { $(container).find('.alert').alert('close'); }, 4000);
-        }
-    }
-
     // Initialize Drag & Drop Sortable
     function initDragDropSortable() {
         if ($('#sortableCategoryBody').length) {
@@ -50,7 +34,7 @@ $(function () {
                             }
                         },
                         error: function () {
-                            showAlert('Failed to update sort order.', 'danger');
+                            showAlert('Failed to update sort order.', 'error');
                         }
                     });
                 }
@@ -76,7 +60,7 @@ $(function () {
                 initDragDropSortable();
             },
             error: function () {
-                showAlert('Failed to refresh categories table.', 'danger');
+                showAlert('Failed to refresh categories table.', 'error');
             },
             complete: function () {
                 $('#tableOverlay').addClass('d-none');
@@ -116,19 +100,17 @@ $(function () {
     });
 
     // Clear Errors & Reset Previews
-    function clearFormErrors() {
+    function clearFormErrors(resetMedia = false) {
         $('.invalid-feedback').text('');
         $('.form-control, .custom-select').removeClass('is-invalid');
-        $('#modalAlertContainer').html('');
-        $('#imagePreviewContainer, #ogImagePreviewContainer, #twitterImagePreviewContainer').addClass('d-none');
-        $('.custom-file-label').text('Choose file...');
+        if (resetMedia) window.mediaPicker?.reset('#categoryAjaxForm');
         $('#categoryTab a:first').tab('show');
     }
 
     // Open Create Modal
     $('#btnCreateCategory').on('click', function (e) {
         e.preventDefault();
-        clearFormErrors();
+        clearFormErrors(true);
         $('#categoryAjaxForm')[0].reset();
         $('#categoryFormMethod').val('POST');
         $('#categoryAjaxForm').attr('action', '{{ route("admin.categories.store") }}');
@@ -140,7 +122,7 @@ $(function () {
     $(document).on('click', '.btn-edit-category', function (e) {
         e.preventDefault();
         const catId = $(this).data('id');
-        clearFormErrors();
+        clearFormErrors(true);
 
         $.ajax({
             url: `/admin/categories/${catId}/edit`,
@@ -161,10 +143,7 @@ $(function () {
                     $('#cat-sort-order').val(c.sort_order);
                     $('#cat-description').val(c.description);
 
-                    if (c.image_url) {
-                        $('#imagePreview').attr('src', c.image_url);
-                        $('#imagePreviewContainer').removeClass('d-none');
-                    }
+                    window.mediaPicker?.setPreview('cat-image', c.image_url || null, c.image_media_name || '');
 
                     // SEO
                     $('#seo-meta-title').val(c.meta_title);
@@ -175,38 +154,26 @@ $(function () {
                     // OG
                     $('#seo-og-title').val(c.og_title);
                     $('#seo-og-description').val(c.og_description);
-                    if (c.og_image_url) {
-                        $('#ogImagePreview').attr('src', c.og_image_url);
-                        $('#ogImagePreviewContainer').removeClass('d-none');
-                    }
+                    window.mediaPicker?.setPreview('seo-og-image', c.og_image_url || null, c.og_image_media_name || '');
 
                     // Twitter
                     $('#seo-twitter-title').val(c.twitter_title);
                     $('#seo-twitter-description').val(c.twitter_description);
-                    if (c.twitter_image_url) {
-                        $('#twitterImagePreview').attr('src', c.twitter_image_url);
-                        $('#twitterImagePreviewContainer').removeClass('d-none');
-                    }
+                    window.mediaPicker?.setPreview('seo-twitter-image', c.twitter_image_url || null, c.twitter_image_media_name || '');
 
                     $('#categoryFormModal').modal('show');
                 }
             },
             error: function () {
-                showAlert('Failed to retrieve category details.', 'danger');
+                showAlert('Failed to retrieve category details.', 'error');
             }
         });
-    });
-
-    // File Input Custom Label Update
-    $('.custom-file-input').on('change', function () {
-        const fileName = $(this).val().split('\\').pop();
-        $(this).next('.custom-file-label').html(fileName || 'Choose file...');
     });
 
     // Submit Create/Edit Form via AJAX with FormData
     $('#categoryAjaxForm').on('submit', function (e) {
         e.preventDefault();
-        clearFormErrors();
+        clearFormErrors(false);
 
         const form = $(this);
         const submitBtn = $('#btnSubmitCategoryForm');
@@ -237,7 +204,7 @@ $(function () {
                         $(`[name="${key}"]`).addClass('is-invalid');
                     });
                 } else {
-                    showAlert(xhr.responseJSON?.message || 'Something went wrong.', 'danger', '#modalAlertContainer');
+                    showAlert(xhr.responseJSON?.message || 'Something went wrong.', 'error');
                 }
             },
             complete: function () {
@@ -298,52 +265,56 @@ $(function () {
                 }
             },
             error: function () {
-                showAlert('Could not load category details.', 'danger');
+                showAlert('Could not load category details.', 'error');
             }
         });
     });
 
-    // Action Confirmation Modal (Delete, Restore, Force Delete)
-    let pendingAction = null;
+    // Delete, restore and permanent-delete confirmations via SweetAlert2.
+    function executeAction(action) {
+        $.ajax({
+            url: action.url,
+            method: action.method,
+            data: action.data,
+            dataType: 'json',
+            success: function (res) {
+                showAlert(res.message, 'success');
+                reloadTable();
+            },
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || 'Operation failed.', 'error');
+            }
+        });
+    }
 
     $(document).on('click', '.btn-action', function (e) {
         e.preventDefault();
         const btn = $(this);
-        pendingAction = {
+        const action = {
             url: btn.data('url'),
             method: btn.data('method'),
             data: { _token: '{{ csrf_token() }}' }
         };
 
-        $('#confirmModalTitle').text(btn.data('confirm-title') || 'Are you sure?');
-        $('#confirmModalText').text(btn.data('confirm-text') || 'This action cannot be undone.');
-        $('#confirmModal').modal('show');
-    });
+        const confirm = function () {
+            executeAction(action);
+        };
 
-    $('#confirmModalBtn').on('click', function () {
-        if (!pendingAction) return;
+        if (!window.Swal || typeof window.Swal.fire !== 'function') {
+            confirm();
+            return;
+        }
 
-        const confirmBtn = $(this);
-        confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...');
-
-        $.ajax({
-            url: pendingAction.url,
-            method: pendingAction.method,
-            data: pendingAction.data,
-            dataType: 'json',
-            success: function (res) {
-                $('#confirmModal').modal('hide');
-                showAlert(res.message, 'success');
-                reloadTable();
-            },
-            error: function (xhr) {
-                $('#confirmModal').modal('hide');
-                showAlert(xhr.responseJSON?.message || 'Operation failed.', 'danger');
-            },
-            complete: function () {
-                confirmBtn.prop('disabled', false).text('Confirm');
-                pendingAction = null;
-            }
+        window.Swal.fire({
+            title: btn.data('confirm-title') || 'Are you sure?',
+            text: btn.data('confirm-text') || 'This action cannot be undone.',
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, continue',
+            cancelButtonText: 'Cancel'
+        }).then(function (result) {
+            if (result.value) confirm();
         });
     });
 
@@ -356,7 +327,7 @@ $(function () {
         }).get();
 
         if (!action || selected.length === 0) {
-            showAlert('Please select at least one category and choose a bulk action.', 'danger');
+            showAlert('Please select at least one category and choose a bulk action.', 'error');
             return;
         }
 
@@ -366,7 +337,7 @@ $(function () {
             'force-delete': 'permanently delete selected categories'
         };
 
-        pendingAction = {
+        const bulkAction = {
             url: $(this).attr('action'),
             method: 'POST',
             data: {
@@ -376,9 +347,26 @@ $(function () {
             }
         };
 
-        $('#confirmModalTitle').text('Confirm Bulk Action');
-        $('#confirmModalText').text(`Are you sure you want to ${labels[action] || 'process'}?`);
-        $('#confirmModal').modal('show');
+        const executeBulk = function () {
+            executeAction(bulkAction);
+        };
+
+        if (!window.Swal || typeof window.Swal.fire !== 'function') {
+            executeBulk();
+            return;
+        }
+
+        window.Swal.fire({
+            title: 'Confirm Bulk Action',
+            text: `Are you sure you want to ${labels[action] || 'process'}?`,
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, continue',
+            cancelButtonText: 'Cancel'
+        }).then(function (result) {
+            if (result.value) executeBulk();
+        });
     });
 });
 </script>

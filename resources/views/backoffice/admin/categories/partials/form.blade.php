@@ -15,8 +15,6 @@
                 </div>
 
                 <div class="modal-body p-3">
-                    <div id="modalAlertContainer"></div>
-
                     {{-- Form Nav Tabs --}}
                     <ul class="nav nav-tabs mb-3" id="categoryTab" role="tablist">
                         <li class="nav-item">
@@ -66,14 +64,15 @@
                                     <div class="invalid-feedback d-block" id="err-description"></div>
                                 </div>
                                 <div class="form-group col-12 mb-0">
-                                    <label class="font-weight-600">Category Image</label>
-                                    <div class="custom-file mb-2">
-                                        <input type="file" class="custom-file-input" id="cat-image" name="image" accept="image/*">
-                                        <label class="custom-file-label custom-file-label-sm" for="cat-image">Choose image file...</label>
-                                    </div>
-                                    <div id="imagePreviewContainer" class="d-none mt-2">
-                                        <img id="imagePreview" src="" alt="Preview" class="img-thumbnail" style="max-height: 80px;">
-                                    </div>
+                                    <x-backoffice.media-picker
+                                        name="image"
+                                        input-id="cat-image"
+                                        label="Category Image"
+                                        choose-label="Choose image file..."
+                                        remove-name="remove_image"
+                                        media-id-name="image_media_id"
+                                        picker-url="{{ route('admin.media.picker') }}"
+                                    />
                                     <div class="invalid-feedback d-block" id="err-image"></div>
                                 </div>
                             </div>
@@ -116,14 +115,15 @@
                                 <div class="invalid-feedback d-block" id="err-og_description"></div>
                             </div>
                             <div class="form-group mb-0">
-                                <label class="font-weight-600">Facebook Share Image</label>
-                                <div class="custom-file mb-2">
-                                    <input type="file" class="custom-file-input" id="seo-og-image" name="og_image" accept="image/*">
-                                    <label class="custom-file-label custom-file-label-sm" for="seo-og-image">Choose OG image...</label>
-                                </div>
-                                <div id="ogImagePreviewContainer" class="d-none mt-2">
-                                    <img id="ogImagePreview" src="" alt="OG Preview" class="img-thumbnail" style="max-height: 80px;">
-                                </div>
+                                <x-backoffice.media-picker
+                                    name="og_image"
+                                    input-id="seo-og-image"
+                                    label="Facebook Share Image"
+                                    choose-label="Choose OG image..."
+                                    remove-name="remove_og_image"
+                                    media-id-name="og_image_media_id"
+                                    picker-url="{{ route('admin.media.picker') }}"
+                                />
                                 <div class="invalid-feedback d-block" id="err-og_image"></div>
                             </div>
                         </div>
@@ -141,14 +141,15 @@
                                 <div class="invalid-feedback d-block" id="err-twitter_description"></div>
                             </div>
                             <div class="form-group mb-0">
-                                <label class="font-weight-600">Twitter Share Image</label>
-                                <div class="custom-file mb-2">
-                                    <input type="file" class="custom-file-input" id="seo-twitter-image" name="twitter_image" accept="image/*">
-                                    <label class="custom-file-label custom-file-label-sm" for="seo-twitter-image">Choose Twitter image...</label>
-                                </div>
-                                <div id="twitterImagePreviewContainer" class="d-none mt-2">
-                                    <img id="twitterImagePreview" src="" alt="Twitter Preview" class="img-thumbnail" style="max-height: 80px;">
-                                </div>
+                                <x-backoffice.media-picker
+                                    name="twitter_image"
+                                    input-id="seo-twitter-image"
+                                    label="Twitter Share Image"
+                                    choose-label="Choose Twitter image..."
+                                    remove-name="remove_twitter_image"
+                                    media-id-name="twitter_image_media_id"
+                                    picker-url="{{ route('admin.media.picker') }}"
+                                />
                                 <div class="invalid-feedback d-block" id="err-twitter_image"></div>
                             </div>
                         </div>
@@ -165,3 +166,5 @@
         </div>
     </div>
 </div>
+
+@include('backoffice.admin.media.partials.picker-modal')
