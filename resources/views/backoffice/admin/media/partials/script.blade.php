@@ -2,7 +2,7 @@
 (function ($) {
     'use strict';
 
-    const fetchUrl = window.location.href;
+    const fetchUrl = '{{ $fetchUrl ?? request()->url() }}';
 
     // Reload Media Grid via AJAX
     function reloadMediaGrid(url = fetchUrl) {
@@ -19,11 +19,14 @@
                 if (res.pagination) {
                     $('#paginationContainer').html(res.pagination).show();
                 } else {
-                    $('#paginationContainer').hide();
+                    $('#paginationContainer').html('').hide();
                 }
-                // Update stats if available
+
                 if (res.stats) {
-                    // Update stats blocks dynamically if needed
+                    $('#stat-total').text(res.stats.total);
+                    $('#stat-images').text(res.stats.images);
+                    $('#stat-videos').text(res.stats.videos);
+                    $('#stat-storage').text((res.stats.storage / 1048576).toFixed(2) + ' MB');
                 }
             },
             error: function () {
@@ -31,9 +34,39 @@
             },
             complete: function () {
                 $('#mediaTableOverlay').addClass('d-none');
+                $('#mediaSelectAll').prop('checked', false);
             }
         });
     }
+
+    // Intercept Filter Form Submit (AJAX)
+    $(document).off('submit', '#filterForm').on('submit', '#filterForm', function (e) {
+        e.preventDefault();
+        reloadMediaGrid(fetchUrl);
+    });
+
+    // Debounced Live Search Input
+    let searchTimeout = null;
+    $(document).off('input', '#filterForm input[name="search"]').on('input', '#filterForm input[name="search"]', function () {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            reloadMediaGrid(fetchUrl);
+        }, 400);
+    });
+
+    // Filter Dropdown Change (Type, Disk, Collection)
+    $(document).off('change', '#filterForm select').on('change', '#filterForm select', function () {
+        reloadMediaGrid(fetchUrl);
+    });
+
+    // Reset Button Click (AJAX)
+    $(document).off('click', '#btnResetFilter').on('click', '#btnResetFilter', function (e) {
+        e.preventDefault();
+        $('#filterForm')[0].reset();
+        $('#filterForm input[name="search"]').val('');
+        $('#filterForm select').val('');
+        reloadMediaGrid(fetchUrl);
+    });
 
     function confirmAction(options, callback) {
         if (window.Swal && typeof window.Swal.fire === 'function') {
@@ -101,7 +134,7 @@
                 success: function (res) {
                     if (res.success) {
                         showAlert(res.message, 'success');
-                        reloadMediaGrid();
+                        reloadMediaGrid(fetchUrl);
                     }
                 },
                 error: function (xhr) {
@@ -149,8 +182,7 @@
                 success: function (res) {
                     if (res.success) {
                         showAlert(res.message, 'success');
-                        reloadMediaGrid();
-                        $('#mediaSelectAll').prop('checked', false);
+                        reloadMediaGrid(fetchUrl);
                     }
                 },
                 error: function (xhr) {

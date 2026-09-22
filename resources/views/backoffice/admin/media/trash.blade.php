@@ -12,12 +12,8 @@
         </div>
 
         <div class="col-12 col-md-auto">
-            <a
-                href="{{ route('admin.media.index') }}"
-                class="btn btn-light border btn-sm"
-            >
-                <i class="fas fa-arrow-left mr-1"></i>
-                Back to Media
+            <a href="{{ route('admin.media.index') }}" class="btn btn-light border btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Media
             </a>
         </div>
     </div>
@@ -30,6 +26,7 @@
     <div class="card card-outline card-danger shadow-sm">
         <div class="card-header bg-white">
             <form
+                id="filterForm"
                 method="GET"
                 action="{{ route('admin.media.trash') }}"
                 class="form-row align-items-end"
@@ -46,75 +43,45 @@
                 </div>
 
                 <div class="col-12 col-md-5 text-md-right">
-                    <button class="btn btn-danger btn-sm">
-                        <i class="fas fa-search mr-1"></i>
-                        Filter
+                    <button type="button" id="btnResetFilter" class="btn btn-light border btn-sm">
+                        <i class="fas fa-redo-alt mr-1"></i> Reset
                     </button>
-                    <a
-                        href="{{ route('admin.media.trash') }}"
-                        class="btn btn-light border btn-sm"
-                    >Reset</a>
                 </div>
             </form>
         </div>
 
-        {{-- Keep this form separate from the media cards. --}}
-        <form
-            id="mediaBulkForm"
-            method="POST"
-            action="{{ route('admin.media.bulk-action') }}"
-        >
+        <form id="mediaBulkForm" method="POST" action="{{ route('admin.media.bulk-action') }}">
             @csrf
-
             <div class="card-body border-bottom py-2">
                 <div class="d-flex flex-wrap align-items-center">
                     <label class="mb-0 mr-3">
-                        <input
-                            type="checkbox"
-                            id="mediaSelectAll"
-                            class="mr-1"
-                        >
+                        <input type="checkbox" id="mediaSelectAll" class="mr-1">
                         Select All
                     </label>
 
-                    <select
-                        name="action"
-                        class="custom-select custom-select-sm mr-2"
-                        style="width: 220px;"
-                    >
+                    <select name="action" class="custom-select custom-select-sm mr-2" style="width: 220px;">
                         <option value="">Bulk Actions</option>
-
                         @can('media.restore')
-                            <option value="restore">
-                                Restore Selected
-                            </option>
+                            <option value="restore">Restore Selected</option>
                         @endcan
-
                         @can('media.force-delete')
-                            <option value="force-delete">
-                                Permanent Delete Selected
-                            </option>
+                            <option value="force-delete">Permanent Delete Selected</option>
                         @endcan
                     </select>
 
-                    <button
-                        type="submit"
-                        class="btn btn-danger btn-sm"
-                    >
-                        <i class="fas fa-check mr-1"></i>
-                        Apply
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-check mr-1"></i> Apply
                     </button>
                 </div>
             </div>
         </form>
 
-        {{-- Must stay outside #mediaBulkForm because table has individual forms. --}}
-      <div class="card-body p-0 position-relative">
+        <div class="card-body p-0 position-relative">
             <div id="mediaTableOverlay" class="overlay d-none">
                 <i class="fas fa-2x fa-sync-alt fa-spin"></i>
             </div>
-            <div id="mediaTableContainer">
-                @include('backoffice.admin.media.partials.table', ['isTrash' => false]) {{-- trash-e true hobe --}}
+            <div id="mediaTableContainer" class="p-3">
+                @include('backoffice.admin.media.partials.table', ['isTrash' => true])
             </div>
         </div>
 
@@ -127,5 +94,5 @@
 @endsection
 
 @push('js')
-    @include('backoffice.admin.media.partials.script')
+    @include('backoffice.admin.media.partials.script', ['fetchUrl' => route('admin.media.trash')])
 @endpush
