@@ -159,16 +159,20 @@
             </div>
         </form>
 
-        {{-- Must stay outside #mediaBulkForm because table has individual forms. --}}
-        @include('backoffice.admin.media.partials.table', [
-            'isTrash' => false,
-        ])
-
-        @if($media->hasPages())
-            <div class="card-footer bg-white">
-                {{ $media->links() }}
+       <div class="card-body p-0 position-relative">
+            <div id="mediaTableOverlay" class="overlay d-none">
+                <i class="fas fa-2x fa-sync-alt fa-spin"></i>
             </div>
-        @endif
+            <div id="mediaTableContainer">
+                @include('backoffice.admin.media.partials.table', ['isTrash' => false]) {{-- trash-e true hobe --}}
+            </div>
+        </div>
+
+        <div class="card-footer bg-white border-top py-2" id="paginationContainer">
+            @if($media->hasPages())
+                {{ $media->links() }}
+            @endif
+        </div>
     </div>
 @endsection
 

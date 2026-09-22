@@ -12,18 +12,31 @@ use Illuminate\View\View;
 
 class MediaController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorizeAction('media.view');
+
+        $media = $this->mediaQuery($request)
+            ->paginate(24)
+            ->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('backoffice.admin.media.partials.table', [
+                    'media' => $media,
+                    'isTrash' => false,
+                ])->render(),
+                'pagination' => $media->hasPages() ? (string) $media->links() : '',
+                'stats' => $this->stats(),
+            ]);
+        }
 
         return view('backoffice.admin.media.index', [
             'title' => 'Media Management',
             'breadcrumb' => [
                 ['text' => 'Media', 'url' => null],
             ],
-            'media' => $this->mediaQuery($request)
-                ->paginate(24)
-                ->withQueryString(),
+            'media' => $media,
             'stats' => $this->stats(),
             'filters' => $request->only([
                 'search',
@@ -35,25 +48,31 @@ class MediaController extends Controller
         ]);
     }
 
-    public function trash(Request $request): View
+    public function trash(Request $request): View|JsonResponse
     {
         $this->authorizeAction('media.view');
+
+        $media = $this->mediaQuery($request, true)
+            ->paginate(24)
+            ->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('backoffice.admin.media.partials.table', [
+                    'media' => $media,
+                    'isTrash' => true,
+                ])->render(),
+                'pagination' => $media->hasPages() ? (string) $media->links() : '',
+            ]);
+        }
 
         return view('backoffice.admin.media.trash', [
             'title' => 'Media Trash',
             'breadcrumb' => [
-                [
-                    'text' => 'Media',
-                    'url' => route('admin.media.index'),
-                ],
-                [
-                    'text' => 'Trash',
-                    'url' => null,
-                ],
+                ['text' => 'Media', 'url' => route('admin.media.index')],
+                ['text' => 'Trash', 'url' => null],
             ],
-            'media' => $this->mediaQuery($request, true)
-                ->paginate(24)
-                ->withQueryString(),
+            'media' => $media,
             'filters' => $request->only([
                 'search',
                 'type',
@@ -88,67 +107,60 @@ class MediaController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, int $media): RedirectResponse
+    public function destroy(Request $request, int $media): JsonResponse|RedirectResponse
     {
         $this->authorizeAction('media.delete');
 
-        Media::query()
-            ->findOrFail($media)
-            ->delete();
+        Media::query()->findOrFail($media)->delete();
 
-        return back()->with(
-            'success',
-            'Media moved to trash successfully.'
-        );
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Media moved to trash successfully.',
+            ]);
+        }
+
+        return back()->with('success', 'Media moved to trash successfully.');
     }
 
-    public function restore(Request $request, int $media): RedirectResponse
+    public function restore(Request $request, int $media): JsonResponse|RedirectResponse
     {
         $this->authorizeAction('media.restore');
 
-        Media::onlyTrashed()
-            ->findOrFail($media)
-            ->restore();
+        Media::onlyTrashed()->findOrFail($media)->restore();
 
-        return back()->with(
-            'success',
-            'Media restored successfully.'
-        );
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Media restored successfully.',
+            ]);
+        }
+
+        return back()->with('success', 'Media restored successfully.');
     }
 
-    public function forceDelete(
-        Request $request,
-        int $media
-    ): RedirectResponse {
+    public function forceDelete(Request $request, int $media): JsonResponse|RedirectResponse
+    {
         $this->authorizeAction('media.force-delete');
 
-        Media::onlyTrashed()
-            ->findOrFail($media)
-            ->forceDelete();
+        Media::onlyTrashed()->findOrFail($media)->forceDelete();
 
-        return back()->with(
-            'success',
-            'Media permanently deleted.'
-        );
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Media permanently deleted.',
+            ]);
+        }
+
+        return back()->with('success', 'Media permanently deleted.');
     }
 
-    public function bulkAction(Request $request): RedirectResponse
+    public function bulkAction(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
-            'action' => [
-                'required',
-                'in:delete,restore,force-delete',
-            ],
-            'media_ids' => [
-                'required',
-                'array',
-                'min:1',
-            ],
-            'media_ids.*' => [
-                'integer',
-                'distinct',
-                'exists:media,id',
-            ],
+            'action' => ['required', 'in:delete,restore,force-delete'],
+            'media_ids' => ['required', 'array', 'min:1'],
+            'media_ids.*' => ['integer', 'distinct', 'exists:media,id'],
         ]);
 
         $permission = match ($validated['action']) {
@@ -160,17 +172,12 @@ class MediaController extends Controller
         $this->authorizeAction($permission);
 
         $processed = 0;
-
-        $mediaIds = collect($validated['media_ids'])
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
+        $mediaIds = collect($validated['media_ids'])->map(fn ($id) => (int) $id)->unique()->values();
 
         foreach ($mediaIds as $id) {
             $media = match ($validated['action']) {
                 'delete' => Media::query()->find($id),
-                'restore',
-                'force-delete' => Media::onlyTrashed()->find($id),
+                'restore', 'force-delete' => Media::onlyTrashed()->find($id),
             };
 
             if (! $media) {
@@ -186,99 +193,38 @@ class MediaController extends Controller
             $processed++;
         }
 
-        return back()->with(
-            'success',
-            sprintf('%d media file(s) processed.', $processed)
-        );
+        $message = sprintf('%d media file(s) processed.', $processed);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
-    private function mediaQuery(
-        Request $request,
-        bool $trash = false
-    ) {
+    private function mediaQuery(Request $request, bool $trash = false)
+    {
         return ($trash ? Media::onlyTrashed() : Media::query())
-            ->when(
-                $request->filled('search'),
-                function ($query) use ($request): void {
-                    $term = '%'
-                        . $request->string('search')->trim()
-                        . '%';
-
-                    $query->where(function ($nested) use ($term): void {
-                        $nested
-                            ->where('name', 'like', $term)
-                            ->orWhere('file_name', 'like', $term)
-                            ->orWhere(
-                                'collection_name',
-                                'like',
-                                $term
-                            )
-                            ->orWhere(
-                                'model_type',
-                                'like',
-                                $term
-                            );
-                    });
-                }
-            )
-            ->when(
-                $request->filled('type'),
-                function ($query) use ($request): void {
-                    $type = $request
-                        ->string('type')
-                        ->toString();
-
-                    $query
-                        ->when(
-                            $type === 'image',
-                            fn ($q) => $q->where(
-                                'mime_type',
-                                'like',
-                                'image/%'
-                            )
-                        )
-                        ->when(
-                            $type === 'video',
-                            fn ($q) => $q->where(
-                                'mime_type',
-                                'like',
-                                'video/%'
-                            )
-                        )
-                        ->when(
-                            $type === 'other',
-                            fn ($q) => $q->whereNot(
-                                function ($q) {
-                                    $q
-                                        ->where(
-                                            'mime_type',
-                                            'like',
-                                            'image/%'
-                                        )
-                                        ->orWhere(
-                                            'mime_type',
-                                            'like',
-                                            'video/%'
-                                        );
-                                }
-                            )
-                        );
-                }
-            )
-            ->when(
-                $request->filled('collection'),
-                fn ($query) => $query->where(
-                    'collection_name',
-                    $request->string('collection')->toString()
-                )
-            )
-            ->when(
-                $request->filled('disk'),
-                fn ($query) => $query->where(
-                    'disk',
-                    $request->string('disk')->toString()
-                )
-            )
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $term = '%' . $request->string('search')->trim() . '%';
+                $query->where(function ($nested) use ($term): void {
+                    $nested->where('name', 'like', $term)
+                           ->orWhere('file_name', 'like', $term)
+                           ->orWhere('collection_name', 'like', $term)
+                           ->orWhere('model_type', 'like', $term);
+                });
+            })
+            ->when($request->filled('type'), function ($query) use ($request): void {
+                $type = $request->string('type')->toString();
+                $query->when($type === 'image', fn ($q) => $q->where('mime_type', 'like', 'image/%'))
+                      ->when($type === 'video', fn ($q) => $q->where('mime_type', 'like', 'video/%'))
+                      ->when($type === 'other', fn ($q) => $q->whereNot(fn ($q2) => $q2->where('mime_type', 'like', 'image/%')->orWhere('mime_type', 'like', 'video/%')));
+            })
+            ->when($request->filled('collection'), fn ($query) => $query->where('collection_name', $request->string('collection')->toString()))
+            ->when($request->filled('disk'), fn ($query) => $query->where('disk', $request->string('disk')->toString()))
             ->latest('id');
     }
 
@@ -288,12 +234,8 @@ class MediaController extends Controller
 
         return [
             'total' => (clone $active)->count(),
-            'images' => (clone $active)
-                ->where('mime_type', 'like', 'image/%')
-                ->count(),
-            'videos' => (clone $active)
-                ->where('mime_type', 'like', 'video/%')
-                ->count(),
+            'images' => (clone $active)->where('mime_type', 'like', 'image/%')->count(),
+            'videos' => (clone $active)->where('mime_type', 'like', 'video/%')->count(),
             'storage' => (clone $active)->sum('size'),
         ];
     }
@@ -301,9 +243,7 @@ class MediaController extends Controller
     private function authorizeAction(string $permission): void
     {
         if (! auth('admin')->user()?->can($permission)) {
-            throw new AuthorizationException(
-                'You are not authorized to perform this action.'
-            );
+            throw new AuthorizationException('You are not authorized to perform this action.');
         }
     }
 
@@ -318,8 +258,7 @@ class MediaController extends Controller
             'url' => $media->getUrl(),
             'thumb_url' => $media->getUrl(),
             'collection_name' => $media->collection_name,
-            'created_at' => optional($media->created_at)
-                ->format('d M Y, h:i A'),
+            'created_at' => optional($media->created_at)->format('d M Y, h:i A'),
         ];
     }
 }
