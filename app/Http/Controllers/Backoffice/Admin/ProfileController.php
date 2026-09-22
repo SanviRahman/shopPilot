@@ -39,29 +39,10 @@ class ProfileController extends Controller
         $admin = $this->admin($request);
 
         $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:120',
-            ],
-            'email' => [
-                'required',
-                'email',
-                'max:191',
-                Rule::unique('admins', 'email')
-                    ->ignore($admin->id),
-            ],
-            'photo' => [
-                'nullable',
-                'image',
-                'mimes:jpeg,png,jpg,webp',
-                'max:2048',
-            ],
-            'photo_media_id' => [
-                'nullable',
-                'integer',
-                'exists:media,id',
-            ],
+            'name' => ['required','string','max:120'],
+            'email' => ['required','email','max:191',Rule::unique('admins', 'email')->ignore($admin->id)],
+            'photo' => ['nullable','image','mimes:jpeg,png,jpg,webp','max:2048'],
+            'photo_media_id' => ['nullable','integer','exists:media,id'],
         ]);
 
         $admin->update([
@@ -96,18 +77,11 @@ class ProfileController extends Controller
         $admin = $this->admin($request);
 
         $validated = $request->validate([
-            'current_password' => [
-                'required',
-                'string',
-            ],
-            'password' => [
-                'required',
-                'confirmed',
-                Password::defaults(),
-            ],
+            'current_password' => ['required','string'],
+            'password' => ['required','confirmed',Password::defaults()],
         ]);
 
-        if (! Hash::check(
+        if (!Hash::check(
             $validated['current_password'],
             $admin->password
         )) {
@@ -116,9 +90,7 @@ class ProfileController extends Controller
             ]);
         }
 
-        $admin->update([
-            'password' => $validated['password'],
-        ]);
+        $admin->update(['password' => $validated['password']]);
 
         return back()->with(
             'success',
