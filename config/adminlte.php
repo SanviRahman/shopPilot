@@ -332,7 +332,13 @@ return [
                     'active' => ['admin/categories*'],
                     'can'    => 'categories.view',
                 ],
-                // ভবিষ্যতে Products, Coupons ইত্যাদি এখানে যুক্ত হবে
+                [
+                    'text'   => 'Products',
+                    'icon'   => 'fas fa-fw fa-box',
+                    'route'  => 'admin.products.index',
+                    'active' => ['admin/products*'],
+                    'can'    => 'products.view',
+                ],
             ],
         ],
 

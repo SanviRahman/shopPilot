@@ -5,6 +5,7 @@ use App\Http\Controllers\Backoffice\Admin\CategoryController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
+use App\Http\Controllers\Backoffice\Admin\ProductController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
 use App\Http\Controllers\Backoffice\Admin\RoleController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
@@ -32,6 +33,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/password', [ProfileController::class, 'password'])->name('password');
         Route::post('/password', [ProfileController::class, 'updatePassword'])->name('update_password');
 
+        // Roles
         Route::prefix('roles')->name('roles.')->group(function () {
             Route::get('trash', [RoleController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [RoleController::class, 'bulkAction'])->name('bulk-action');
@@ -40,6 +42,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('roles', RoleController::class);
 
+        // Permissions
         Route::prefix('permissions')->name('permissions.')->group(function () {
             Route::get('trash', [PermissionController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [PermissionController::class, 'bulkAction'])->name('bulk-action');
@@ -48,6 +51,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('permissions', PermissionController::class);
 
+        //Admins
         Route::prefix('admins')->name('admins.')->group(function () {
             Route::get('trash', [AdminController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [AdminController::class, 'bulkAction'])->name('bulk-action');
@@ -56,6 +60,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('admins', AdminController::class);
 
+        // Categories
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('trash', [CategoryController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [CategoryController::class, 'bulkAction'])->name('bulk-action');
@@ -65,6 +70,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('categories', CategoryController::class);
 
+        // Media
         Route::prefix('media')->name('media.')->group(function () {
             Route::get('trash', [MediaController::class, 'trash'])->name('trash');
             Route::get('picker', [MediaController::class, 'picker'])->name('picker');
@@ -73,6 +79,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{media}/force-delete', [MediaController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('media', MediaController::class)->only(['index', 'destroy']);
+
+        // Products
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('trash', [ProductController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [ProductController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{product}/restore', [ProductController::class, 'restore'])->name('restore');
+            Route::delete('{product}/force-delete', [ProductController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('products', ProductController::class);
 
     });
 });
