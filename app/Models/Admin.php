@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -63,6 +64,14 @@ class Admin extends Authenticatable implements HasMedia
     public function isActive(): bool
     {
         return ($this->status ?? 'active') === 'active';
+    }
+
+    /**
+     * Check if admin is super admin.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
     }
 
     /**
