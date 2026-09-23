@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -33,9 +35,12 @@ class User extends Authenticatable implements HasMedia
         ];
     }
 
-    public function blogs()
+    /**
+     * User has many blogs (Foreign key: user_id for cascade delete).
+     */
+    public function blogs(): HasMany
     {
-        return $this->morphMany(\App\Models\Blog::class, 'author');
+        return $this->hasMany(Blog::class, 'user_id');
     }
 
     /**
@@ -60,8 +65,7 @@ class User extends Authenticatable implements HasMedia
             return $mediaUrl;
         }
 
-        // Image na thakle dynamic rounded avatar fallback
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'Admin') . '&background=007bff&color=ffffff&bold=true&rounded=true';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'User') . '&background=007bff&color=ffffff&bold=true&rounded=true';
     }
 
     /**

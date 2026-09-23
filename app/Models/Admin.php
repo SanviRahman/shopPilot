@@ -1,7 +1,9 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -35,9 +37,12 @@ class Admin extends Authenticatable implements HasMedia
         ];
     }
 
-    public function blogs()
+    /**
+     * Admin has many blogs (Foreign key: admin_id for cascade delete).
+     */
+    public function blogs(): HasMany
     {
-        return $this->morphMany(\App\Models\Blog::class, 'author');
+        return $this->hasMany(Blog::class, 'admin_id');
     }
 
     /**
@@ -57,9 +62,9 @@ class Admin extends Authenticatable implements HasMedia
     public function hasProfilePhoto(): bool
     {
         return $this->hasMedia('avatar')
-        || $this->hasMedia('user_avatar')
-        || $this->hasMedia('profile_photo')
-        || ! empty($this->avatar_url);
+            || $this->hasMedia('user_avatar')
+            || $this->hasMedia('profile_photo')
+            || ! empty($this->avatar_url);
     }
 
     /**

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Backoffice\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\Blog;
+use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -68,6 +70,8 @@ class BlogController extends Controller
         $author = auth('admin')->user();
 
         $blog = Blog::create([
+            'admin_id'    => $author instanceof Admin ? $author->id : null,
+            'user_id'     => $author instanceof User ? $author->id : null,
             'author_type' => $author ? get_class($author) : null,
             'author_id'   => $author?->id,
             'title'       => $validated['title'],
@@ -109,7 +113,7 @@ class BlogController extends Controller
             ]);
         }
 
-        return view('backoffice.admin.blogs.partials.show', compact('blog'));
+        return view('backoffice.admin.blogs.show', compact('blog'));
     }
 
     public function edit(Request $request, Blog $blog): JsonResponse|View

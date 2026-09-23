@@ -10,11 +10,18 @@ return new class extends Migration
     {
         Schema::create('blogs', function (Blueprint $table) {
             $table->id();
-            $table->nullableMorphs('author'); // User ebong Admin dujoneri polymorphic relation
+            
+            // Database-level Foreign Key Cascade
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
+
+            // Polymorphic relation support (Existing view & author compatibility)
+            $table->nullableMorphs('author');
+
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('content')->nullable();
-            $table->softDeletes(); // deleted_at column
+            $table->softDeletes();
             $table->timestamps();
         });
     }
