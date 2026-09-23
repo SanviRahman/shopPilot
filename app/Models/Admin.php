@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +33,11 @@ class Admin extends Authenticatable implements HasMedia
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    public function blogs()
+    {
+        return $this->morphMany(\App\Models\Blog::class, 'author');
     }
 
     /**

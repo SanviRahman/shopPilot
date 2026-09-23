@@ -8,25 +8,25 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'title'         => 'ShopPilot',
-    'title_prefix'  => '',
-    'title_postfix' => '',
+    'title'                                   => 'ShopPilot',
+    'title_prefix'                            => '',
+    'title_postfix'                           => '',
 
-    'use_ico_only'     => false,
-    'use_full_favicon' => false,
+    'use_ico_only'                            => false,
+    'use_full_favicon'                        => false,
 
-    'google_fonts' => [
+    'google_fonts'                            => [
         'allowed' => true,
     ],
 
-    'logo'             => '<b>Shop</b>Pilot',
-    'logo_img'         => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class'   => 'brand-image img-circle elevation-3',
-    'logo_img_xl'      => null,
-    'logo_img_xl_class'=> 'brand-image-xs',
-    'logo_img_alt'     => 'Admin Logo',
+    'logo'                                    => '<b>Shop</b>Pilot',
+    'logo_img'                                => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo_img_class'                          => 'brand-image img-circle elevation-3',
+    'logo_img_xl'                             => null,
+    'logo_img_xl_class'                       => 'brand-image-xs',
+    'logo_img_alt'                            => 'Admin Logo',
 
-    'auth_logo' => [
+    'auth_logo'                               => [
         'enabled' => false,
         'img'     => [
             'path'   => 'vendor/adminlte/dist/img/AdminLTELogo.png',
@@ -37,7 +37,7 @@ return [
         ],
     ],
 
-    'preloader' => [
+    'preloader'                               => [
         'enabled' => true,
         'mode'    => 'fullscreen',
         'img'     => [
@@ -49,38 +49,38 @@ return [
         ],
     ],
 
-    'usermenu_enabled'      => true,
-    'usermenu_header'       => false,
-    'usermenu_header_class' => 'bg-primary',
-    'usermenu_image'        => true,
-    'usermenu_desc'         => false,
-    'usermenu_profile_url'  => false,
+    'usermenu_enabled'                        => true,
+    'usermenu_header'                         => false,
+    'usermenu_header_class'                   => 'bg-primary',
+    'usermenu_image'                          => true,
+    'usermenu_desc'                           => false,
+    'usermenu_profile_url'                    => false,
 
-    'layout_topnav'                    => null,
-    'layout_boxed'                     => null,
-    'layout_fixed_sidebar'             => null,
-    'layout_fixed_navbar'              => null,
-    'layout_fixed_footer'              => null,
-    'layout_dark_mode'                 => null,
+    'layout_topnav'                           => null,
+    'layout_boxed'                            => null,
+    'layout_fixed_sidebar'                    => null,
+    'layout_fixed_navbar'                     => null,
+    'layout_fixed_footer'                     => null,
+    'layout_dark_mode'                        => null,
 
-    'classes_auth_card'   => 'card-outline card-primary',
-    'classes_auth_header' => '',
-    'classes_auth_body'   => '',
-    'classes_auth_footer' => '',
-    'classes_auth_icon'   => '',
-    'classes_auth_btn'    => 'btn-flat btn-primary',
+    'classes_auth_card'                       => 'card-outline card-primary',
+    'classes_auth_header'                     => '',
+    'classes_auth_body'                       => '',
+    'classes_auth_footer'                     => '',
+    'classes_auth_icon'                       => '',
+    'classes_auth_btn'                        => 'btn-flat btn-primary',
 
-    'classes_body'             => '',
-    'classes_brand'            => '',
-    'classes_brand_text'       => '',
-    'classes_content_wrapper'  => '',
-    'classes_content_header'   => '',
-    'classes_content'          => '',
-    'classes_sidebar'          => 'sidebar-dark-primary elevation-4',
-    'classes_sidebar_nav'      => '',
-    'classes_topnav'           => 'navbar-white navbar-light',
-    'classes_topnav_nav'       => 'navbar-expand',
-    'classes_topnav_container' => 'container',
+    'classes_body'                            => '',
+    'classes_brand'                           => '',
+    'classes_brand_text'                      => '',
+    'classes_content_wrapper'                 => '',
+    'classes_content_header'                  => '',
+    'classes_content'                         => '',
+    'classes_sidebar'                         => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar_nav'                     => '',
+    'classes_topnav'                          => 'navbar-white navbar-light',
+    'classes_topnav_nav'                      => 'navbar-expand',
+    'classes_topnav_container'                => 'container',
 
     'sidebar_mini'                            => 'lg',
     'sidebar_collapse'                        => false,
@@ -92,27 +92,27 @@ return [
     'sidebar_nav_accordion'                   => true,
     'sidebar_nav_animation_speed'             => 300,
 
-    'right_sidebar'                     => false,
-    'right_sidebar_icon'                => 'fas fa-cogs',
-    'right_sidebar_theme'               => 'dark',
-    'right_sidebar_slide'               => true,
-    'right_sidebar_push'                => true,
-    'right_sidebar_scrollbar_theme'     => 'os-theme-light',
-    'right_sidebar_scrollbar_auto_hide' => 'l',
+    'right_sidebar'                           => false,
+    'right_sidebar_icon'                      => 'fas fa-cogs',
+    'right_sidebar_theme'                     => 'dark',
+    'right_sidebar_slide'                     => true,
+    'right_sidebar_push'                      => true,
+    'right_sidebar_scrollbar_theme'           => 'os-theme-light',
+    'right_sidebar_scrollbar_auto_hide'       => 'l',
 
-    'use_route_url'           => true,
-    'dashboard_url'           => 'admin.redirect',
-    'logout_url'              => 'admin.logout',
-    'login_url'               => 'admin.login',
-    'register_url'            => false,
-    'password_reset_url'      => false,
-    'password_email_url'      => false,
-    'profile_url'             => false,
-    'disable_darkmode_routes' => false,
+    'use_route_url'                           => true,
+    'dashboard_url'                           => 'admin.redirect',
+    'logout_url'                              => 'admin.logout',
+    'login_url'                               => 'admin.login',
+    'register_url'                            => false,
+    'password_reset_url'                      => false,
+    'password_email_url'                      => false,
+    'profile_url'                             => false,
+    'disable_darkmode_routes'                 => false,
 
-    'laravel_asset_bundling' => false,
-    'laravel_css_path'       => 'css/app.css',
-    'laravel_js_path'        => 'js/app.js',
+    'laravel_asset_bundling'                  => false,
+    'laravel_css_path'                        => 'css/app.css',
+    'laravel_js_path'                         => 'js/app.js',
 
     /*
     |--------------------------------------------------------------------------
@@ -120,7 +120,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'menu' => [
+    'menu'                                    => [
         [
             'type'         => 'fullscreen-widget',
             'topnav_right' => true,
@@ -143,6 +143,19 @@ return [
             'icon'   => 'fas fa-fw fa-photo-video',
             'active' => ['admin/media*'],
             'can'    => 'media.view',
+        ],
+
+        // BLOG MANAGEMENT
+        [
+            'header' => 'BLOG MANAGEMENT',
+            'can'    => 'blogs.view',
+        ],
+        [
+            'text'   => 'Blogs',
+            'route'  => 'admin.blogs.index',
+            'icon'   => 'fas fa-fw fa-newspaper',
+            'active' => ['admin/blogs*'],
+            'can'    => 'blogs.view',
         ],
 
         // E-COMMERCE MANAGEMENT
@@ -284,7 +297,7 @@ return [
         ],
     ],
 
-    'filters' => [
+    'filters'                                 => [
         JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter::class,
@@ -294,8 +307,8 @@ return [
         JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter::class,
     ],
 
-    'plugins' => [
-        'Datatables' => [
+    'plugins'                                 => [
+        'Datatables'  => [
             'active' => false,
             'files'  => [
                 [
@@ -315,7 +328,7 @@ return [
                 ],
             ],
         ],
-        'Select2' => [
+        'Select2'     => [
             'active' => true,
             'files'  => [
                 [
@@ -330,7 +343,7 @@ return [
                 ],
             ],
         ],
-        'Chartjs' => [
+        'Chartjs'     => [
             'active' => false,
             'files'  => [
                 [
@@ -350,7 +363,7 @@ return [
                 ],
             ],
         ],
-        'Pace' => [
+        'Pace'        => [
             'active' => false,
             'files'  => [
                 [
@@ -367,12 +380,12 @@ return [
         ],
     ],
 
-    'iframe' => [
+    'iframe'                                  => [
         'default_tab' => [
             'url'   => null,
             'title' => null,
         ],
-        'buttons' => [
+        'buttons'     => [
             'close'           => true,
             'close_all'       => true,
             'close_all_other' => true,
@@ -380,12 +393,12 @@ return [
             'scroll_right'    => true,
             'fullscreen'      => true,
         ],
-        'options' => [
+        'options'     => [
             'loading_screen'    => 1000,
             'auto_show_new_tab' => true,
             'use_navbar_items'  => true,
         ],
     ],
 
-    'livewire' => false,
+    'livewire'                                => false,
 ];

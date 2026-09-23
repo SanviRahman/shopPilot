@@ -34,6 +34,11 @@ class RolePermissionSeeder extends Seeder
                 'products.view', 'products.create', 'products.update',
                 'products.delete', 'products.restore', 'products.force-delete',
             ],
+            // BLOGS PERMISSIONS ADDED HERE
+            'Blogs' => [
+                'blogs.view', 'blogs.create', 'blogs.update',
+                'blogs.delete', 'blogs.restore', 'blogs.force-delete',
+            ],
             'Stock' => ['stock.view', 'stock.update'],
             'Coupons' => [
                 'coupons.view', 'coupons.create', 'coupons.update',
@@ -84,6 +89,7 @@ class RolePermissionSeeder extends Seeder
             'products.update', 'stock.view', 'stock.update', 'orders.view',
             'orders.update', 'orders.assign', 'payments.view', 'payments.verify',
             'reports.view',
+            'blogs.view', 'blogs.create', 'blogs.update', // <-- Manager can manage blogs
         ]);
         $agentRole->syncPermissions([
             'dashboard.view', 'orders.view', 'orders.update', 'orders.cancel',

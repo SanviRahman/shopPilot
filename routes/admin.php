@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Backoffice\Admin\AdminController;
+use App\Http\Controllers\Backoffice\Admin\BlogController;
 use App\Http\Controllers\Backoffice\Admin\CategoryController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
@@ -88,6 +89,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{product}/force-delete', [ProductController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('products', ProductController::class);
+
+        // Blogs
+        Route::prefix('blogs')->name('blogs.')->group(function () {
+            Route::get('trash', [BlogController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [BlogController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{blog}/restore', [BlogController::class, 'restore'])->name('restore');
+            Route::delete('{blog}/force-delete', [BlogController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('blogs', BlogController::class);
 
     });
 });
