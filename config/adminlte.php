@@ -161,12 +161,12 @@ return [
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',
-            'can'    => ['categories.view', 'products.view'],
+            'can'    => ['categories.view', 'products.view', 'coupons.view'],
         ],
         [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
-            'can'     => ['categories.view', 'products.view'],
+            'can'     => ['categories.view', 'products.view', 'coupons.view'],
             'submenu' => [
                 [
                     'text'   => 'Categories',
@@ -181,6 +181,13 @@ return [
                     'route'  => 'admin.products.index',
                     'active' => ['admin/products*'],
                     'can'    => 'products.view',
+                ],
+                [
+                    'text'   => 'Coupons',
+                    'icon'   => 'fas fa-fw fa-percent',
+                    'route'  => 'admin.coupons.index',
+                    'active' => ['admin/coupons*'],
+                    'can'    => 'coupons.view',
                 ],
             ],
         ],

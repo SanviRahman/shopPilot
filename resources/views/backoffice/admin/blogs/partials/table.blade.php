@@ -75,7 +75,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-outline-danger btn-xs" title="Delete">
-                                        <i class="fas fa-trash-alt"></i>
+                                         <i class="fas fa-trash text-danger"></i>
                                     </button>
                                 </form>
                             @endcan

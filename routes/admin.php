@@ -3,6 +3,7 @@
 use App\Http\Controllers\Backoffice\Admin\AdminController;
 use App\Http\Controllers\Backoffice\Admin\BlogController;
 use App\Http\Controllers\Backoffice\Admin\CategoryController;
+use App\Http\Controllers\Backoffice\Admin\CouponController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
@@ -98,6 +99,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{blog}/force-delete', [BlogController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('blogs', BlogController::class);
+
+        // Coupons
+        Route::prefix('coupons')->name('coupons.')->group(function () {
+            Route::get('trash', [CouponController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [CouponController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{coupon}/restore', [CouponController::class, 'restore'])->name('restore');
+            Route::delete('{coupon}/force-delete', [CouponController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('coupons', CouponController::class);
 
     });
 });
