@@ -11,6 +11,7 @@ use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\ProductController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
 use App\Http\Controllers\Backoffice\Admin\RoleController;
+use App\Http\Controllers\Backoffice\Admin\OrderController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -119,5 +120,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('payment-methods', PaymentMethodController::class);
 
+
+                // Orders
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('trash', [OrderController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [OrderController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{order}/restore', [OrderController::class, 'restore'])->name('restore');
+            Route::delete('{order}/force-delete', [OrderController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('orders', OrderController::class)->except(['create']);
     });
 });
