@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -55,6 +54,11 @@ class Order extends Model
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
     public function isGuest(): bool

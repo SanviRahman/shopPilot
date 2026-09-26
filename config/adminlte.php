@@ -166,7 +166,9 @@ return [
         [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
-            'can'     => ['categories.view', 'products.view', 'coupons.view', 'payment-methods.view', 'orders.view'],
+            'can'     => ['categories.view', 'products.view', 
+            'coupons.view', 'payment-methods.view', 
+            'orders.view', 'order-items.view'],
             'submenu' => [
                 [
                     'text'   => 'Categories',
@@ -201,6 +203,14 @@ return [
                     'icon'   => 'fas fa-fw fa-shopping-cart',
                     'route'  => 'admin.orders.index',
                     'active' => ['admin/orders*'],
+                    'can'    => 'orders.view',
+                ],
+
+                                [
+                    'text'   => 'Order Items',
+                    'icon'   => 'fas fa-fw fa-list-ol',
+                    'route'  => 'admin.order-items.index',
+                    'active' => ['admin/order-items*'],
                     'can'    => 'orders.view',
                 ],
             ],

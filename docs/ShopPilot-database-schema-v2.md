@@ -1131,12 +1131,7 @@ rejected
 ---
 
 # 19. `order_items` Table
-
-**Model:** `App\Models\OrderItem`
-
-| Column | Type | Null | Default | Key / Index |
-|---|---|---:|---|---|
-| `id` | BIGINT UNSIGNED | No | auto | PK |
+id` | BIGINT UNSIGNED | No | auto | PK |
 | `order_id` | BIGINT UNSIGNED | No | — | FK |
 | `product_id` | BIGINT UNSIGNED | No | — | FK |
 | `product_name` | VARCHAR(180) | No | — | Snapshot |
@@ -1266,7 +1261,12 @@ Schema::create('order_histories', function (Blueprint $table) {
     $table->foreignId('user_id')
         ->nullable()
         ->constrained('users')
-        ->nullOnDelete()
+        ->nul
+**Model:** `App\Models\OrderItem`
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `lOnDelete()
         ->cascadeOnUpdate();
 
     $table->string('from_status', 20)->nullable();

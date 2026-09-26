@@ -6,12 +6,13 @@ use App\Http\Controllers\Backoffice\Admin\CategoryController;
 use App\Http\Controllers\Backoffice\Admin\CouponController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
+use App\Http\Controllers\Backoffice\Admin\OrderController;
+use App\Http\Controllers\Backoffice\Admin\OrderItemController;
 use App\Http\Controllers\Backoffice\Admin\PaymentMethodController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\ProductController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
 use App\Http\Controllers\Backoffice\Admin\RoleController;
-use App\Http\Controllers\Backoffice\Admin\OrderController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -120,8 +121,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('payment-methods', PaymentMethodController::class);
 
-
-                // Orders
+        // Orders
         Route::prefix('orders')->name('orders.')->group(function () {
             Route::get('trash', [OrderController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [OrderController::class, 'bulkAction'])->name('bulk-action');
@@ -129,5 +129,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{order}/force-delete', [OrderController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('orders', OrderController::class)->except(['create']);
+
+        // Order Items
+        Route::prefix('order-items')->name('order-items.')->group(function () {
+            Route::get('trash', [OrderItemController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [OrderItemController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{orderItem}/restore', [OrderItemController::class, 'restore'])->name('restore');
+            Route::delete('{orderItem}/force-delete', [OrderItemController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('order-items', OrderItemController::class)->except(['create']);
     });
 });
