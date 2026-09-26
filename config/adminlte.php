@@ -161,12 +161,12 @@ return [
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',
-            'can'    => ['categories.view', 'products.view', 'coupons.view'],
+            'can'    => ['categories.view', 'products.view', 'coupons.view', 'payment-methods.view'],
         ],
         [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
-            'can'     => ['categories.view', 'products.view', 'coupons.view'],
+            'can'     => ['categories.view', 'products.view', 'coupons.view', 'payment-methods.view'],
             'submenu' => [
                 [
                     'text'   => 'Categories',
@@ -188,6 +188,13 @@ return [
                     'route'  => 'admin.coupons.index',
                     'active' => ['admin/coupons*'],
                     'can'    => 'coupons.view',
+                ],
+                [
+                    'text'   => 'Payment Methods',
+                    'icon'   => 'fas fa-fw fa-credit-card',
+                    'route'  => 'admin.payment-methods.index',
+                    'active' => ['admin/payment-methods*'],
+                    'can'    => 'payment-methods.view',
                 ],
             ],
         ],

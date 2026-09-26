@@ -6,6 +6,7 @@ use App\Http\Controllers\Backoffice\Admin\CategoryController;
 use App\Http\Controllers\Backoffice\Admin\CouponController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
+use App\Http\Controllers\Backoffice\Admin\PaymentMethodController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\ProductController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
@@ -108,6 +109,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{coupon}/force-delete', [CouponController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('coupons', CouponController::class);
+
+        // Payment Methods
+        Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+            Route::get('trash', [PaymentMethodController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [PaymentMethodController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{id}/restore', [PaymentMethodController::class, 'restore'])->name('restore');
+            Route::delete('{id}/force-delete', [PaymentMethodController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('payment-methods', PaymentMethodController::class);
 
     });
 });
