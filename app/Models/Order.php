@@ -56,6 +56,11 @@ class Order extends Model
         return $this->belongsTo(Coupon::class);
     }
 
+    public function histories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderHistory::class);
+    }
+
     public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(OrderItem::class);

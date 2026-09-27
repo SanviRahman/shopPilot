@@ -168,7 +168,7 @@ return [
             'icon'    => 'fas fa-fw fa-shopping-bag',
             'can'     => ['categories.view', 'products.view', 
             'coupons.view', 'payment-methods.view', 
-            'orders.view', 'order-items.view'],
+            'orders.view', 'order-items.view', 'order-histories.view'],
             'submenu' => [
                 [
                     'text'   => 'Categories',
@@ -211,6 +211,14 @@ return [
                     'icon'   => 'fas fa-fw fa-list-ol',
                     'route'  => 'admin.order-items.index',
                     'active' => ['admin/order-items*'],
+                    'can'    => 'orders.view',
+                ],
+
+                                [
+                    'text'   => 'Order Histories',
+                    'icon'   => 'fas fa-fw fa-history',
+                    'route'  => 'admin.order-histories.index',
+                    'active' => ['admin/order-histories*'],
                     'can'    => 'orders.view',
                 ],
             ],

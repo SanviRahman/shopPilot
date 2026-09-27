@@ -1261,12 +1261,7 @@ Schema::create('order_histories', function (Blueprint $table) {
     $table->foreignId('user_id')
         ->nullable()
         ->constrained('users')
-        ->nul
-**Model:** `App\Models\OrderItem`
-
-| Column | Type | Null | Default | Key / Index |
-|---|---|---:|---|---|
-| `lOnDelete()
+        ->nullOnDelete()
         ->cascadeOnUpdate();
 
     $table->string('from_status', 20)->nullable();

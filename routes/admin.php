@@ -7,6 +7,7 @@ use App\Http\Controllers\Backoffice\Admin\CouponController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
 use App\Http\Controllers\Backoffice\Admin\OrderController;
+use App\Http\Controllers\Backoffice\Admin\OrderHistoryController;
 use App\Http\Controllers\Backoffice\Admin\OrderItemController;
 use App\Http\Controllers\Backoffice\Admin\PaymentMethodController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
@@ -138,5 +139,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{orderItem}/force-delete', [OrderItemController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('order-items', OrderItemController::class)->except(['create']);
+
+        // Order Histories
+        Route::prefix('order-histories')->name('order-histories.')->group(function () {
+            Route::get('trash', [OrderHistoryController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [OrderHistoryController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{orderHistory}/restore', [OrderHistoryController::class, 'restore'])->name('restore');
+            Route::delete('{orderHistory}/force-delete', [OrderHistoryController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('order-histories', OrderHistoryController::class)->except(['create']);
     });
 });
