@@ -130,6 +130,7 @@ return [
             'route' => 'admin.redirect',
             'icon'  => 'fas fa-fw fa-tachometer-alt',
             'can'   => 'dashboard.view',
+            'active' => ['admin/dashboard*'],
         ],
 
         // MEDIA MANAGEMENT
