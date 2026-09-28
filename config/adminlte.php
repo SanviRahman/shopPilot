@@ -166,9 +166,9 @@ return [
         [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
-            'can'     => ['categories.view', 'products.view', 
-            'coupons.view', 'payment-methods.view', 
-            'orders.view', 'order-items.view', 'order-histories.view'],
+            'can'     => ['categories.view', 'products.view',
+                'coupons.view', 'payment-methods.view',
+                'orders.view', 'order-items.view', 'order-histories.view'],
             'submenu' => [
                 [
                     'text'   => 'Categories',
@@ -198,7 +198,14 @@ return [
                     'active' => ['admin/payment-methods*'],
                     'can'    => 'payment-methods.view',
                 ],
-                                [
+                [
+                    'text'   => 'Payment Submissions',
+                    'icon'   => 'fas fa-fw fa-file-invoice-dollar',
+                    'route'  => 'admin.payments.index',
+                    'active' => ['admin/payments*'],
+                    'can'    => 'payments.view',
+                ],
+                [
                     'text'   => 'Orders',
                     'icon'   => 'fas fa-fw fa-shopping-cart',
                     'route'  => 'admin.orders.index',
@@ -206,7 +213,7 @@ return [
                     'can'    => 'orders.view',
                 ],
 
-                                [
+                [
                     'text'   => 'Order Items',
                     'icon'   => 'fas fa-fw fa-list-ol',
                     'route'  => 'admin.order-items.index',
@@ -214,7 +221,7 @@ return [
                     'can'    => 'orders.view',
                 ],
 
-                                [
+                [
                     'text'   => 'Order Histories',
                     'icon'   => 'fas fa-fw fa-history',
                     'route'  => 'admin.order-histories.index',

@@ -10,6 +10,7 @@ use App\Http\Controllers\Backoffice\Admin\OrderController;
 use App\Http\Controllers\Backoffice\Admin\OrderHistoryController;
 use App\Http\Controllers\Backoffice\Admin\OrderItemController;
 use App\Http\Controllers\Backoffice\Admin\PaymentMethodController;
+use App\Http\Controllers\Backoffice\Admin\PaymentSubmissionController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\ProductController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
@@ -148,5 +149,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{orderHistory}/force-delete', [OrderHistoryController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('order-histories', OrderHistoryController::class)->except(['create']);
+
+        // Payment Submissions
+        Route::prefix('payments')->name('payments.')->group(function () {
+            Route::get('trash', [PaymentSubmissionController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [PaymentSubmissionController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{payment}/verify', [PaymentSubmissionController::class, 'verify'])->name('verify');
+            Route::patch('{payment}/reject', [PaymentSubmissionController::class, 'reject'])->name('reject');
+            Route::patch('{id}/restore', [PaymentSubmissionController::class, 'restore'])->name('restore');
+            Route::delete('{id}/force-delete', [PaymentSubmissionController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('payments', PaymentSubmissionController::class)->only(['index', 'show', 'destroy']);
     });
 });
