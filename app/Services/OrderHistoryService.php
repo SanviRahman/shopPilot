@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\Order;
@@ -15,8 +14,8 @@ class OrderHistoryService
             $order = Order::findOrFail($data['order_id']);
 
             // Dual Actor Rule: Admin event -> admin_id populated, user_id NULL
-            $data['admin_id'] = auth('admin')->id();
-            $data['user_id']  = null;
+            $data['admin_id']    = auth('admin')->id();
+            $data['user_id']     = null;
             $data['from_status'] = $order->order_status;
 
             // If to_status is provided and changed, update the order status as well
@@ -35,15 +34,21 @@ class OrderHistoryService
     public function update(OrderHistory $history, array $data): OrderHistory
     {
         return DB::transaction(function () use ($history, $data): OrderHistory {
-            // Only notes are allowed to be adjusted for audit trail protection
-            $history->update([
+            $updateData = [
                 'note' => $data['note'],
-            ]);
+            ];
+
+            // If to_status is updated, reflect it in the parent Order as well
+            if (! empty($data['to_status']) && $data['to_status'] !== $history->to_status) {
+                $updateData['to_status'] = $data['to_status'];
+                $history->order?->update(['order_status' => $data['to_status']]);
+            }
+
+            $history->update($updateData);
 
             return $history->refresh()->load(['order', 'admin', 'user']);
         });
     }
-
     public function delete(OrderHistory $history): void
     {
         $history->delete();
@@ -64,7 +69,7 @@ class OrderHistoryService
     {
         return DB::transaction(function () use ($action, $ids): array {
             $processed = 0;
-            $skipped = 0;
+            $skipped   = 0;
 
             foreach (array_unique(array_map('intval', $ids)) as $id) {
                 $history = OrderHistory::withTrashed()->find($id);

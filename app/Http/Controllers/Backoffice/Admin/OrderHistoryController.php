@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Backoffice\Admin;
 
 use App\Http\Controllers\Controller;
@@ -21,7 +20,7 @@ class OrderHistoryController extends Controller
     {
     }
 
-    public function index(Request $request): View|JsonResponse
+    public function index(Request $request): View | JsonResponse
     {
         $this->authorizeAction('orders.view');
 
@@ -33,15 +32,15 @@ class OrderHistoryController extends Controller
                     $q->where('note', 'like', "%{$search}%")
                         ->orWhere('from_status', 'like', "%{$search}%")
                         ->orWhere('to_status', 'like', "%{$search}%")
-                        ->orWhereHas('order', fn ($oq) => $oq->where('order_number', 'like', "%{$search}%"))
-                        ->orWhereHas('admin', fn ($aq) => $aq->where('name', 'like', "%{$search}%"))
-                        ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$search}%"));
+                        ->orWhereHas('order', fn($oq) => $oq->where('order_number', 'like', "%{$search}%"))
+                        ->orWhereHas('admin', fn($aq) => $aq->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
                 });
             })
-            ->when($request->filled('order_id'), fn ($q) => $q->where('order_id', $request->integer('order_id')))
+            ->when($request->filled('order_id'), fn($q) => $q->where('order_id', $request->integer('order_id')))
             ->when($request->filled('status'), function ($q) use ($request) {
                 $status = $request->string('status')->toString();
-                $q->where(fn ($sub) => $sub->where('from_status', $status)->orWhere('to_status', $status));
+                $q->where(fn($sub) => $sub->where('from_status', $status)->orWhere('to_status', $status));
             })
             ->latest('created_at')
             ->paginate(15)
@@ -49,7 +48,7 @@ class OrderHistoryController extends Controller
 
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('backoffice.admin.order-histories.partials.table', [
+                'html'       => view('backoffice.admin.order-histories.partials.table', [
                     'histories' => $histories,
                     'isTrash'   => false,
                 ])->render(),
@@ -66,7 +65,7 @@ class OrderHistoryController extends Controller
         ]);
     }
 
-    public function trash(Request $request): View|JsonResponse
+    public function trash(Request $request): View | JsonResponse
     {
         $this->authorizeAction('orders.view');
 
@@ -76,7 +75,7 @@ class OrderHistoryController extends Controller
                 $search = $request->string('search')->trim()->toString();
                 $query->where(function ($q) use ($search) {
                     $q->where('note', 'like', "%{$search}%")
-                        ->orWhereHas('order', fn ($oq) => $oq->where('order_number', 'like', "%{$search}%"));
+                        ->orWhereHas('order', fn($oq) => $oq->where('order_number', 'like', "%{$search}%"));
                 });
             })
             ->latest('deleted_at')
@@ -85,7 +84,7 @@ class OrderHistoryController extends Controller
 
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('backoffice.admin.order-histories.partials.table', [
+                'html'       => view('backoffice.admin.order-histories.partials.table', [
                     'histories' => $histories,
                     'isTrash'   => true,
                 ])->render(),
@@ -99,7 +98,7 @@ class OrderHistoryController extends Controller
         ]);
     }
 
-    public function store(StoreOrderHistoryRequest $request): JsonResponse|RedirectResponse
+    public function store(StoreOrderHistoryRequest $request): JsonResponse | RedirectResponse
     {
         $history = $this->orderHistoryService->create($request->validated());
 
@@ -113,7 +112,7 @@ class OrderHistoryController extends Controller
         return redirect()->route('admin.order-histories.index')->with('success', 'Audit note added successfully.');
     }
 
-    public function show(Request $request, OrderHistory $orderHistory): JsonResponse|View
+    public function show(Request $request, OrderHistory $orderHistory): JsonResponse | View
     {
         $this->authorizeAction('orders.view');
 
@@ -143,17 +142,22 @@ class OrderHistoryController extends Controller
     {
         $this->authorizeAction('orders.update');
 
+        $orderHistory->load('order');
+
         return response()->json([
             'success' => true,
             'history' => [
                 'id'           => $orderHistory->id,
+                'order_id'     => $orderHistory->order_id,
                 'order_number' => $orderHistory->order?->order_number ?? 'N/A',
+                'from_status'  => $orderHistory->from_status,
+                'to_status'    => $orderHistory->to_status,
                 'note'         => $orderHistory->note,
             ],
         ]);
     }
 
-    public function update(UpdateOrderHistoryRequest $request, OrderHistory $orderHistory): JsonResponse|RedirectResponse
+    public function update(UpdateOrderHistoryRequest $request, OrderHistory $orderHistory): JsonResponse | RedirectResponse
     {
         $this->orderHistoryService->update($orderHistory, $request->validated());
 
@@ -167,7 +171,7 @@ class OrderHistoryController extends Controller
         return redirect()->route('admin.order-histories.index')->with('success', 'History note updated successfully.');
     }
 
-    public function destroy(Request $request, OrderHistory $orderHistory): JsonResponse|RedirectResponse
+    public function destroy(Request $request, OrderHistory $orderHistory): JsonResponse | RedirectResponse
     {
         $this->authorizeAction('orders.update');
         $this->orderHistoryService->delete($orderHistory);
@@ -182,7 +186,7 @@ class OrderHistoryController extends Controller
         return back()->with('success', 'History record moved to trash.');
     }
 
-    public function restore(Request $request, int $orderHistory): JsonResponse|RedirectResponse
+    public function restore(Request $request, int $orderHistory): JsonResponse | RedirectResponse
     {
         $this->authorizeAction('orders.restore');
         $trashed = OrderHistory::onlyTrashed()->findOrFail($orderHistory);
@@ -198,7 +202,7 @@ class OrderHistoryController extends Controller
         return back()->with('success', 'History record restored successfully.');
     }
 
-    public function forceDelete(Request $request, int $orderHistory): JsonResponse|RedirectResponse
+    public function forceDelete(Request $request, int $orderHistory): JsonResponse | RedirectResponse
     {
         $this->authorizeAction('orders.force-delete');
         $trashed = OrderHistory::onlyTrashed()->findOrFail($orderHistory);
@@ -214,9 +218,9 @@ class OrderHistoryController extends Controller
         return back()->with('success', 'History record permanently deleted.');
     }
 
-    public function bulkAction(Request $request): JsonResponse|RedirectResponse
+    public function bulkAction(Request $request): JsonResponse | RedirectResponse
     {
-        $action = $request->string('action')->toString();
+        $action     = $request->string('action')->toString();
         $permission = match ($action) {
             'delete'       => 'orders.update',
             'restore'      => 'orders.restore',
@@ -239,7 +243,7 @@ class OrderHistoryController extends Controller
             'history_ids.*' => ['integer'],
         ])->validate();
 
-        $result = $this->orderHistoryService->bulk($validated['action'], $validated['history_ids']);
+        $result  = $this->orderHistoryService->bulk($validated['action'], $validated['history_ids']);
         $message = sprintf('%d history record(s) processed.', $result['processed']);
 
         if ($result['skipped'] > 0) {

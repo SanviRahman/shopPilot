@@ -87,9 +87,13 @@ $(function () {
         $('#historyFormMethod').val('POST');
         $('#historyAjaxForm').attr('action', '{{ route("admin.order-histories.store") }}');
         $('#historyFormModalTitle span').text('Add Audit Note');
+
+        // Show dropdown selector, hide readonly order display
         $('#orderSelectContainer').removeClass('d-none');
-        $('#statusTransitionContainer').removeClass('d-none');
+        $('#orderDisplayContainer').addClass('d-none');
         $('#modal_order_id').prop('required', true);
+
+        $('#to_status').val('');
         $('#historyFormModal').modal('show');
     });
 
@@ -111,11 +115,16 @@ $(function () {
                     $('#historyAjaxForm').attr('action', `/admin/order-histories/${historyId}`);
                     $('#historyFormModalTitle span').text('Edit Audit Note: #' + h.order_number);
 
+                    // Hide dropdown, show readonly order box
                     $('#orderSelectContainer').addClass('d-none');
-                    $('#statusTransitionContainer').addClass('d-none');
                     $('#modal_order_id').prop('required', false);
+                    $('#orderDisplayContainer').removeClass('d-none');
+                    $('#edit_order_number').val('#' + h.order_number);
 
+                    // Populate status and note
+                    $('#to_status').val(h.to_status || '');
                     $('#note').val(h.note);
+
                     $('#historyFormModal').modal('show');
                 }
             },
