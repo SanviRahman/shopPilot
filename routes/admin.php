@@ -146,9 +146,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('trash', [OrderHistoryController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [OrderHistoryController::class, 'bulkAction'])->name('bulk-action');
             Route::patch('{orderHistory}/restore', [OrderHistoryController::class, 'restore'])->name('restore');
-            Route::delete('{orderHistory}/force-delete', [OrderHistoryController::class, 'forceDelete'])->name('force-delete');
         });
-        Route::resource('order-histories', OrderHistoryController::class)->except(['create']);
+        Route::resource('order-histories', OrderHistoryController::class)->only(['index', 'store', 'show', 'destroy']);
 
         // Payment Submissions
         Route::prefix('payments')->name('payments.')->group(function () {

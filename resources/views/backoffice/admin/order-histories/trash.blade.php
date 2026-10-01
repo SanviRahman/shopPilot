@@ -17,7 +17,6 @@
                     <select name="action" class="custom-select custom-select-sm" required>
                         <option value="">Bulk Actions</option>
                         @can('orders.restore')<option value="restore">Restore</option>@endcan
-                        @can('orders.force-delete')<option value="force-delete">Permanent Delete</option>@endcan
                     </select>
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-secondary btn-sm px-3">Apply</button>

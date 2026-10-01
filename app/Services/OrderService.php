@@ -14,6 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
+    public function __construct(private readonly OrderHistoryService $orderHistoryService)
+    {
+    }
+
     public function create(array $data): Order
     {
         return DB::transaction(function () use ($data): Order {
@@ -39,6 +43,22 @@ class OrderService
 
             $order = Order::create($data);
 
+            $this->orderHistoryService->recordAdminEvent(
+                order: $order,
+                fromStatus: null,
+                toStatus: Order::STATUS_PENDING,
+                note: 'Order created.',
+            );
+
+            if ($order->assigned_agent_id !== null) {
+                $agent = Admin::withTrashed()->find($order->assigned_agent_id);
+
+                $this->orderHistoryService->recordAdminEvent(
+                    order: $order,
+                    note: 'Assigned to agent: ' . ($agent?->name ?? "Admin #{$order->assigned_agent_id}") . '.',
+                );
+            }
+
             return $order->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
         });
     }
@@ -47,8 +67,9 @@ class OrderService
     {
         return DB::transaction(function () use ($order, $data): Order {
             $currentAdmin = auth('admin')->user();
-
             $requestedStatus = (string) ($data['order_status'] ?? $order->order_status);
+            $previousStatus = $order->order_status;
+            $previousAgentId = $order->assigned_agent_id;
 
             if ($requestedStatus !== $order->order_status) {
                 if (! $order->canTransitionTo($requestedStatus)) {
@@ -79,23 +100,27 @@ class OrderService
             // Payment state is owned by the payment workflow, never by the general Order form.
             unset($data['payment_status']);
 
-            $previousStatus = $order->order_status;
             $this->applyCalculatedTotals($data, $order);
-
             $order->update($data);
+            $order->refresh();
 
-            if ($requestedStatus !== $previousStatus) {
-                OrderHistory::create([
-                    'order_id' => $order->id,
-                    'admin_id' => $currentAdmin?->id,
-                    'user_id' => null,
-                    'from_status' => $previousStatus,
-                    'to_status' => $requestedStatus,
-                    'note' => "Order status changed from {$previousStatus} to {$requestedStatus}.",
-                ]);
+            if ($order->assigned_agent_id !== $previousAgentId) {
+                $this->orderHistoryService->recordAdminEvent(
+                    order: $order,
+                    note: $this->assignmentHistoryNote($previousAgentId, $order->assigned_agent_id),
+                );
             }
 
-            return $order->refresh()->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
+            if ($requestedStatus !== $previousStatus) {
+                $this->orderHistoryService->recordAdminEvent(
+                    order: $order,
+                    fromStatus: $previousStatus,
+                    toStatus: $requestedStatus,
+                    note: "Order status changed from {$previousStatus} to {$requestedStatus}.",
+                );
+            }
+
+            return $order->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
         });
     }
 
@@ -173,6 +198,26 @@ class OrderService
                 'assigned_agent_id' => 'The selected account is not an active Agent.',
             ]);
         }
+    }
+
+    private function assignmentHistoryNote(?int $previousAgentId, ?int $newAgentId): string
+    {
+        $previousAgent = $previousAgentId !== null ? Admin::withTrashed()->find($previousAgentId) : null;
+        $newAgent = $newAgentId !== null ? Admin::withTrashed()->find($newAgentId) : null;
+
+        if ($previousAgentId === null && $newAgentId !== null) {
+            return 'Assigned to agent: ' . ($newAgent?->name ?? "Admin #{$newAgentId}") . '.';
+        }
+
+        if ($previousAgentId !== null && $newAgentId === null) {
+            return 'Agent assignment removed. Previous agent: ' . ($previousAgent?->name ?? "Admin #{$previousAgentId}") . '.';
+        }
+
+        return 'Reassigned from '
+            . ($previousAgent?->name ?? "Admin #{$previousAgentId}")
+            . ' to '
+            . ($newAgent?->name ?? "Admin #{$newAgentId}")
+            . '.';
     }
 
     private function applyCalculatedTotals(array &$data, ?Order $order = null): void

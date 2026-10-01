@@ -11,8 +11,10 @@ class OrderHistory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    // Schema does not use updated_at
-    const UPDATED_AT = null;
+    /**
+     * The canonical order_histories table is append-oriented and has no updated_at column.
+     */
+    public const UPDATED_AT = null;
 
     protected $fillable = [
         'order_id',
@@ -21,27 +23,29 @@ class OrderHistory extends Model
         'from_status',
         'to_status',
         'note',
-        'created_at',
     ];
 
-    protected $casts = [
-        'created_at' => 'datetime',
-        'deleted_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function order(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class)->withTrashed();
     }
 
     public function admin(): BelongsTo
     {
-        return $this->belongsTo(Admin::class);
+        return $this->belongsTo(Admin::class)->withTrashed();
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function getActorBadgeAttribute(): string
@@ -60,7 +64,7 @@ class OrderHistory extends Model
     public function getStatusTransitionBadgeAttribute(): string
     {
         if (! $this->from_status && ! $this->to_status) {
-            return '<span class="badge badge-light border text-muted">Note Added</span>';
+            return '<span class="badge badge-light border text-muted">Event / Note</span>';
         }
 
         $from = $this->from_status ? ucfirst($this->from_status) : 'Start';
@@ -68,8 +72,8 @@ class OrderHistory extends Model
 
         return sprintf(
             '<span class="badge badge-light border text-secondary">%s</span> <i class="fas fa-arrow-right text-muted mx-1" style="font-size:10px;"></i> <span class="badge badge-success">%s</span>',
-            $from,
-            $to
+            e($from),
+            e($to),
         );
     }
 }

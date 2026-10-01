@@ -9,14 +9,17 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentSubmissionService
 {
+    public function __construct(private readonly OrderHistoryService $orderHistoryService)
+    {
+    }
+
     public function verify(PaymentSubmission $paymentSubmission): PaymentSubmission
     {
-        return DB::transaction(function () use ($paymentSubmission) {
-            if ($paymentSubmission->status === 'verified') {
-                throw ValidationException::withMessages([
-                    'status' => 'This payment is already verified.',
-                ]);
-            }
+        return DB::transaction(function () use ($paymentSubmission): PaymentSubmission {
+            $this->ensureSubmitted($paymentSubmission);
+
+            $order = $paymentSubmission->order()->firstOrFail();
+            $previousPaymentStatus = $order->payment_status;
 
             $paymentSubmission->update([
                 'status' => 'verified',
@@ -25,25 +28,40 @@ class PaymentSubmissionService
                 'rejection_note' => null,
             ]);
 
-            $paymentSubmission->order()->update(['payment_status' => Order::PAYMENT_VERIFIED]);
+            $order->update(['payment_status' => Order::PAYMENT_VERIFIED]);
 
-            return $paymentSubmission->load(['order', 'paymentMethod', 'verifier']);
+            $this->orderHistoryService->recordAdminEvent(
+                order: $order,
+                note: "Payment verified. Payment status changed from {$previousPaymentStatus} to " . Order::PAYMENT_VERIFIED . ". Transaction ID: {$paymentSubmission->transaction_id}.",
+            );
+
+            return $paymentSubmission->refresh()->load(['order', 'paymentMethod', 'verifier']);
         });
     }
 
     public function reject(PaymentSubmission $paymentSubmission, string $note): PaymentSubmission
     {
-        return DB::transaction(function () use ($paymentSubmission, $note) {
+        return DB::transaction(function () use ($paymentSubmission, $note): PaymentSubmission {
+            $this->ensureSubmitted($paymentSubmission);
+
+            $order = $paymentSubmission->order()->firstOrFail();
+            $previousPaymentStatus = $order->payment_status;
+
             $paymentSubmission->update([
                 'status' => 'rejected',
                 'verified_by_admin_id' => auth('admin')->id(),
                 'verified_at' => now(),
-                'rejection_note' => $note,
+                'rejection_note' => trim($note),
             ]);
 
-            $paymentSubmission->order()->update(['payment_status' => Order::PAYMENT_REJECTED]);
+            $order->update(['payment_status' => Order::PAYMENT_REJECTED]);
 
-            return $paymentSubmission->load(['order', 'paymentMethod', 'verifier']);
+            $this->orderHistoryService->recordAdminEvent(
+                order: $order,
+                note: "Payment rejected. Payment status changed from {$previousPaymentStatus} to " . Order::PAYMENT_REJECTED . ". Transaction ID: {$paymentSubmission->transaction_id}.",
+            );
+
+            return $paymentSubmission->refresh()->load(['order', 'paymentMethod', 'verifier']);
         });
     }
 
@@ -88,5 +106,14 @@ class PaymentSubmissionService
 
             return compact('processed', 'skipped');
         });
+    }
+
+    private function ensureSubmitted(PaymentSubmission $paymentSubmission): void
+    {
+        if ($paymentSubmission->status !== 'submitted') {
+            throw ValidationException::withMessages([
+                'status' => 'Only a submitted payment can be verified or rejected.',
+            ]);
+        }
     }
 }

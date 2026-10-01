@@ -11,16 +11,12 @@ $(function () {
                 timer: 3000,
                 timerProgressBar: true
             });
-            Toast.fire({
-                icon: type,
-                title: message
-            });
+            Toast.fire({ icon: type, title: message });
         } else {
             alert(message);
         }
     }
 
-    // Load Table Content via AJAX
     function reloadTable(url = fetchUrl) {
         $('#tableOverlay').removeClass('d-none');
         const formData = $('#filterForm').serialize();
@@ -43,11 +39,10 @@ $(function () {
         });
     }
 
-    // Debounced Search & Filter
     let searchTimeout = null;
     $('#search').on('input', function () {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => { reloadTable(); }, 400);
+        searchTimeout = setTimeout(() => reloadTable(), 400);
     });
 
     $('#order_id, #status').on('change', function () {
@@ -59,16 +54,12 @@ $(function () {
         reloadTable();
     });
 
-    // Pagination Click Intercept
     $(document).on('click', '#paginationContainer a.page-link', function (e) {
         e.preventDefault();
         const pageUrl = $(this).attr('href');
-        if (pageUrl) {
-            reloadTable(pageUrl);
-        }
+        if (pageUrl) reloadTable(pageUrl);
     });
 
-    // Check All Checkboxes
     $(document).on('change', '[data-select-all]', function () {
         const target = $(this).data('selectAll');
         $(`${target} [data-row-checkbox]`).prop('checked', $(this).is(':checked'));
@@ -79,62 +70,13 @@ $(function () {
         $('.form-control, .custom-select').removeClass('is-invalid');
     }
 
-    // Open Create Modal
     $('#btnCreateHistory').on('click', function (e) {
         e.preventDefault();
         clearFormErrors();
         $('#historyAjaxForm')[0].reset();
-        $('#historyFormMethod').val('POST');
-        $('#historyAjaxForm').attr('action', '{{ route("admin.order-histories.store") }}');
-        $('#historyFormModalTitle span').text('Add Audit Note');
-
-        // Show dropdown selector, hide readonly order display
-        $('#orderSelectContainer').removeClass('d-none');
-        $('#orderDisplayContainer').addClass('d-none');
-        $('#modal_order_id').prop('required', true);
-
-        $('#to_status').val('');
         $('#historyFormModal').modal('show');
     });
 
-    // Open Edit Modal via AJAX
-    $(document).on('click', '.btn-edit-history', function (e) {
-        e.preventDefault();
-        const historyId = $(this).data('id');
-        clearFormErrors();
-
-        $.ajax({
-            url: `/admin/order-histories/${historyId}/edit`,
-            method: 'GET',
-            dataType: 'json',
-            success: function (res) {
-                if (res.success) {
-                    const h = res.history;
-                    $('#historyAjaxForm')[0].reset();
-                    $('#historyFormMethod').val('PUT');
-                    $('#historyAjaxForm').attr('action', `/admin/order-histories/${historyId}`);
-                    $('#historyFormModalTitle span').text('Edit Audit Note: #' + h.order_number);
-
-                    // Hide dropdown, show readonly order box
-                    $('#orderSelectContainer').addClass('d-none');
-                    $('#modal_order_id').prop('required', false);
-                    $('#orderDisplayContainer').removeClass('d-none');
-                    $('#edit_order_number').val('#' + h.order_number);
-
-                    // Populate status and note
-                    $('#to_status').val(h.to_status || '');
-                    $('#note').val(h.note);
-
-                    $('#historyFormModal').modal('show');
-                }
-            },
-            error: function () {
-                showToast('Failed to retrieve history details.', 'error');
-            }
-        });
-    });
-
-    // Submit Create/Edit Form via AJAX
     $('#historyAjaxForm').on('submit', function (e) {
         e.preventDefault();
         clearFormErrors();
@@ -157,7 +99,7 @@ $(function () {
             },
             error: function (xhr) {
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
+                    const errors = xhr.responseJSON.errors || {};
                     $.each(errors, function (key, messages) {
                         $(`#err-${key}`).text(messages[0]);
                         $(`[name="${key}"]`).addClass('is-invalid');
@@ -167,12 +109,11 @@ $(function () {
                 }
             },
             complete: function () {
-                submitBtn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save Note');
+                submitBtn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Add Note');
             }
         });
     });
 
-    // View History Details via AJAX
     $(document).on('click', '.btn-view-history', function (e) {
         e.preventDefault();
         const historyId = $(this).data('id');
@@ -189,8 +130,7 @@ $(function () {
                     $('#show-actor-badge').html(h.actor_badge);
                     $('#show-transition-badge').html(h.transition_badge);
                     $('#show-created-at').text(h.created_at);
-                    $('#show-note').text(h.note);
-
+                    $('#show-note').text(h.note || '—');
                     $('#historyShowModal').modal('show');
                 }
             },
@@ -200,7 +140,6 @@ $(function () {
         });
     });
 
-    // Confirmation Modal (Delete, Restore, Force Delete)
     let pendingAction = null;
 
     $(document).on('click', '.btn-action', function (e) {
@@ -213,7 +152,7 @@ $(function () {
         };
 
         $('#confirmModalTitle').text(btn.data('confirm-title') || 'Are you sure?');
-        $('#confirmModalText').text(btn.data('confirm-text') || 'This action cannot be undone.');
+        $('#confirmModalText').text(btn.data('confirm-text') || 'Confirm this recovery action.');
         $('#confirmModal').modal('show');
     });
 
@@ -244,7 +183,6 @@ $(function () {
         });
     });
 
-    // Bulk Actions via AJAX
     $('#bulkActionForm').on('submit', function (e) {
         e.preventDefault();
         const action = $(this).find('[name="action"]').val();
@@ -259,8 +197,7 @@ $(function () {
 
         const labels = {
             'delete': 'move selected histories to trash',
-            'restore': 'restore selected histories',
-            'force-delete': 'permanently delete selected histories'
+            'restore': 'restore selected histories'
         };
 
         pendingAction = {

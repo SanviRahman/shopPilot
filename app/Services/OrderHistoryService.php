@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\Order;
@@ -8,76 +9,112 @@ use Illuminate\Validation\ValidationException;
 
 class OrderHistoryService
 {
-    public function create(array $data): OrderHistory
+    /**
+     * Add a manual staff audit note without mutating Order state.
+     */
+    public function addAdminNote(array $data): OrderHistory
     {
-        return DB::transaction(function () use ($data): OrderHistory {
-            $order = Order::findOrFail($data['order_id']);
+        $order = Order::query()->findOrFail((int) $data['order_id']);
 
-            // Dual Actor Rule: Admin event -> admin_id populated, user_id NULL
-            $data['admin_id']    = auth('admin')->id();
-            $data['user_id']     = null;
-            $data['from_status'] = $order->order_status;
-
-            // If to_status is provided and changed, validate the canonical order transition first.
-            if (! empty($data['to_status']) && $data['to_status'] !== $order->order_status) {
-                if (! $order->canTransitionTo($data['to_status'])) {
-                    throw ValidationException::withMessages([
-                        'to_status' => "Invalid order status transition from {$order->order_status} to {$data['to_status']}.",
-                    ]);
-                }
-
-                if ($data['to_status'] === Order::STATUS_CANCELLED && ! auth('admin')->user()?->can('orders.cancel')) {
-                    throw ValidationException::withMessages([
-                        'to_status' => 'You are not authorized to cancel this order.',
-                    ]);
-                }
-
-                $order->update(['order_status' => $data['to_status']]);
-            } else {
-                $data['to_status'] = $order->order_status;
-            }
-
-            $history = OrderHistory::create($data);
-
-            return $history->load(['order', 'admin', 'user']);
-        });
+        return $this->recordAdminEvent(
+            order: $order,
+            note: trim((string) $data['note']),
+        );
     }
 
-    public function update(OrderHistory $history, array $data): OrderHistory
-    {
-        return DB::transaction(function () use ($history, $data): OrderHistory {
-            $updateData = [
-                'note' => $data['note'],
-            ];
-
-            // If to_status is updated, validate against the parent Order's current state.
-            if (! empty($data['to_status']) && $data['to_status'] !== $history->to_status) {
-                $order = $history->order;
-
-                if ($order && $data['to_status'] !== $order->order_status) {
-                    if (! $order->canTransitionTo($data['to_status'])) {
-                        throw ValidationException::withMessages([
-                            'to_status' => "Invalid order status transition from {$order->order_status} to {$data['to_status']}.",
-                        ]);
-                    }
-
-                    if ($data['to_status'] === Order::STATUS_CANCELLED && ! auth('admin')->user()?->can('orders.cancel')) {
-                        throw ValidationException::withMessages([
-                            'to_status' => 'You are not authorized to cancel this order.',
-                        ]);
-                    }
-
-                    $order->update(['order_status' => $data['to_status']]);
-                }
-
-                $updateData['to_status'] = $data['to_status'];
-            }
-
-            $history->update($updateData);
-
-            return $history->refresh()->load(['order', 'admin', 'user']);
-        });
+    public function recordAdminEvent(
+        Order $order,
+        ?string $fromStatus = null,
+        ?string $toStatus = null,
+        ?string $note = null,
+    ): OrderHistory {
+        return $this->record(
+            order: $order,
+            adminId: auth('admin')->id(),
+            userId: null,
+            fromStatus: $fromStatus,
+            toStatus: $toStatus,
+            note: $note,
+        );
     }
+
+    public function recordCustomerEvent(
+        Order $order,
+        int $userId,
+        ?string $fromStatus = null,
+        ?string $toStatus = null,
+        ?string $note = null,
+    ): OrderHistory {
+        return $this->record(
+            order: $order,
+            adminId: null,
+            userId: $userId,
+            fromStatus: $fromStatus,
+            toStatus: $toStatus,
+            note: $note,
+        );
+    }
+
+    public function recordSystemEvent(
+        Order $order,
+        ?string $fromStatus = null,
+        ?string $toStatus = null,
+        ?string $note = null,
+    ): OrderHistory {
+        return $this->record(
+            order: $order,
+            adminId: null,
+            userId: null,
+            fromStatus: $fromStatus,
+            toStatus: $toStatus,
+            note: $note,
+        );
+    }
+
+    /**
+     * Central append-only history writer.
+     * Exactly one actor type may be present; Guest/System uses both actor IDs as null.
+     */
+    public function record(
+        Order $order,
+        ?int $adminId,
+        ?int $userId,
+        ?string $fromStatus = null,
+        ?string $toStatus = null,
+        ?string $note = null,
+    ): OrderHistory {
+        if ($adminId !== null && $userId !== null) {
+            throw ValidationException::withMessages([
+                'actor' => 'An order history event cannot have both an Admin actor and a User actor.',
+            ]);
+        }
+
+        foreach (['from_status' => $fromStatus, 'to_status' => $toStatus] as $field => $status) {
+            if ($status !== null && ! in_array($status, Order::ORDER_STATUSES, true)) {
+                throw ValidationException::withMessages([
+                    $field => "Invalid order status: {$status}.",
+                ]);
+            }
+        }
+
+        $normalizedNote = $note !== null ? trim($note) : null;
+
+        if ($fromStatus === null && $toStatus === null && ($normalizedNote === null || $normalizedNote === '')) {
+            throw ValidationException::withMessages([
+                'note' => 'A history event must contain a status transition or a note.',
+            ]);
+        }
+
+        return OrderHistory::create([
+            'order_id' => $order->id,
+            'admin_id' => $adminId,
+            'user_id' => $userId,
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'note' => $normalizedNote !== '' ? $normalizedNote : null,
+        ])->load(['order', 'admin', 'user']);
+    }
+
     public function delete(OrderHistory $history): void
     {
         $history->delete();
@@ -85,12 +122,9 @@ class OrderHistoryService
 
     public function restore(OrderHistory $history): void
     {
-        $history->restore();
-    }
-
-    public function forceDelete(OrderHistory $history): void
-    {
-        $history->forceDelete();
+        if ($history->trashed()) {
+            $history->restore();
+        }
     }
 
     /** @return array{processed:int, skipped:int} */
@@ -98,7 +132,7 @@ class OrderHistoryService
     {
         return DB::transaction(function () use ($action, $ids): array {
             $processed = 0;
-            $skipped   = 0;
+            $skipped = 0;
 
             foreach (array_unique(array_map('intval', $ids)) as $id) {
                 $history = OrderHistory::withTrashed()->find($id);
@@ -110,10 +144,9 @@ class OrderHistoryService
 
                 try {
                     match ($action) {
-                        'delete'       => $history->delete(),
-                        'restore'      => $history->restore(),
-                        'force-delete' => $history->forceDelete(),
-                        default        => throw ValidationException::withMessages([
+                        'delete' => $history->trashed() ? null : $this->delete($history),
+                        'restore' => $history->trashed() ? $this->restore($history) : null,
+                        default => throw ValidationException::withMessages([
                             'action' => 'Invalid bulk action.',
                         ]),
                     };

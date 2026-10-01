@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Order;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,9 +15,12 @@ class StoreOrderHistoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_id'    => ['required', 'integer', Rule::exists('orders', 'id')->whereNull('deleted_at')],
-            'to_status'   => ['nullable', Rule::in(Order::ORDER_STATUSES)],
-            'note'        => ['required', 'string', 'max:2000'],
+            'order_id' => [
+                'required',
+                'integer',
+                Rule::exists('orders', 'id')->whereNull('deleted_at'),
+            ],
+            'note' => ['required', 'string', 'max:2000'],
         ];
     }
 }
