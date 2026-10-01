@@ -13,7 +13,8 @@
                 <th>Type</th>
                 <th>Value</th>
                 <th>Min Order</th>
-                <th>Expires At</th>
+                <th>Start Date</th>
+                <th>End Date</th>
                 <th>Status</th>
                 <th width="140" class="text-right">Action</th>
             </tr>
@@ -24,21 +25,22 @@
                     <td>
                         <input type="checkbox" name="coupon_ids[]" value="{{ $coupon->id }}" class="coupon-checkbox" data-coupon-checkbox>
                     </td>
+                    <td><strong>{{ $coupon->code }}</strong></td>
                     <td>
-                        <strong>{{ $coupon->code }}</strong>
+                        <span class="badge badge-secondary">{{ ucfirst($coupon->discount_type) }}</span>
                     </td>
                     <td>
-                        <span class="badge badge-secondary">{{ ucfirst($coupon->type) }}</span>
+                        {{ $coupon->discount_type === \App\Models\Coupon::TYPE_FIXED
+                            ? '৳ ' . number_format((float) $coupon->discount_value, 2)
+                            : number_format((float) $coupon->discount_value, 2) . '%' }}
                     </td>
                     <td>
-                        {{ $coupon->type === 'fixed' ? '৳ ' . number_format($coupon->value, 2) : $coupon->value . '%' }}
+                        {{ (float) $coupon->minimum_order_amount > 0
+                            ? '৳ ' . number_format((float) $coupon->minimum_order_amount, 2)
+                            : '৳ 0.00' }}
                     </td>
-                    <td>
-                        {{ $coupon->min_order_amount ? '৳ ' . number_format($coupon->min_order_amount, 2) : 'N/A' }}
-                    </td>
-                    <td>
-                        {{ optional($coupon->expires_at)->format('d M Y, h:i A') ?? 'No Expiry' }}
-                    </td>
+                    <td>{{ optional($coupon->start_date)->format('d M Y, h:i A') ?? '—' }}</td>
+                    <td>{{ optional($coupon->end_date)->format('d M Y, h:i A') ?? '—' }}</td>
                     <td>
                         @php
                             $badgeClass = match($coupon->status) {
@@ -76,8 +78,8 @@
                         @else
                             <div class="btn-group btn-group-sm">
                                 @can('coupons.view')
-                                    <button type="button" 
-                                        class="btn btn-default text-info btn-sm px-2 btn-show-coupon" 
+                                    <button type="button"
+                                        class="btn btn-default text-info btn-sm px-2 btn-show-coupon"
                                         data-url="{{ route('admin.coupons.show', $coupon->id) }}"
                                         title="View Coupon">
                                         <i class="fas fa-eye"></i>
@@ -85,8 +87,8 @@
                                 @endcan
 
                                 @can('coupons.update')
-                                    <button type="button" 
-                                        class="btn btn-default text-primary btn-sm px-2 btn-edit-coupon" 
+                                    <button type="button"
+                                        class="btn btn-default text-primary btn-sm px-2 btn-edit-coupon"
                                         data-url="{{ route('admin.coupons.edit', $coupon->id) }}"
                                         title="Edit Coupon">
                                         <i class="fas fa-pen text-primary"></i>
@@ -98,7 +100,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-default text-danger btn-sm px-2" title="Delete">
-                                             <i class="fas fa-trash text-danger"></i>
+                                            <i class="fas fa-trash text-danger"></i>
                                         </button>
                                     </form>
                                 @endcan
@@ -108,7 +110,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">No coupons found.</td>
+                    <td colspan="9" class="text-center text-muted py-4">No coupons found.</td>
                 </tr>
             @endforelse
         </tbody>

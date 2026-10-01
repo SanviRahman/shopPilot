@@ -1,5 +1,7 @@
 # ShopPilot E-commerce
 
+> **Schema Alignment:** Documentation synchronized to `docs/ShopPilot-database-schema-v2.md` v2.0. Admin-side actors use `App\Models\Admin` / `admins` / `admin` guard; Customers use `App\Models\User` / `users` / `web` guard.
+
 > Role-Based Single-Store E-commerce & Order Operations System built as a Laravel full-stack practice project.
 
 ShopPilot is a medium-size, single-store e-commerce application designed to practice a realistic Laravel workflow without turning the project into an enterprise commerce platform. The approved MVP supports both **Guest Customers** and **logged-in Customers**, staff-side role/permission control, product and stock management, session-based cart, coupons, manual bKash/Nagad/Rocket payment submission, payment review, agent assignment, controlled order processing, historical snapshots, and critical feature tests.
@@ -216,6 +218,21 @@ Guest Customer / Visitor
 
 Guest is **not** a Spatie role.
 
+Authentication/storage mapping:
+
+```text
+Admin / Manager / Agent → Admin model → admins → admin guard
+Customer                → User model  → users  → web guard
+Guest                   → no account / no Spatie role
+```
+
+Spatie role guards:
+
+```text
+admin: super_admin, admin, manager, agent
+web:   customer
+```
+
 | Actor | Main Responsibility |
 |---|---|
 | Admin | Full approved store administration and sensitive controls |
@@ -412,7 +429,7 @@ Resource Ownership
 ### Customer ownership
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 Customer must not access another Customer's Order.
@@ -420,7 +437,7 @@ Customer must not access another Customer's Order.
 ### Agent ownership
 
 ```text
-order.assigned_agent_id == auth()->id()
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 Agent must not process another Agent's Order by default.
@@ -506,7 +523,7 @@ Initial payment state:
 ```text
 PaymentSubmission.status = submitted
 Order.payment_status      = submitted
-verified_by               = null
+verified_by_admin_id      = null
 verified_at               = null
 ```
 
@@ -558,10 +575,13 @@ Rules:
 
 ## Database Overview
 
-### Application-owned P0 tables
+### Application/authentication P0 tables
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
@@ -572,15 +592,15 @@ order_histories
 payment_submissions
 ```
 
-### Spatie Permission package tables
+### Spatie Permission supporting tables
 
 ```text
-roles
-permissions
 model_has_roles
 model_has_permissions
 role_has_permissions
 ```
+
+`Role` and `Permission` are custom application models extending Spatie and use SoftDeletes; Spatie pivot tables remain package-owned.
 
 ### Spatie Media Library
 
@@ -605,13 +625,15 @@ activity_logs
 
 ### Important schema decisions
 
-- `orders.user_id` is nullable for Guest Checkout.
-- `orders.assigned_agent_id` is nullable until assignment.
+- `orders.user_id` is nullable for Guest Checkout and references `users.id` for authenticated Customers.
+- `orders.assigned_agent_id` is nullable until assignment and references `admins.id`.
 - Order buyer/shipping snapshots are persisted.
 - Order Items preserve commercial snapshots.
 - P0 uses `Order hasOne PaymentSubmission`.
 - `payment_submissions.order_id` is unique under the approved P0 schema.
 - `transaction_id` is not globally unique because duplicate Transaction ID policy remains unresolved.
+- `order_histories.admin_id` stores Admin/Manager/Agent actors; `order_histories.user_id` stores Customer actors.
+- `payment_submissions.verified_by_admin_id` references `admins.id` and remains nullable until verify/reject.
 - historical Order data must not be cascade-deleted.
 - authoritative money uses `DECIMAL(12,2)`.
 - application statuses are stored as strings and mapped to PHP Enums.
@@ -843,13 +865,11 @@ PaymentMethodSeeder
 
 ### Roles
 
-Seed:
+Seed by guard:
 
 ```text
-Admin
-Manager
-Agent
-Customer
+admin guard → super_admin, admin, manager, agent
+web guard   → customer
 ```
 
 Do **not** seed:
@@ -896,9 +916,9 @@ rocket
 
 Use safe development/test numbers or instructions in seed data. Real operational values should be configured from the authorized backoffice.
 
-### Admin user
+### Bootstrap Admin
 
-The docs require a development/admin bootstrap user, but do not define a canonical username/password. Do not hard-code insecure production credentials. Document the actual local bootstrap strategy after implementation.
+The bootstrap account is an `App\Models\Admin` row in `admins` (normally assigned the `super_admin` role on the `admin` guard). The existing seeder filename may remain `AdminUserSeeder.php` until code cleanup. Do not hard-code insecure production credentials.
 
 ---
 
@@ -1058,26 +1078,24 @@ Never rely on Blade-only hiding for authorization.
 
 ## Soft Deletes and Historical Data
 
-P0 SoftDelete-enabled entities/tables:
+Every canonical application-owned model uses SoftDeletes:
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
-orders
 payment_methods
-```
-
-Historical records that should not use normal SoftDelete behavior:
-
-```text
+orders
 order_items
 order_histories
 payment_submissions
 ```
 
-Historical purchase facts must remain readable even if current Product/User/master data later changes.
+Historical purchase facts (`order_items`, `order_histories`, `payment_submissions`) remain preservation-oriented during normal business flow. SoftDelete/Trash support must never be interpreted as permission to cascade-destroy Order history.
 
 Do not cascade-delete historical Order data.
 

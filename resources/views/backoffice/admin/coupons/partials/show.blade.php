@@ -20,28 +20,41 @@
                         <p class="mb-0"><span id="modal-coupon-status" class="badge"></span></p>
                     </div>
                 </div>
+
                 <div class="form-row">
                     <div class="col-md-4 form-group">
                         <label class="text-muted small text-uppercase font-weight-bold">Discount Type</label>
                         <p id="modal-coupon-type" class="mb-0 text-dark"></p>
                     </div>
                     <div class="col-md-4 form-group">
-                        <label class="text-muted small text-uppercase font-weight-bold">Value</label>
+                        <label class="text-muted small text-uppercase font-weight-bold">Discount Value</label>
                         <p id="modal-coupon-value" class="mb-0 text-dark font-weight-bold"></p>
                     </div>
                     <div class="col-md-4 form-group">
-                        <label class="text-muted small text-uppercase font-weight-bold">Min Order Amount</label>
+                        <label class="text-muted small text-uppercase font-weight-bold">Minimum Order Amount</label>
                         <p id="modal-coupon-min-order" class="mb-0 text-dark"></p>
                     </div>
                 </div>
+
                 <div class="form-row">
                     <div class="col-md-6 form-group">
-                        <label class="text-muted small text-uppercase font-weight-bold">Expires At</label>
-                        <p id="modal-coupon-expires" class="text-muted mb-0"></p>
+                        <label class="text-muted small text-uppercase font-weight-bold">Start Date</label>
+                        <p id="modal-coupon-start-date" class="text-muted mb-0"></p>
                     </div>
                     <div class="col-md-6 form-group">
+                        <label class="text-muted small text-uppercase font-weight-bold">End Date</label>
+                        <p id="modal-coupon-end-date" class="text-muted mb-0"></p>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-6 form-group mb-md-0">
                         <label class="text-muted small text-uppercase font-weight-bold">Created At</label>
                         <p id="modal-coupon-created" class="text-muted mb-0"></p>
+                    </div>
+                    <div class="col-md-6 form-group mb-0">
+                        <label class="text-muted small text-uppercase font-weight-bold">Updated At</label>
+                        <p id="modal-coupon-updated" class="text-muted mb-0"></p>
                     </div>
                 </div>
             </div>

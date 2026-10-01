@@ -4,6 +4,19 @@
 
     const fetchUrl = '{{ $fetchUrl ?? request()->url() }}';
 
+    function syncDiscountInputRules() {
+        const isPercentage = $('#coupon_discount_type').val() === 'percentage';
+        const $value = $('#coupon_discount_value');
+
+        if (isPercentage) {
+            $value.attr('max', '100');
+            $('#couponDiscountHelp').text('Percentage must be greater than 0 and cannot exceed 100%.');
+        } else {
+            $value.removeAttr('max');
+            $('#couponDiscountHelp').text('Enter the fixed discount amount.');
+        }
+    }
+
     function showAlert(message, type = 'success') {
         if (window.Swal && typeof window.Swal.fire === 'function') {
             const Toast = window.Swal.mixin({
@@ -88,6 +101,8 @@
         $('#couponSubmitBtn').text('Save Coupon');
         $form.find('.is-invalid').removeClass('is-invalid');
         $form.find('.invalid-feedback').text('');
+        $('#coupon_minimum_order_amount').val('0');
+        syncDiscountInputRules();
     }
 
     $(document).on('click', '#btnAddCoupon', function () {
@@ -140,11 +155,13 @@
                 if (res.success && res.coupon) {
                     const c = res.coupon;
                     $('#modal-coupon-code').text(c.code);
-                    $('#modal-coupon-type').text(c.type);
-                    $('#modal-coupon-value').text(c.type === 'Fixed' ? '৳ ' + parseFloat(c.value).toFixed(2) : c.value + '%');
-                    $('#modal-coupon-min-order').text(c.min_order_amount !== 'N/A' ? '৳ ' + parseFloat(c.min_order_amount).toFixed(2) : 'N/A');
-                    $('#modal-coupon-expires').text(c.expires_at);
-                    $('#modal-coupon-created').text(c.created_at);
+                    $('#modal-coupon-type').text(c.discount_type);
+                    $('#modal-coupon-value').text(c.discount_type === 'Fixed' ? '৳ ' + parseFloat(c.discount_value).toFixed(2) : parseFloat(c.discount_value).toFixed(2) + '%');
+                    $('#modal-coupon-min-order').text('৳ ' + parseFloat(c.minimum_order_amount || 0).toFixed(2));
+                    $('#modal-coupon-start-date').text(c.start_date || '—');
+                    $('#modal-coupon-end-date').text(c.end_date || '—');
+                    $('#modal-coupon-created').text(c.created_at || '—');
+                    $('#modal-coupon-updated').text(c.updated_at || '—');
 
                     const $statusBadge = $('#modal-coupon-status');
                     $statusBadge.text(c.status);
@@ -184,11 +201,13 @@
                     $('#couponSubmitBtn').text('Update Coupon');
 
                     $('#coupon_code').val(c.code);
-                    $('#coupon_type').val(c.type);
-                    $('#coupon_value').val(c.value);
-                    $('#coupon_min_order').val(c.min_order_amount);
-                    $('#coupon_expires').val(c.expires_at);
+                    $('#coupon_discount_type').val(c.discount_type);
+                    $('#coupon_discount_value').val(c.discount_value);
+                    $('#coupon_minimum_order_amount').val(c.minimum_order_amount);
+                    $('#coupon_start_date').val(c.start_date);
+                    $('#coupon_end_date').val(c.end_date);
                     $('#coupon_status').val(c.status);
+                    syncDiscountInputRules();
 
                     // Static Backdrop Modal Open
                     $('#couponFormModal').modal({
@@ -201,6 +220,10 @@
                 showAlert(xhr.responseJSON?.message || 'Failed to fetch coupon data.', 'error');
             }
         });
+    });
+
+    $(document).off('change', '#coupon_discount_type').on('change', '#coupon_discount_type', function () {
+        syncDiscountInputRules();
     });
 
     // Store / Update Form AJAX Submission

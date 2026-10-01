@@ -1,4884 +1,1652 @@
-**# ShopPilot E-commerce — Database Schema**
-
-**# শপপাইলট ই-কমার্স — ডেটাবেজ স্কিমা**
-
-\> **\*\*Document:\*\*** Physical Database Schema / ফিজিক্যাল ডেটাবেজ স্কিমা  
-
-\> **\*\*Project:\*\*** ShopPilot E-commerce  
-
-\> **\*\*Source Documents:\*\***  
-
-\> \`01-PROJECT-OVERVIEW-UPDATED.md\` v1.1  
-
-\> \`ShopPilot-02-PRD.md\` v1.0  
-
-\> \`ShopPilot-03-FEATURES.md\` v1.0  
-
-\> \`ShopPilot-04-USER-ROLES-AND-PERMISSIONS.md\` v1.0  
-
-\> \`ShopPilot-05-BUSINESS-RULES.md\` v1.0  
-
-\> \`ShopPilot-06-ARCHITECTURE.md\` v1.0  
-
-\> \`ShopPilot-07-DATABASE-ERD.md\` v1.0  
-
-\> **\*\*Database:\*\*** MySQL  
-
-\> **\*\*ORM / Migration:\*\*** Laravel Eloquent + Laravel Schema Builder  
-
-\> **\*\*Architecture:\*\*** Service-Oriented Modular Laravel Monolith  
-
-\> **\*\*RBAC:\*\*** Spatie Laravel Permission  
-
-\> **\*\*Media:\*\*** Spatie Laravel Media Library  
-
-\> **\*\*Cart:\*\*** Laravel Session — no P0 \`carts\` / \`cart\_items\` tables  
-
-\> **\*\*Payment:\*\*** Manual bKash / Nagad / Rocket Submission  
-
-\> **\*\*Document Version:\*\*** 1.1  
-
-\> **\*\*Language:\*\*** English + Bangla  
-
-\> **\*\*Status:\*\*** Implementation-Ready P0 Physical Schema Definition — Universal Application SoftDeletes + Trash/Restore  
-
-\> **\*\*Next Document:\*\*** \`09-APPLICATION-FLOW\.md\`
-
-\---
-
-**# Table of Contents**
-
-1\. Document Purpose  
-
-2\. Schema Authority & Precedence  
-
-3\. P0 Schema Scope  
-
-4\. Physical Schema Conventions  
-
-5\. Data-Type Conventions  
-
-6\. Money Convention  
-
-7\. Status Storage Convention  
-
-8\. Timestamp Convention  
-
-9\. SoftDelete Convention  
-
-10\. Foreign-Key Convention  
-
-11\. Delete-Action Convention  
-
-12\. Indexing Convention  
-
-13\. Schema Decision Log  
-
-14\. P0 Table Inventory  
-
-15\. \`users\` Table  
-
-16\. \`categories\` Table  
-
-17\. \`products\` Table  
-
-18\. \`coupons\` Table  
-
-19\. \`payment\_methods\` Table  
-
-20\. \`orders\` Table  
-
-21\. \`order\_items\` Table  
-
-22\. \`order\_histories\` Table  
-
-23\. \`payment\_submissions\` Table  
-
-24\. Order ↔ Coupon Persistence Decision  
-
-25\. Buyer Snapshot Columns  
-
-26\. Product Snapshot Columns  
-
-27\. Payment Snapshot / State Boundary  
-
-28\. Order State Columns  
-
-29\. Nullable FK Matrix  
-
-30\. Foreign-Key Action Matrix  
-
-31\. Unique Constraint Matrix  
-
-32\. Index Matrix  
-
-33\. Composite Index Guidance  
-
-34\. Status Value Catalogue  
-
-35\. Laravel Enum Mapping  
-
-36\. Laravel Model Cast Guidance  
-
-37\. Spatie Permission Package Tables  
-
-38\. Spatie Media Library Table  
-
-39\. Framework Tables  
-
-40\. Session Cart — No Database Tables  
-
-41\. Optional P1 Tables  
-
-42\. No \`customers\` Table  
-
-43\. No Inventory Ledger Tables  
-
-44\. No Real Gateway Tables  
-
-45\. No Settings Table in P0  
-
-46\. Checkout Transaction Write Set  
-
-47\. Stock Mutation Schema Rule  
-
-48\. Historical Preservation Rules  
-
-49\. Guest Checkout Schema Behavior  
-
-50\. Logged-in Customer Schema Behavior  
-
-51\. Agent Assignment Schema Behavior  
-
-52\. Payment Verification Schema Behavior  
-
-53\. Order History Schema Behavior  
-
-54\. Coupon Schema Behavior  
-
-55\. SoftDelete / Restore Behavior  
-
-56\. Hard Delete Protection  
-
-57\. Migration Dependency Order  
-
-58\. Migration File Plan  
-
-59\. Laravel Migration Blueprint — Users  
-
-60\. Laravel Migration Blueprint — Categories  
-
-61\. Laravel Migration Blueprint — Products  
-
-62\. Laravel Migration Blueprint — Coupons  
-
-63\. Laravel Migration Blueprint — Payment Methods  
-
-64\. Laravel Migration Blueprint — Orders  
-
-65\. Laravel Migration Blueprint — Order Items  
-
-66\. Laravel Migration Blueprint — Order Histories  
-
-67\. Laravel Migration Blueprint — Payment Submissions  
-
-68\. Package Migration Strategy  
-
-69\. Seeder Data Requirements  
-
-70\. Factory / Testing Data Guidance  
-
-71\. Critical Schema Test Cases  
-
-72\. Remaining Business TBDs — No Schema Automation  
-
-73\. Schema Anti-Patterns  
-
-74\. Schema Review Checklist  
-
-75\. Definition of Schema Complete  
-
-76\. Final Schema Summary  
-
-77\. Universal Application Model SoftDelete Contract  
-
-78\. Trash Blade View Contract  
-
-79\. Trash Route / Restore Action Contract  
-
-80\. Next Documentation
-
-\---
-
-**# 1. Document Purpose**
-
-This document converts the approved logical ERD into an **\*\*implementation-ready Laravel + MySQL physical schema\*\***.
-
-এই file-এর কাজ হলো:
-
-\- exact P0 tables define করা
-
-\- column names define করা
-
-\- practical MySQL/Laravel data types define করা
-
-\- nullable/default behavior define করা
-
-\- unique constraints define করা
-
-\- indexes define করা
-
-\- foreign keys এবং hard-delete actions define করা
-
-\- SoftDelete columns define করা
-
-\- Guest Checkout physical persistence define করা
-
-\- Order buyer/product snapshots define করা
-
-\- Order → PaymentSubmission P0 \`hasOne\` decision implement করা
-
-\- Coupon-to-Order persistence strategy finalize করা
-
-\- Spatie package tables custom rewrite না করা
-
-\- migration creation order define করা
-
-\- later implementation-এর জন্য Laravel migration blueprints দেওয়া
-
-This document must not introduce new P0 business modules.
-
-\---
-
-**# 2. Schema Authority & Precedence**
-
-For database implementation, use this precedence:
-
-\`\`\`text
-
-05-BUSINESS-RULES.md
-
-        ↓
-
-06-ARCHITECTURE.md
-
-        ↓
-
-07-DATABASE-ERD.md
-
-        ↓
-
-08-DATABASE-SCHEMA.md
-
-        ↓
-
-Laravel migrations
-
-\`\`\`
-
-Earlier Project Overview / PRD / Features / Permission docs remain requirements sources.
-
-If this file conflicts with an approved business rule:
-
-\`\`\`text
-
-Business Rule wins.
-
-\`\`\`
-
-If a physical decision is not defined by earlier documents, this file may make an explicit **\*\*SCHEMA-DEC\*\*** decision.
-
-It must not make that decision silently.
-
-\---
-
-**# 3. P0 Schema Scope**
-
-Application-owned P0 tables:
-
-\`\`\`text
-
-users
-
-categories
-
-products
-
-coupons
-
-payment\_methods
-
-orders
-
-order\_items
-
-order\_histories
-
-payment\_submissions
-
-\`\`\`
-
-Package-managed:
-
-\`\`\`text
-
-roles
-
-permissions
-
-model\_has\_roles
-
-model\_has\_permissions
-
-role\_has\_permissions
-
-media
-
-\`\`\`
-
-Framework / configuration-dependent:
-
-\`\`\`text
-
-sessions
-
-password\_reset\_tokens
-
-notifications
-
-\`\`\`
-
-Optional P1:
-
-\`\`\`text
-
-addresses
-
-activity\_logs
-
-\`\`\`
-
-\---
-
-**# 4. Physical Schema Conventions**
-
-Recommended P0 database assumptions:
-
-\`\`\`text
-
-Database Engine: InnoDB
-
-Character Set: utf8mb4
-
-Default Collation: utf8mb4\_unicode\_ci
-
-Primary Key: BIGINT UNSIGNED AUTO\_INCREMENT
-
-Foreign Keys: BIGINT UNSIGNED
-
-Money: DECIMAL(12,2)
-
-Boolean: BOOLEAN / TINYINT(1)
-
-Status Storage: VARCHAR + PHP Enum cast
-
-Created/Updated: Laravel timestamps
-
-Soft Delete: deleted\_at nullable timestamp
-
-\`\`\`
-
-Why:
-
-\- Laravel-native
-
-\- MySQL-friendly
-
-\- simple for a 13-day project
-
-\- avoids unnecessary database-specific complexity
-
-\- works cleanly with Eloquent relationships
-
-\---
-
-**# 5. Data-Type Conventions**
-
-**## IDs**
-
-Use:
-
-\`\`\`text
-
-BIGINT UNSIGNED
-
-\`\`\`
-
-Laravel:
-
-\`\`\`php
-
-$table->id();
-
-$table->foreignId(...);
-
-\`\`\`
-
-\---
-
-**## Short Names**
-
-Typical:
-
-\`\`\`text
-
-VARCHAR(120–180)
-
-\`\`\`
-
-\---
-
-**## Slugs**
-
-Use:
-
-\`\`\`text
-
-VARCHAR(200)
-
-\`\`\`
-
-\---
-
-**## Email**
-
-Use:
-
-\`\`\`text
-
-VARCHAR(191)
-
-\`\`\`
-
-\---
-
-**## Phone**
-
-Use:
-
-\`\`\`text
-
-VARCHAR(30)
-
-\`\`\`
-
-Reason:
-
-Phone is an identifier/contact string, not arithmetic data.
-
-\---
-
-**## SKU**
-
-Use:
-
-\`\`\`text
-
-VARCHAR(100)
-
-\`\`\`
-
-\---
-
-**## Transaction ID**
-
-Use:
-
-\`\`\`text
-
-VARCHAR(100)
-
-\`\`\`
-
-Do not use numeric type.
-
-\---
-
-**## Description / Notes**
-
-Use:
-
-\`\`\`text
-
-TEXT
-
-LONGTEXT where long product description is expected
-
-\`\`\`
-
-\---
-
-**# 6. Money Convention**
-
-Use:
-
-\`\`\`text
-
-DECIMAL(12,2)
-
-\`\`\`
-
-for:
-
-\`\`\`text
-
-regular\_price
-
-sale\_price
-
-discount\_value
-
-minimum\_order\_amount
-
-subtotal
-
-discount
-
-shipping
-
-grand\_total
-
-unit\_price
-
-line\_total
-
-payment amount
-
-\`\`\`
-
-Never use:
-
-\`\`\`text
-
-FLOAT
-
-DOUBLE
-
-\`\`\`
-
-for authoritative monetary calculations.
-
-Application/service logic must calculate money server-side.
-
-\---
-
-**# 7. Status Storage Convention**
-
-P0 uses PHP Enums, but database columns use:
-
-\`\`\`text
-
-VARCHAR
-
-\`\`\`
-
-rather than native MySQL \`ENUM\`.
-
-Reason:
-
-\`\`\`text
-
-Laravel Enum casts
-
-Easier migration changes
-
-Readable schema
-
-Less DB-vendor coupling
-
-\`\`\`
-
-Application Enums remain the source of allowed status values.
-
-Database schema does not attempt to implement the state machine.
-
-\---
-
-**# 8. Timestamp Convention**
-
-Normal mutable entities:
-
-\`\`\`text
-
-created\_at
-
-updated\_at
-
-\`\`\`
-
-via:
-
-\`\`\`php
-
-$table->timestamps();
-
-\`\`\`
-
-Historical event table \`order\_histories\` needs:
-
-\`\`\`text
-
-created\_at
-
-\`\`\`
-
-and does not require \`updated\_at\` for P0.
-
-Soft-deleted tables additionally use:
-
-\`\`\`text
-
-deleted\_at
-
-\`\`\`
-
-\---
-
-**# 9. SoftDelete Convention**
-
-All **application-owned Eloquent models** in ShopPilot use Laravel `SoftDeletes`.
-
-Application-owned models:
-
-\`\`\`text
-
+# ShopPilot E-commerce — Database Schema
+# শপপাইলট ই-কমার্স — ডেটাবেজ স্কিমা
+
+> **Document:** Physical Database Schema / ফিজিক্যাল ডেটাবেজ স্কিমা  
+> **Project:** ShopPilot E-commerce  
+> **Database:** MySQL / InnoDB / utf8mb4  
+> **ORM / Migration:** Laravel Eloquent + Laravel Schema Builder  
+> **RBAC:** Spatie Laravel Permission  
+> **Media:** Spatie Laravel Media Library  
+> **Architecture:** Service-Oriented Modular Laravel Monolith  
+> **Cart:** Laravel Session — no P0 `carts` / `cart_items` tables  
+> **Payment:** Manual bKash / Nagad / Rocket Submission  
+> **Document Version:** 2.0 (Synchronized Canonical `08-DATABASE-SCHEMA.md`)  
+> **Status:** Canonical Physical Schema — Separate Admin Model + Spatie Role/Permission + Universal SoftDeletes + Trash/Restore  
+> **Language:** English + Bangla
+
+---
+
+# 1. Purpose
+
+এই document ShopPilot-এর final physical database structure define করে।
+
+Latest project decision অনুযায়ী authentication/data ownership এখন দুই ভাগে:
+
+```text
+Admin-side actors
+→ admins table
+→ Admin model
+→ Spatie guard: admin
+
+Customer-side authenticated buyers
+→ users table
+→ User model
+→ Spatie guard: web
+```
+
+Admin-side role examples:
+
+```text
+super_admin
+admin
+manager
+agent
+```
+
+Customer role:
+
+```text
+customer
+```
+
+Guest:
+
+```text
+No database account required
+No Spatie role required
+orders.user_id = NULL
+```
+
+Critical rules:
+
+```text
+Every application-owned model uses SoftDeletes.
+Every application management module has Trash + Restore.
+Package pivot tables do not need SoftDeletes.
+Roles and Permissions use custom application models extending Spatie.
+Spatie's published permission migration stays package-owned.
+Custom Role/Permission columns are added with a separate migration.
+```
+
+---
+
+# 2. Final Application Models
+
+Application-owned Eloquent models:
+
+```text
+Admin
 User
-
+Role
+Permission
 Category
-
 Product
-
 Coupon
-
 PaymentMethod
-
 Order
-
 OrderItem
-
 OrderHistory
-
 PaymentSubmission
+```
 
-\`\`\`
+Every one of these models must use:
 
-Therefore every corresponding application-owned table contains:
+```php
+use Illuminate\Database\Eloquent\SoftDeletes;
+```
 
-\`\`\`text
+Example:
 
-deleted_at TIMESTAMP NULL
-
-\`\`\`
-
-Use in every application-owned model:
-
-\`\`\`php
-
+```php
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Example extends Model
+class Product extends Model
 {
     use SoftDeletes;
 }
+```
 
-\`\`\`
+Corresponding tables must contain:
 
-Use in every application-owned migration:
+```text
+deleted_at TIMESTAMP NULL
+```
 
-\`\`\`php
+Exception:
 
-$table->softDeletes();
+```text
+Spatie pivot tables
+Spatie media table
+Framework tables
+```
 
-\`\`\`
+are not treated as ShopPilot application-owned SoftDelete models.
 
-**## Historical Model Rule**
+---
 
-These models are historical but still use SoftDeletes:
+# 3. Final Table Inventory
 
-\`\`\`text
+## Application / Authentication
 
-OrderItem
-
-OrderHistory
-
-PaymentSubmission
-
-\`\`\`
-
-Adding SoftDeletes does **not** mean normal business workflow should delete them.
-
-Rules:
-
-\`\`\`text
-
-Normal checkout/order/payment workflow
-→ never deletes historical rows.
-
-Authorized explicit delete action
-→ soft delete only.
-
-Trash view
-→ lists only trashed rows.
-
-Restore action
-→ restores the same row.
-
-Force delete
-→ not required for P0.
-
-\`\`\`
-
-Historical preservation remains mandatory.
-
-**## Package / Framework Exception**
-
-This universal SoftDelete rule applies to **ShopPilot application-owned Eloquent models only**.
-
-Do not modify package-managed schemas solely to force this convention:
-
-\`\`\`text
-
-Spatie Permission tables
-
-Spatie Media Library media table
-
-Laravel framework tables
-
-\`\`\`
-
-Those remain controlled by their package/framework migrations.
-
-\---
-
-**# 10. Foreign-Key Convention**
-
-Use real MySQL foreign keys for core P0 relations.
-
-Preferred Laravel style:
-
-\`\`\`php
-
-$table->foreignId('...')->constrained(...);
-
-\`\`\`
-
-Foreign-key behavior must preserve historical Order data.
-
-Do not rely only on application-level IDs without constraints for the core schema.
-
-\---
-
-**# 11. Delete-Action Convention**
-
-Because core master records use SoftDelete, normal application deletion does not fire hard-delete FK actions.
-
-For the rare hard-delete case, schema uses:
-
-\`\`\`text
-
-SET NULL
-
-\`\`\`
-
-when historical child data may remain valid without the parent identity.
-
-Use:
-
-\`\`\`text
-
-RESTRICT
-
-\`\`\`
-
-when deleting the parent would break historical meaning.
-
-Core policy:
-
-\`\`\`text
-
-Never cascade-delete historical Order data.
-
-\`\`\`
-
-\---
-
-**# 12. Indexing Convention**
-
-Create indexes for:
-
-\`\`\`text
-
-Foreign keys
-
-Unique business identifiers
-
-Common status filters
-
-Customer My Orders
-
-Agent Assigned Orders
-
-Payment verification queue
-
-Coupon expiry lookup
-
-Product storefront filtering
-
-\`\`\`
-
-Avoid speculative over-indexing.
-
-Every extra index has write/storage cost.
-
-\---
-
-**# 13. Schema Decision Log**
-
-**## SCHEMA-DEC-001 — Primary Keys**
-
-Use:
-
-\`\`\`text
-
-BIGINT UNSIGNED AUTO\_INCREMENT
-
-\`\`\`
-
-for all application-owned P0 table PKs.
-
-\---
-
-**## SCHEMA-DEC-002 — Money Precision**
-
-Use:
-
-\`\`\`text
-
-DECIMAL(12,2)
-
-\`\`\`
-
-for P0 monetary values.
-
-\---
-
-**## SCHEMA-DEC-003 — Status Columns**
-
-Use:
-
-\`\`\`text
-
-VARCHAR
-
-\`\`\`
-
-with Laravel PHP Enum casts.
-
-Do not use MySQL native ENUM for P0.
-
-\---
-
-**## SCHEMA-DEC-004 — Order → PaymentSubmission**
-
-07-ERD finalized:
-
-\`\`\`text
-
-Order hasOne PaymentSubmission
-
-\`\`\`
-
-Physical implementation:
-
-\`\`\`text
-
-payment\_submissions.order\_id
-
-\= NOT NULL
-
-\= FK
-
-\= UNIQUE
-
-\`\`\`
-
-Therefore one Order may have:
-
-\`\`\`text
-
-0..1 PaymentSubmission
-
-\`\`\`
-
-\---
-
-**## SCHEMA-DEC-005 — Guest Order Ownership**
-
-Use:
-
-\`\`\`text
-
-orders.user\_id NULL
-
-\`\`\`
-
-Guest Order:
-
-\`\`\`text
-
-user\_id = null
-
-\`\`\`
-
-Authenticated Customer Order:
-
-\`\`\`text
-
-user\_id = authenticated User ID
-
-\`\`\`
-
-\---
-
-**## SCHEMA-DEC-006 — Agent Assignment**
-
-Use:
-
-\`\`\`text
-
-orders.assigned\_agent\_id NULL
-
-\`\`\`
-
-FK target:
-
-\`\`\`text
-
-users.id
-
-\`\`\`
-
-Application Service validates that the selected User has Agent role/context.
-
-\---
-
-**## SCHEMA-DEC-007 — Coupon Persistence on Order**
-
-07-ERD intentionally deferred the exact Order/Coupon persistence strategy.
-
-P0 physical schema uses both:
-
-\`\`\`text
-
-orders.coupon\_id nullable
-
-orders.coupon\_code nullable snapshot
-
-\`\`\`
-
-and keeps:
-
-\`\`\`text
-
-orders.discount
-
-\`\`\`
-
-as the historical monetary discount snapshot.
-
-Why:
-
-\`\`\`text
-
-coupon\_id
-
-→ current relational trace
-
-coupon\_code
-
-→ historical human-readable snapshot
-
-discount
-
-→ historical financial truth
-
-\`\`\`
-
-This does not add coupon stacking.
-
-Only one nullable Coupon link exists per Order.
-
-\---
-
-**## SCHEMA-DEC-008 — Coupon Code Uniqueness**
-
-P0 uses:
-
-\`\`\`text
-
-coupons.code UNIQUE
-
-\`\`\`
-
-Database default collation:
-
-\`\`\`text
-
-utf8mb4\_unicode\_ci
-
-\`\`\`
-
-therefore normal MySQL uniqueness is case-insensitive under this schema convention.
-
-Recommended application behavior:
-
-\`\`\`text
-
-trim coupon input
-
-normalize consistently before validation
-
-\`\`\`
-
-This explicitly resolves the previously undefined case-sensitivity behavior for the P0 physical schema.
-
-\---
-
-**## SCHEMA-DEC-009 — Transaction ID Uniqueness**
-
-Earlier documents explicitly leave duplicate Transaction ID policy undefined.
-
-Therefore P0 schema uses:
-
-\`\`\`text
-
-transaction\_id INDEX
-
-\`\`\`
-
-but **\*\*NOT\*\***:
-
-\`\`\`text
-
-UNIQUE(transaction\_id)
-
-\`\`\`
-
-Do not silently reject duplicates at database level until the business rule is approved.
-
-\---
-
-**## SCHEMA-DEC-010 — Sale Price Storage**
-
-Store:
-
-\`\`\`text
-
-sale\_price NULL
-
-\`\`\`
-
-No sale schedule columns are added.
-
-Exact sale-price activation rule remains a business/application TBD.
-
-Schema only stores the optional value.
-
-\---
-
-**## SCHEMA-DEC-011 — Shipping Storage**
-
-Store:
-
-\`\`\`text
-
-shipping DECIMAL(12,2) DEFAULT 0.00
-
-\`\`\`
-
-Exact shipping calculation remains TBD.
-
-No shipping-engine tables are introduced.
-
-\---
-
-**## SCHEMA-DEC-012 — No Database Triggers**
-
-P0 uses no DB triggers for:
-
-\`\`\`text
-
-Stock deduction
-
-Stock restore
-
-Order history
-
-Payment synchronization
-
-Status transition
-
-Coupon expiry
-
-\`\`\`
-
-Those concerns remain in Services / Rules / Console where approved.
-
-\---
-
-**# 14. P0 Table Inventory**
-
-\| Table | Ownership | SoftDelete | Main Role |
-
-\|---|---|---:|---|
-
-\| \`users\` | Application | Yes | Authenticated accounts |
-
-\| \`categories\` | Application | Yes | Product grouping |
-
-\| \`products\` | Application | Yes | Catalog + stock |
-
-\| \`coupons\` | Application | Yes | Discount definitions |
-
-\| \`payment\_methods\` | Application | Yes | Manual MFS config |
-
-\| \`orders\` | Application | Yes | Purchase aggregate |
-
-\| \`order\_items\` | Application | Yes | Historical line snapshots; delete means soft-delete only |
-
-\| \`order\_histories\` | Application | Yes | Workflow history; delete means soft-delete only |
-
-\| \`payment\_submissions\` | Application | Yes | Manual payment submission; delete means soft-delete only |
-
-\| Spatie RBAC tables | Package | Package | Roles / permissions |
-
-\| \`media\` | Package | Package | Media Library |
-
-\| framework tables | Framework | Varies | Laravel infrastructure |
-
-\---
-
-**# 15. \`users\` Table**
-
-**## Purpose**
-
-Authenticated:
-
-\`\`\`text
-
-Admin
-
-Manager
-
-Agent
-
-Customer
-
-\`\`\`
-
-Guest does not require a User record.
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | Laravel \`id()\` |
-
-\| \`name\` | VARCHAR(120) | No | — | — | Display/account name |
-
-\| \`email\` | VARCHAR(191) | No | — | UNIQUE | Login identity |
-
-\| \`email\_verified\_at\` | TIMESTAMP | Yes | NULL | — | P1-compatible |
-
-\| \`password\` | VARCHAR(255) | No | — | — | Hashed |
-
-\| \`remember\_token\` | VARCHAR(100) | Yes | NULL | — | Laravel auth |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | — | Laravel timestamps |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | Laravel timestamps |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | INDEX optional | SoftDelete |
-
-**## Not Added**
-
-P0 does not require dedicated:
-
-\`\`\`text
-
-role column
-
-customer\_type column
-
-agent flag
-
-\`\`\`
-
-Role/permission comes from Spatie Permission.
-
-\---
-
-**# 16. \`categories\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`name\` | VARCHAR(150) | No | — | — | |
-
-\| \`slug\` | VARCHAR(200) | No | — | UNIQUE | Route/storefront identifier |
-
-\| \`description\` | TEXT | Yes | NULL | — | |
-
-\| \`status\` | VARCHAR(20) | No | \`active\` | INDEX | Enum-cast |
-
-\| \`sort\_order\` | INT UNSIGNED | No | \`0\` | INDEX | Display order |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | — | SoftDelete |
-
-**## Media**
-
-Category image is not stored as a string column.
-
-Use Media Library collection:
-
-\`\`\`text
-
-category\_image
-
-\`\`\`
-
-\---
-
-**# 17. \`products\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`category\_id\` | BIGINT UNSIGNED | No | — | FK + INDEX | → \`categories.id\` |
-
-\| \`name\` | VARCHAR(180) | No | — | INDEX optional | Product name |
-
-\| \`slug\` | VARCHAR(200) | No | — | UNIQUE | |
-
-\| \`sku\` | VARCHAR(100) | No | — | UNIQUE | Business identifier |
-
-\| \`short\_description\` | VARCHAR(500) | Yes | NULL | — | |
-
-\| \`description\` | LONGTEXT | Yes | NULL | — | |
-
-\| \`regular\_price\` | DECIMAL(12,2) | No | — | — | Server-authoritative |
-
-\| \`sale\_price\` | DECIMAL(12,2) | Yes | NULL | — | Activation rule remains TBD |
-
-\| \`stock\_quantity\` | INT UNSIGNED | No | \`0\` | INDEX | P0 stock source |
-
-\| \`status\` | VARCHAR(20) | No | \`active\` | INDEX | active/inactive |
-
-\| \`featured\` | BOOLEAN | No | \`false\` | INDEX | Home/storefront |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | INDEX optional | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | INDEX optional | SoftDelete |
-
-**## FK**
-
-\`\`\`text
-
-products.category\_id
-
-→ categories.id
-
-ON DELETE RESTRICT
-
-ON UPDATE CASCADE
-
-\`\`\`
-
-**## Recommended Composite Index**
-
-\`\`\`text
-
-(category\_id, status)
-
-\`\`\`
-
-Optional:
-
-\`\`\`text
-
-(status, featured)
-
-\`\`\`
-
-for storefront queries.
-
-**## Media**
-
-Use:
-
-\`\`\`text
-
-product\_thumbnail
-
-product\_gallery
-
-\`\`\`
-
-through Spatie Media Library.
-
-\---
-
-**# 18. \`coupons\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`code\` | VARCHAR(80) | No | — | UNIQUE | Case-insensitive under DB collation |
-
-\| \`discount\_type\` | VARCHAR(20) | No | — | INDEX optional | fixed/percentage |
-
-\| \`discount\_value\` | DECIMAL(12,2) | No | — | — | |
-
-\| \`minimum\_order\_amount\` | DECIMAL(12,2) | No | \`0.00\` | — | |
-
-\| \`start\_date\` | DATETIME | No | — | INDEX | |
-
-\| \`end\_date\` | DATETIME | No | — | INDEX | Expiry |
-
-\| \`status\` | VARCHAR(20) | No | \`active\` | INDEX | active/inactive/expired |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | — | SoftDelete |
-
-**## Recommended Composite Index**
-
-\`\`\`text
-
-(status, end\_date)
-
-\`\`\`
-
-Useful for:
-
-\`\`\`text
-
-coupons\:expire
-
-\`\`\`
-
-\---
-
-**# 19. \`payment\_methods\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`name\` | VARCHAR(100) | No | — | — | bKash/Nagad/Rocket display name |
-
-\| \`code\` | VARCHAR(50) | No | — | UNIQUE | \`bkash\`, \`nagad\`, \`rocket\` |
-
-\| \`account\_number\` | VARCHAR(50) | No | — | — | String, not numeric |
-
-\| \`account\_type\` | VARCHAR(50) | No | — | — | e.g. configured account type |
-
-\| \`instruction\` | TEXT | No | — | — | Checkout instruction |
-
-\| \`status\` | VARCHAR(20) | No | \`active\` | INDEX | active/inactive |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | — | SoftDelete |
-
-No provider API credential columns are required.
-
-\---
-
-**# 20. \`orders\` Table**
-
-**## Purpose**
-
-Primary purchase aggregate for Guest and authenticated Customer.
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`order\_number\` | VARCHAR(40) | No | — | UNIQUE | e.g. \`ORD-2026-000001\` |
-
-\| \`user\_id\` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX | Auth Customer; null for Guest |
-
-\| \`assigned\_agent\_id\` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX | → \`users.id\` |
-
-\| \`coupon\_id\` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX | One optional Coupon |
-
-\| \`coupon\_code\` | VARCHAR(80) | Yes | NULL | INDEX optional | Historical snapshot |
-
-\| \`buyer\_name\` | VARCHAR(150) | No | — | — | Snapshot |
-
-\| \`buyer\_phone\` | VARCHAR(30) | No | — | INDEX optional | Snapshot |
-
-\| \`buyer\_email\` | VARCHAR(191) | No | — | INDEX optional | Snapshot |
-
-\| \`shipping\_address\` | TEXT | No | — | — | Snapshot |
-
-\| \`city\_or\_area\` | VARCHAR(150) | No | — | — | Snapshot |
-
-\| \`subtotal\` | DECIMAL(12,2) | No | — | — | Server-calculated |
-
-\| \`discount\` | DECIMAL(12,2) | No | \`0.00\` | — | Historical discount |
-
-\| \`shipping\` | DECIMAL(12,2) | No | \`0.00\` | — | Calculation rule TBD |
-
-\| \`grand\_total\` | DECIMAL(12,2) | No | — | — | Server-calculated |
-
-\| \`payment\_status\` | VARCHAR(20) | No | \`unpaid\` | INDEX | Enum |
-
-\| \`order\_status\` | VARCHAR(20) | No | \`pending\` | INDEX | Enum |
-
-\| \`customer\_note\` | TEXT | Yes | NULL | — | Customer-visible own input |
-
-\| \`internal\_note\` | TEXT | Yes | NULL | — | Staff-only |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | INDEX | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | INDEX optional | SoftDelete |
-
-**## FK — Customer**
-
-\`\`\`text
-
-orders.user\_id
-
-→ users.id
-
-ON DELETE SET NULL
-
-ON UPDATE CASCADE
-
-\`\`\`
-
-This preserves Order history even if a User is ever hard-deleted.
-
-\---
-
-**## FK — Assigned Agent**
-
-\`\`\`text
-
-orders.assigned\_agent\_id
-
-→ users.id
-
-ON DELETE SET NULL
-
-ON UPDATE CASCADE
-
-\`\`\`
-
-\---
-
-**## FK — Coupon**
-
-\`\`\`text
-
-orders.coupon\_id
-
-→ coupons.id
-
-ON DELETE SET NULL
-
-ON UPDATE CASCADE
-
-\`\`\`
-
-\`coupon\_code\` + \`discount\` preserve Order history if Coupon identity becomes unavailable.
-
-\---
-
-**## Recommended Indexes**
-
-\`\`\`text
-
-UNIQUE(order\_number)
-
-INDEX(user\_id)
-
-INDEX(assigned\_agent\_id)
-
-INDEX(coupon\_id)
-
-INDEX(order\_status)
-
-INDEX(payment\_status)
-
-INDEX(created\_at)
-
-INDEX(assigned\_agent\_id, order\_status)
-
-INDEX(user\_id, created\_at)
-
-\`\`\`
-
-\---
-
-**# 21. \`order\_items\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`order\_id\` | BIGINT UNSIGNED | No | — | FK + INDEX | |
-
-\| \`product\_id\` | BIGINT UNSIGNED | No | — | FK + INDEX | Current Product reference |
-
-\| \`product\_name\` | VARCHAR(180) | No | — | — | Snapshot |
-
-\| \`sku\` | VARCHAR(100) | No | — | — | Snapshot |
-
-\| \`unit\_price\` | DECIMAL(12,2) | No | — | — | Snapshot |
-
-\| \`quantity\` | INT UNSIGNED | No | — | — | |
-
-\| \`line\_total\` | DECIMAL(12,2) | No | — | — | Snapshot/calculated |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | — | SoftDelete / Trash |
-
-**## FKs**
-
-\`\`\`text
-
-order\_items.order\_id
-
-→ orders.id
-
-ON DELETE RESTRICT
-
-order\_items.product\_id
-
-→ products.id
-
-ON DELETE RESTRICT
-
-\`\`\`
-
-Reason:
-
-Historical Order Items must not disappear through cascade deletion.
-
-\---
-**# 22. \`order\_histories\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`order\_id\` | BIGINT UNSIGNED | No | — | FK + INDEX | |
-
-\| \`user\_id\` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX | Actor; nullable for Guest/System context |
-
-\| \`from\_status\` | VARCHAR(20) | Yes | NULL | — | Can be null for initial/non-status event |
-
-\| \`to\_status\` | VARCHAR(20) | Yes | NULL | INDEX optional | |
-
-\| \`note\` | TEXT | Yes | NULL | — | Event/trace text |
-
-\| \`created\_at\` | TIMESTAMP | No | current timestamp | INDEX | Immutable event time |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | — | SoftDelete / Trash |
-
-No:
-
-\`\`\`text
-
-updated\_at
-
-\`\`\`
-
-for P0 history.
-
-`deleted\_at` exists for explicit authorized Trash/Restore behavior. Normal workflow must not delete OrderHistory rows.
-
-**## FKs**
-
-\`\`\`text
-
-order\_histories.order\_id
-
-→ orders.id
-
-ON DELETE RESTRICT
-
-order\_histories.user\_id
-
-→ users.id
-
-ON DELETE SET NULL
-
-\`\`\`
-
-**## Recommended Composite Index**
-
-\`\`\`text
-
-(order\_id, created\_at)
-
-\`\`\`
-
-\---
-**# 23. \`payment\_submissions\` Table**
-
-**## Physical Schema**
-
-\| Column | Type | Null | Default | Key / Index | Notes |
-
-\|---|---|---:|---|---|---|
-
-\| \`id\` | BIGINT UNSIGNED | No | auto | PK | |
-
-\| \`order\_id\` | BIGINT UNSIGNED | No | — | FK + UNIQUE | P0 hasOne |
-
-\| \`payment\_method\_id\` | BIGINT UNSIGNED | No | — | FK + INDEX | |
-
-\| \`transaction\_id\` | VARCHAR(100) | No | — | INDEX, **\*\*not UNIQUE\*\*** | Uniqueness rule TBD |
-
-\| \`amount\` | DECIMAL(12,2) | No | — | — | Submitted payment amount |
-
-\| \`status\` | VARCHAR(20) | No | \`submitted\` | INDEX | submitted/verified/rejected |
-
-\| \`verified\_by\` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX | Authorized staff User |
-
-\| \`verified\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`rejection\_note\` | TEXT | Yes | NULL | — | |
-
-\| \`created\_at\` | TIMESTAMP | Yes | NULL | INDEX | |
-
-\| \`updated\_at\` | TIMESTAMP | Yes | NULL | — | |
-
-\| \`deleted\_at\` | TIMESTAMP | Yes | NULL | — | SoftDelete / Trash |
-
-**## FKs**
-
-\`\`\`text
-
-payment\_submissions.order\_id
-
-→ orders.id
-
-ON DELETE RESTRICT
-
-payment\_submissions.payment\_method\_id
-
-→ payment\_methods.id
-
-ON DELETE RESTRICT
-
-payment\_submissions.verified\_by
-
-→ users.id
-
-ON DELETE SET NULL
-
-\`\`\`
-
-**## Critical Constraint**
-
-\`\`\`text
-
-UNIQUE(order\_id)
-
-\`\`\`
-
-implements:
-
-\`\`\`text
-
-Order hasOne PaymentSubmission
-
-\`\`\`
-
-for P0.
-
-\---
-**# 24. Order ↔ Coupon Persistence Decision**
-
-Physical P0 design:
-
-\`\`\`text
-
-orders.coupon\_id       nullable FK
-
-orders.coupon\_code     nullable snapshot
-
-orders.discount        non-null monetary snapshot
-
-\`\`\`
-
-Example:
-
-\`\`\`text
-
-Coupon:
-
-id = 8
-
-code = SAVE10
-
-Order:
-
-coupon\_id = 8
-
-coupon\_code = SAVE10
-
-discount = 250.00
-
-\`\`\`
-
-If Coupon is later soft-deleted:
-
-\`\`\`text
-
-Order remains historically understandable.
-
-\`\`\`
-
-If a rare hard delete occurs:
-
-\`\`\`text
-
-coupon\_id → NULL
-
-coupon\_code remains
-
-discount remains
-
-\`\`\`
-
-\---
-
-**# 25. Buyer Snapshot Columns**
-
-Every Order stores:
-
-\`\`\`text
-
-buyer\_name
-
-buyer\_phone
-
-buyer\_email
-
-shipping\_address
-
-city\_or\_area
-
-\`\`\`
-
-These columns are:
-
-\`\`\`text
-
-NOT NULL
-
-\`\`\`
-
-for both:
-
-\`\`\`text
-
-Guest
-
-Authenticated Customer
-
-\`\`\`
-
-Do not render historical Order delivery information directly from current User profile.
-
-\---
-
-**# 26. Product Snapshot Columns**
-
-Every OrderItem stores:
-
-\`\`\`text
-
-product\_name
-
-sku
-
-unit\_price
-
-quantity
-
-line\_total
-
-\`\`\`
-
-Historical display should use snapshots for purchase-time facts.
-
-\`product\_id\` remains useful for current-reference/admin navigation.
-
-\---
-
-**# 27. Payment Snapshot / State Boundary**
-
-Order contains:
-
-\`\`\`text
-
-payment\_status
-
-\`\`\`
-
-PaymentSubmission contains:
-
-\`\`\`text
-
-status
-
-payment\_method\_id
-
-transaction\_id
-
-amount
-
-verified\_by
-
-verified\_at
-
-rejection\_note
-
-\`\`\`
-
-Important:
-
-\`\`\`text
-
-Order payment\_status
-
-\`\`\`
-
-is the aggregate-level payment state.
-
-\`\`\`text
-
-PaymentSubmission.status
-
-\`\`\`
-
-is submission verification state.
-
-Service logic must keep relevant state changes consistent.
-
-Do not use a DB trigger to synchronize them.
-
-\---
-
-**# 28. Order State Columns**
-
-Order uses:
-
-\`\`\`text
-
-order\_status VARCHAR(20)
-
-payment\_status VARCHAR(20)
-
-\`\`\`
-
-They are intentionally separate.
-
-Do not combine into:
-
-\`\`\`text
-
-status
-
-\`\`\`
-
-because Order fulfillment and Payment verification are separate workflows.
-
-\---
-
-**# 29. Nullable FK Matrix**
-
-\| Column | Nullable | Reason |
-
-\|---|---:|---|
-
-\| \`products.category\_id\` | No | Product requires Category |
-
-\| \`orders.user\_id\` | Yes | Guest Checkout |
-
-\| \`orders.assigned\_agent\_id\` | Yes | New Order may be unassigned |
-
-\| \`orders.coupon\_id\` | Yes | Coupon is optional |
-
-\| \`order\_items.order\_id\` | No | Item requires Order |
-
-\| \`order\_items.product\_id\` | No | P0 Product reference |
-
-\| \`order\_histories.order\_id\` | No | History requires Order |
-
-\| \`order\_histories.user\_id\` | Yes | Guest/System actor context |
-
-\| \`payment\_submissions.order\_id\` | No | Submission requires Order |
-
-\| \`payment\_submissions.payment\_method\_id\` | No | Submission requires selected method |
-
-\| \`payment\_submissions.verified\_by\` | Yes | Pending submission has no verifier |
-
-\---
-
-**# 30. Foreign-Key Action Matrix**
-
-\| Child FK | Parent | On Delete | Reason |
-
-\|---|---|---|---|
-
-\| \`products.category\_id\` | \`categories.id\` | RESTRICT | Prevent broken Product link |
-
-\| \`orders.user\_id\` | \`users.id\` | SET NULL | Preserve Order |
-
-\| \`orders.assigned\_agent\_id\` | \`users.id\` | SET NULL | Preserve Order |
-
-\| \`orders.coupon\_id\` | \`coupons.id\` | SET NULL | Snapshot remains |
-
-\| \`order\_items.order\_id\` | \`orders.id\` | RESTRICT | Preserve historical item |
-
-\| \`order\_items.product\_id\` | \`products.id\` | RESTRICT | Preserve reference |
-
-\| \`order\_histories.order\_id\` | \`orders.id\` | RESTRICT | Preserve history |
-
-\| \`order\_histories.user\_id\` | \`users.id\` | SET NULL | Preserve history |
-
-\| \`payment\_submissions.order\_id\` | \`orders.id\` | RESTRICT | Preserve payment evidence |
-
-\| \`payment\_submissions.payment\_method\_id\` | \`payment\_methods.id\` | RESTRICT | Preserve method reference |
-
-\| \`payment\_submissions.verified\_by\` | \`users.id\` | SET NULL | Preserve payment evidence |
-
-All core FK updates:
-
-\`\`\`text
-
-ON UPDATE CASCADE
-
-\`\`\`
-
-may be used consistently, though primary IDs are not expected to change.
-
-\---
-
-**# 31. Unique Constraint Matrix**
-
-\| Table | Column(s) | Unique |
-
-\|---|---|---:|
-
-\| \`users\` | \`email\` | Yes |
-
-\| \`categories\` | \`slug\` | Yes |
-
-\| \`products\` | \`slug\` | Yes |
-
-\| \`products\` | \`sku\` | Yes |
-
-\| \`coupons\` | \`code\` | Yes |
-
-\| \`payment\_methods\` | \`code\` | Yes |
-
-\| \`orders\` | \`order\_number\` | Yes |
-
-\| \`payment\_submissions\` | \`order\_id\` | Yes |
-
-\| \`payment\_submissions\` | \`transaction\_id\` | **\*\*No — TBD\*\*** |
-
-\---
-
-**# 32. Index Matrix**
-
-**## Users**
-
-\`\`\`text
-
-UNIQUE(email)
-
-\`\`\`
-
-\---
-
-**## Categories**
-
-\`\`\`text
-
-UNIQUE(slug)
-
-INDEX(status)
-
-INDEX(sort\_order)
-
-\`\`\`
-
-\---
-
-**## Products**
-
-\`\`\`text
-
-UNIQUE(slug)
-
-UNIQUE(sku)
-
-INDEX(category\_id)
-
-INDEX(status)
-
-INDEX(featured)
-
-INDEX(stock\_quantity)
-
-INDEX(category\_id, status)
-
-INDEX(status, featured)
-
-\`\`\`
-
-\---
-
-**## Coupons**
-
-\`\`\`text
-
-UNIQUE(code)
-
-INDEX(status)
-
-INDEX(start\_date)
-
-INDEX(end\_date)
-
-INDEX(status, end\_date)
-
-\`\`\`
-
-\---
-
-**## Payment Methods**
-
-\`\`\`text
-
-UNIQUE(code)
-
-INDEX(status)
-
-\`\`\`
-
-\---
-
-**## Orders**
-
-\`\`\`text
-
-UNIQUE(order\_number)
-
-INDEX(user\_id)
-
-INDEX(assigned\_agent\_id)
-
-INDEX(coupon\_id)
-
-INDEX(order\_status)
-
-INDEX(payment\_status)
-
-INDEX(created\_at)
-
-INDEX(user\_id, created\_at)
-
-INDEX(assigned\_agent\_id, order\_status)
-
-\`\`\`
-
-\---
-
-**## Order Items**
-
-\`\`\`text
-
-INDEX(order\_id)
-
-INDEX(product\_id)
-
-\`\`\`
-
-\---
-
-**## Order Histories**
-
-\`\`\`text
-
-INDEX(order\_id)
-
-INDEX(user\_id)
-
-INDEX(created\_at)
-
-INDEX(order\_id, created\_at)
-
-\`\`\`
-
-\---
-
-**## Payment Submissions**
-
-\`\`\`text
-
-UNIQUE(order\_id)
-
-INDEX(payment\_method\_id)
-
-INDEX(transaction\_id)
-
-INDEX(status)
-
-INDEX(verified\_by)
-
-INDEX(created\_at)
-
-\`\`\`
-
-\---
-
-**# 33. Composite Index Guidance**
-
-Use composite indexes only for known P0 query patterns.
-
-Approved/useful:
-
-\`\`\`text
-
-products(category\_id, status)
-
-products(status, featured)
-
-orders(user\_id, created\_at)
-
-orders(assigned\_agent\_id, order\_status)
-
-coupons(status, end\_date)
-
-order\_histories(order\_id, created\_at)
-
-\`\`\`
-
-Do not add dozens of speculative indexes.
-
-\---
-
-**# 34. Status Value Catalogue**
-
-**## Product**
-
-\`\`\`text
-
-active
-
-inactive
-
-\`\`\`
-
-\---
-
-**## Order**
-
-\`\`\`text
-
-pending
-
-confirmed
-
-processing
-
-shipped
-
-delivered
-
-cancelled
-
-\`\`\`
-
-\---
-
-**## Payment**
-
-\`\`\`text
-
-unpaid
-
-submitted
-
-verified
-
-rejected
-
-\`\`\`
-
-\---
-
-**## Coupon**
-
-\`\`\`text
-
-active
-
-inactive
-
-expired
-
-\`\`\`
-
-\---
-
-**## Payment Method**
-
-\`\`\`text
-
-active
-
-inactive
-
-\`\`\`
-
-\---
-
-**# 35. Laravel Enum Mapping**
-
-Recommended PHP Enums:
-
-\`\`\`text
-
-ProductStatus
-
-OrderStatus
-
-PaymentStatus
-
-CouponStatus
-
-PaymentMethodStatus
-
-\`\`\`
-
-Potential casts:
-
-\`\`\`php
-
-protected function casts(): array
-
-{
-
-    return [
-
-        'status' => ProductStatus::class,
-
-    ];
-
-}
-
-\`\`\`
-
-For Order:
-
-\`\`\`php
-
-protected function casts(): array
-
-{
-
-    return [
-
-        'order\_status'   => OrderStatus::class,
-
-        'payment\_status' => PaymentStatus::class,
-
-    ];
-
-}
-
-\`\`\`
-
-Enums define valid values.
-
-Services/Rules define valid transitions.
-
-\---
-
-**# 36. Laravel Model Cast Guidance**
-
-**## Product**
-
-\`\`\`text
-
-regular\_price → decimal:2
-
-sale\_price → decimal:2
-
-stock\_quantity → integer
-
-featured → boolean
-
-status → ProductStatus
-
-\`\`\`
-
-**## Coupon**
-
-\`\`\`text
-
-discount\_value → decimal:2
-
-minimum\_order\_amount → decimal:2
-
-start\_date → datetime
-
-end\_date → datetime
-
-status → CouponStatus
-
-\`\`\`
-
-**## Order**
-
-\`\`\`text
-
-subtotal → decimal:2
-
-discount → decimal:2
-
-shipping → decimal:2
-
-grand\_total → decimal:2
-
-order\_status → OrderStatus
-
-payment\_status → PaymentStatus
-
-\`\`\`
-
-**## PaymentMethod**
-
-\`\`\`text
-
-status → PaymentMethodStatus
-
-\`\`\`
-
-**## PaymentSubmission**
-
-\`\`\`text
-
-amount → decimal:2
-
-status → PaymentStatus
-
-verified\_at → datetime
-
-\`\`\`
-
-\---
-
-**# 37. Spatie Permission Package Tables**
-
-Use Spatie Laravel Permission published migration.
-
-Expected package-managed concepts:
-
-\`\`\`text
-
+```text
+admins
+users
 roles
-
 permissions
+```
 
-model\_has\_roles
+## Spatie Permission Pivot Tables
 
-model\_has\_permissions
+```text
+model_has_roles
+model_has_permissions
+role_has_permissions
+```
 
-role\_has\_permissions
+## E-commerce Core
 
-\`\`\`
-
-Do not manually redesign package table column definitions in ShopPilot migrations.
-
-Application role values:
-
-\`\`\`text
-
-Admin
-
-Manager
-
-Agent
-
-Customer
-
-\`\`\`
-
-Guest:
-
-\`\`\`text
-
-No role row required.
-
-\`\`\`
-
-Package migration remains authoritative for its exact physical schema.
-
-\---
-
-**# 38. Spatie Media Library Table**
-
-Use Spatie Media Library published migration.
-
-Package-managed:
-
-\`\`\`text
-
-media
-
-\`\`\`
-
-Collections used by ShopPilot:
-
-\`\`\`text
-
-product\_thumbnail
-
-product\_gallery
-
-category\_image
-
-user\_avatar optional
-
-\`\`\`
-
-Do not add custom:
-
-\`\`\`text
-
-product\_images
-
-category\_images
-
-\`\`\`
-
-for P0.
-
-Package migration remains authoritative for exact Media table fields.
-
-\---
-
-**# 39. Framework Tables**
-
-Depending on Laravel configuration:
-
-\`\`\`text
-
-sessions
-
-password\_reset\_tokens
-
-notifications
-
-\`\`\`
-
-Use Laravel-generated/published framework migrations.
-
-Do not hand-design a second competing version.
-
-\---
-
-**# 40. Session Cart — No Database Tables**
-
-P0 Cart remains:
-
-\`\`\`text
-
-Laravel Session
-
-\`\`\`
-
-Therefore do not create:
-
-\`\`\`text
-
-carts
-
-cart\_items
-
-\`\`\`
-
-Persistent purchase data begins after successful Checkout transaction:
-
-\`\`\`text
-
+```text
+categories
+products
+coupons
+payment_methods
 orders
+order_items
+order_histories
+payment_submissions
+```
 
-order\_items
+## Package
 
-payment\_submissions
+```text
+media
+```
 
-order\_histories
+## Framework / Configuration Dependent
 
-\`\`\`
+```text
+sessions
+password_reset_tokens
+notifications
+```
 
-\---
+No P0 tables:
 
-**# 41. Optional P1 Tables**
+```text
+customers
+carts
+cart_items
+product_variants
+warehouses
+inventory_movements
+payment_gateway_transactions
+refunds
+courier_shipments
+```
 
-Not required for core MVP:
+---
 
-\`\`\`text
+# 4. Common Schema Conventions
 
-addresses
+```text
+Primary Key       → BIGINT UNSIGNED AUTO_INCREMENT
+Foreign Key       → BIGINT UNSIGNED
+Money             → DECIMAL(12,2)
+Boolean           → BOOLEAN / TINYINT(1)
+Status            → VARCHAR + PHP backed Enum / validated string
+Character Set     → utf8mb4
+Collation         → utf8mb4_unicode_ci
+Created/Updated   → Laravel timestamps()
+Soft Delete       → deleted_at via softDeletes()
+```
 
-activity\_logs
+Never use:
 
-\`\`\`
+```text
+FLOAT
+DOUBLE
+```
 
-Do not create them unless P1 is intentionally started.
+for authoritative money.
 
-\---
+---
 
-**# 42. No \`customers\` Table**
+# 5. Authentication / Guard Design
 
-Authenticated Customer:
+Recommended Laravel auth model mapping:
 
-\`\`\`text
+```text
+web guard
+→ App\Models\User
+→ users table
 
-users row
+admin guard
+→ App\Models\Admin
+→ admins table
+```
 
-\+
+Spatie guard mapping:
 
-Customer Spatie role/context
+```text
+Customer permissions/role
+→ guard_name = web
 
-\`\`\`
-
-Guest:
-
-\`\`\`text
-
-no User row required
-
-\`\`\`
-
-Order-owned buyer snapshots handle historical purchase identity.
-
-Therefore:
-
-\`\`\`text
-
-No P0 customers table
-
-\`\`\`
-
-\---
-
-**# 43. No Inventory Ledger Tables**
-
-P0 stock source:
-
-\`\`\`text
-
-products.stock\_quantity
-
-\`\`\`
+Super Admin/Admin/Manager/Agent
+→ guard_name = admin
+```
 
 Do not add:
 
-\`\`\`text
+```text
+admins.role_id
+users.role_id
+```
 
-inventory\_movements
+because Spatie manages role relations through:
 
-stock\_ledgers
+```text
+model_has_roles
+```
 
-warehouses
+---
 
-warehouse\_stocks
+# 6. `admins` Table
 
-\`\`\`
+**Model:** `App\Models\Admin`
 
-\---
+Purpose:
 
-**# 44. No Real Gateway Tables**
-
-Manual MFS P0 does not need:
-
-\`\`\`text
-
-payment\_intents
-
-gateway\_transactions
-
-webhook\_events
-
-provider\_callbacks
-
-refund\_transactions
-
-\`\`\`
-
-Use:
-
-\`\`\`text
-
-payment\_methods
-
-payment\_submissions
-
-\`\`\`
-
-\---
-
-**# 45. No Settings Table in P0**
-
-Permission docs contain:
-
-\`\`\`text
-
-settings.view
-
-settings.update
-
-\`\`\`
-
-but approved core entity list does not define a \`settings\` entity.
-
-Therefore:
-
-\`\`\`text
-
-No P0 settings table is introduced by this schema.
-
-\`\`\`
-
-If settings persistence becomes necessary later, define it explicitly rather than silently adding it here.
-
-\---
-
-**# 46. Checkout Transaction Write Set**
-
-Critical writes:
-
-\`\`\`text
-
-BEGIN TRANSACTION
-
-1\. INSERT orders
-
-2\. INSERT order\_items
-
-3\. INSERT payment\_submissions
-
-4\. UPDATE products.stock\_quantity
-
-5\. INSERT initial order\_histories
-
-COMMIT
-
-\`\`\`
-
-On error:
-
-\`\`\`text
-
-ROLLBACK
-
-\`\`\`
-
-Do not clear successful Cart state until transaction commits.
-
-\---
-
-**# 47. Stock Mutation Schema Rule**
-
-Stock lives in:
-
-\`\`\`text
-
-products.stock\_quantity
-
-\`\`\`
-
-Checkout must:
-
-\`\`\`text
-
-Reload Product
-
-Revalidate stock
-
-Deduct inside transaction
-
-\`\`\`
-
-Database schema does not auto-deduct stock.
-
-No DB trigger.
-
-Stock restoration after cancellation remains undefined.
-
-\---
-
-**# 48. Historical Preservation Rules**
-
-Historical data:
-
-\`\`\`text
-
-Order buyer snapshot
-
-Order coupon snapshot
-
-Order financial totals
-
-OrderItem product snapshot
-
-OrderHistory
-
-PaymentSubmission
-
-\`\`\`
-
-must remain stable even if:
-
-\`\`\`text
-
-User profile changes
-
-Product name changes
-
-Product price changes
-
-Coupon changes
-
-Payment Method is soft-deleted
-
-\`\`\`
-
-\---
-
-**# 49. Guest Checkout Schema Behavior**
-
-Guest successful Order:
-
-\`\`\`text
-
-orders.user\_id = NULL
-
-orders.buyer\_name = submitted name
-
-orders.buyer\_phone = submitted phone
-
-orders.buyer\_email = submitted email
-
-orders.shipping\_address = submitted address
-
-orders.city\_or\_area = submitted city/area
-
-\`\`\`
-
-Then:
-
-\`\`\`text
-
-OrderItems created
-
-PaymentSubmission created
-
-Initial history created
-
-\`\`\`
-
-No Guest User row is required.
-
-\---
-
-**# 50. Logged-in Customer Schema Behavior**
-
-Authenticated Order:
-
-\`\`\`text
-
-orders.user\_id = auth()->id()
-
-\`\`\`
-
-But also persist:
-
-\`\`\`text
-
-buyer\_name
-
-buyer\_phone
-
-buyer\_email
-
-shipping\_address
-
-city\_or\_area
-
-\`\`\`
-
-The relation does not replace the snapshot.
-
-\---
-
-**# 51. Agent Assignment Schema Behavior**
-
-Initially:
-
-\`\`\`text
-
-assigned\_agent\_id = NULL
-
-\`\`\`
-
-Authorized Admin/Manager assignment:
-
-\`\`\`text
-
-assigned\_agent\_id = Agent User ID
-
-\`\`\`
-
-Database FK proves User existence.
-
-Application Service/Policy proves that the User is an eligible Agent.
-
-\---
-
-**# 52. Payment Verification Schema Behavior**
-
-At checkout:
-
-\`\`\`text
-
-payment\_submissions.status = submitted
-
-orders.payment\_status = submitted
-
-verified\_by = NULL
-
-verified\_at = NULL
-
-\`\`\`
-
-On authorized verify:
-
-\`\`\`text
-
-payment\_submissions.status = verified
-
-payment\_submissions.verified\_by = staff user id
-
-payment\_submissions.verified\_at = now()
-
-orders.payment\_status = verified
-
-\`\`\`
-
-On authorized reject:
-
-\`\`\`text
-
-payment\_submissions.status = rejected
-
-payment\_submissions.verified\_by = staff user id
-
-payment\_submissions.verified\_at = now()
-
-payment\_submissions.rejection\_note = ...
-
-orders.payment\_status = rejected
-
-\`\`\`
-
-Do not automatically change \`order\_status\` unless a later approved business rule requires it.
-
-\---
-
-**# 53. Order History Schema Behavior**
-
-Examples written into \`order\_histories\`:
-
-\`\`\`text
-
-Order Created
-
-Payment Submitted
-
-Payment Verified
-
-Assigned To Agent
-
-Confirmed
-
-Processing
-
-Shipped
-
-Delivered
-
-Cancelled
-
-\`\`\`
-
-For an Order-status transition:
-
-\`\`\`text
-
-from\_status
-
-to\_status
-
-\`\`\`
-
-should be populated.
-
-For a non-order-status event such as payment verification or assignment:
-
-\`\`\`text
-
-from\_status / to\_status may remain null
-
-note carries the trace
-
-\`\`\`
-
-No generic enterprise audit log is required for P0.
-
-\---
-
-**# 54. Coupon Schema Behavior**
-
-Coupon validation uses:
-
-\`\`\`text
-
-code
-
-discount\_type
-
-discount\_value
-
-minimum\_order\_amount
-
-start\_date
-
-end\_date
-
-status
-
-\`\`\`
-
-Order stores:
-
-\`\`\`text
-
-coupon\_id
-
-coupon\_code
-
-discount
-
-\`\`\`
-
-Rules:
-
-\`\`\`text
-
-One Coupon per Order
-
-No stacking
-
-Expired rejected
-
-Inactive rejected
-
-Server-side calculation
-
-\`\`\`
-
-\---
-
-**# 55. SoftDelete / Restore Behavior**
-
-All application-owned ShopPilot models use SoftDeletes:
-
-\`\`\`text
-
-User
-
-Category
-
-Product
-
-Coupon
-
-PaymentMethod
-
-Order
-
-OrderItem
-
-OrderHistory
-
-PaymentSubmission
-
-\`\`\`
-
-Normal application delete:
-
-\`\`\`text
-
-UPDATE deleted_at = current timestamp
-
-\`\`\`
-
-not hard delete.
-
-**## Default Query Behavior**
-
-Normal Eloquent queries exclude trashed rows.
-
-Trash listing uses:
-
-\`\`\`php
-
-Model::onlyTrashed()
-
-\`\`\`
-
-Restore uses:
-
-\`\`\`php
-
-$model->restore();
-
-\`\`\`
-
-Single-record restore lookup may use:
-
-\`\`\`php
-
-Model::onlyTrashed()->findOrFail($id);
-
-\`\`\`
-
-**## Historical Models**
-
-These also use SoftDeletes:
-
-\`\`\`text
-
-OrderItem
-
-OrderHistory
-
-PaymentSubmission
-
-\`\`\`
-
-but normal business workflows must not delete them.
-
-They may enter Trash only through an explicit authorized administrative action.
-
-**## Force Delete**
-
-\`\`\`text
-
-Not required for P0.
-
-\`\`\`
-
-Do not expose a permanent-delete button by default.
-
-**## Authorization**
-
-Restore permission/business logic is enforced by application authorization.
-
-Existing explicit restore permissions should be used where already defined:
-
-\`\`\`text
-
-categories.restore
-
-products.restore
-
-orders.restore
-
-\`\`\`
-
-For application models without a documented dedicated `*.restore` permission:
-
-\`\`\`text
-
-Trash/Restore remains Admin-only
-until the permission catalogue is explicitly expanded.
-
-\`\`\`
-
-Do not silently invent new permission names in this schema document.
-
-\---
-
-**# 56. Hard Delete Protection**
-
-P0 does not require force delete for any application-owned model.
-
-Every application delete should normally use SoftDeletes. Migration FK design should still make destructive hard deletes difficult.
-
-Examples:
-
-\`\`\`text
-
-Product with OrderItems
-
-→ RESTRICT hard delete
-
-Order with Items/History/Payment
-
-→ RESTRICT hard delete
-
-PaymentMethod with PaymentSubmission
-
-→ RESTRICT hard delete
-
-\`\`\`
-
-This is intentional.
-
-\---
-
-**# 57. Migration Dependency Order**
-
-Recommended order:
-
-\`\`\`text
-
-01 users
-
-02 Spatie Permission package tables
-
-03 categories
-
-04 products
-
-05 coupons
-
-06 payment\_methods
-
-07 orders
-
-08 order\_items
-
-09 order\_histories
-
-10 payment\_submissions
-
-11 Media Library package migration
-
-12 optional framework/P1 migrations
-
-\`\`\`
-
-Package timestamp order may differ when installed.
-
-Requirement:
-
-\`\`\`text
-
-Parent table must exist before FK child table migration executes.
-
-\`\`\`
-
-\---
-
-**# 58. Migration File Plan**
-
-Example names:
-
-\`\`\`text
-
-0001\_01\_01\_000000\_create\_users\_table.php
-
-2026\_09\_17\_000100\_create\_categories\_table.php
-
-2026\_09\_17\_000200\_create\_products\_table.php
-
-2026\_09\_17\_000300\_create\_coupons\_table.php
-
-2026\_09\_17\_000400\_create\_payment\_methods\_table.php
-
-2026\_09\_17\_000500\_create\_orders\_table.php
-
-2026\_09\_17\_000600\_create\_order\_items\_table.php
-
-2026\_09\_17\_000700\_create\_order\_histories\_table.php
-
-2026\_09\_17\_000800\_create\_payment\_submissions\_table.php
-
-\`\`\`
-
-Exact timestamps are not important.
-
-Dependency order is important.
-
-\---
-
-**# 59. Laravel Migration Blueprint — Users**
-
-\`\`\`php
-
-Schema::create('users', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->string('name', 120);
-
-    $table->string('email', 191)->unique();
-
-    $table->timestamp('email\_verified\_at')->nullable();
-
-    $table->string('password');
-
-    $table->rememberToken();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-});
-
-\`\`\`
-
-Notes:
-
-\`\`\`text
-
-No role column.
-
-No guest row requirement.
-
-Spatie handles role/permission relations.
-
-\`\`\`
-
-\---
-
-**# 60. Laravel Migration Blueprint — Categories**
-
-\`\`\`php
-
-Schema::create('categories', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->string('name', 150);
-
-    $table->string('slug', 200)->unique();
-
-    $table->text('description')->nullable();
-
-    $table->string('status', 20)->default('active')->index();
-
-    $table->unsignedInteger('sort\_order')->default(0)->index();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-});
-
-\`\`\`
-
-No image-path column.
-
-Media Library handles:
-
-\`\`\`text
-
-category\_image
-
-\`\`\`
-
-\---
-
-**# 61. Laravel Migration Blueprint — Products**
-
-\`\`\`php
-
-Schema::create('products', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->foreignId('category\_id')
-
-        ->constrained('categories')
-
-        ->restrictOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->string('name', 180);
-
-    $table->string('slug', 200)->unique();
-
-    $table->string('sku', 100)->unique();
-
-    $table->string('short\_description', 500)->nullable();
-
-    $table->longText('description')->nullable();
-
-    $table->decimal('regular\_price', 12, 2);
-
-    $table->decimal('sale\_price', 12, 2)->nullable();
-
-    $table->unsignedInteger('stock\_quantity')->default(0)->index();
-
-    $table->string('status', 20)->default('active')->index();
-
-    $table->boolean('featured')->default(false)->index();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-    $table->index(['category\_id', 'status']);
-
-    $table->index(['status', 'featured']);
-
-});
-
-\`\`\`
-
-No:
-
-\`\`\`text
-
-size
-
-color
-
-variant\_price
-
-variant\_stock
-
-\`\`\`
-
-P0 columns.
-
-\---
-
-**# 62. Laravel Migration Blueprint — Coupons**
-
-\`\`\`php
-
-Schema::create('coupons', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->string('code', 80)->unique();
-
-    $table->string('discount\_type', 20);
-
-    $table->decimal('discount\_value', 12, 2);
-
-    $table->decimal('minimum\_order\_amount', 12, 2)->default(0);
-
-    $table->dateTime('start\_date')->index();
-
-    $table->dateTime('end\_date')->index();
-
-    $table->string('status', 20)->default('active')->index();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-    $table->index(['status', 'end\_date']);
-
-});
-
-\`\`\`
-
-P0 case behavior:
-
-\`\`\`text
-
-DB collation-based case-insensitive uniqueness.
-
-\`\`\`
-
-\---
-
-**# 63. Laravel Migration Blueprint — Payment Methods**
-
-\`\`\`php
-
-Schema::create('payment\_methods', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->string('name', 100);
-
-    $table->string('code', 50)->unique();
-
-    $table->string('account\_number', 50);
-
-    $table->string('account\_type', 50);
-
-    $table->text('instruction');
-
-    $table->string('status', 20)->default('active')->index();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-});
-
-\`\`\`
-
-P0 seeded codes:
-
-\`\`\`text
-
-bkash
-
-nagad
-
-rocket
-
-\`\`\`
-
-\---
-
-**# 64. Laravel Migration Blueprint — Orders**
-
-\`\`\`php
-
-Schema::create('orders', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->string('order\_number', 40)->unique();
-
-    $table->foreignId('user\_id')
-
-        ->nullable()
-
-        ->constrained('users')
-
-        ->nullOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->foreignId('assigned\_agent\_id')
-
-        ->nullable()
-
-        ->constrained('users')
-
-        ->nullOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->foreignId('coupon\_id')
-
-        ->nullable()
-
-        ->constrained('coupons')
-
-        ->nullOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->string('coupon\_code', 80)->nullable();
-
-    $table->string('buyer\_name', 150);
-
-    $table->string('buyer\_phone', 30);
-
-    $table->string('buyer\_email', 191);
-
-    $table->text('shipping\_address');
-
-    $table->string('city\_or\_area', 150);
-
-    $table->decimal('subtotal', 12, 2);
-
-    $table->decimal('discount', 12, 2)->default(0);
-
-    $table->decimal('shipping', 12, 2)->default(0);
-
-    $table->decimal('grand\_total', 12, 2);
-
-    $table->string('payment\_status', 20)
-
-        ->default('unpaid')
-
-        ->index();
-
-    $table->string('order\_status', 20)
-
-        ->default('pending')
-
-        ->index();
-
-    $table->text('customer\_note')->nullable();
-
-    $table->text('internal\_note')->nullable();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-    $table->index(['user\_id', 'created\_at']);
-
-    $table->index(['assigned\_agent\_id', 'order\_status']);
-
-    $table->index('coupon\_code');
-
-});
-
-\`\`\`
-
-Important:
-
-Manual MFS Checkout must explicitly set:
-
-\`\`\`text
-
-payment\_status = submitted
-
-\`\`\`
-
-inside the successful transaction.
-
-Do not rely on \`unpaid\` default for manual MFS success.
-
-\---
-
-**# 65. Laravel Migration Blueprint — Order Items**
-
-\`\`\`php
-
-Schema::create('order\_items', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->foreignId('order\_id')
-
-        ->constrained('orders')
-
-        ->restrictOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->foreignId('product\_id')
-
-        ->constrained('products')
-
-        ->restrictOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->string('product\_name', 180);
-
-    $table->string('sku', 100);
-
-    $table->decimal('unit\_price', 12, 2);
-
-    $table->unsignedInteger('quantity');
-
-    $table->decimal('line\_total', 12, 2);
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-});
-
-\`\`\`
-
-`OrderItem` uses `SoftDeletes`, but normal Checkout/Order workflow must not delete historical items.
-
-Trash/Restore is an explicit authorized administrative action.
-
-Do not recalculate historical Item display from current Product price.
-
-\---
-**# 66. Laravel Migration Blueprint — Order Histories**
-
-\`\`\`php
-
-Schema::create('order\_histories', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->foreignId('order\_id')
-
-        ->constrained('orders')
-
-        ->restrictOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->foreignId('user\_id')
-
-        ->nullable()
-
-        ->constrained('users')
-
-        ->nullOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->string('from\_status', 20)->nullable();
-
-    $table->string('to\_status', 20)->nullable();
-
-    $table->text('note')->nullable();
-
-    $table->timestamp('created\_at')->useCurrent();
-
-    $table->softDeletes();
-
-    $table->index(['order\_id', 'created\_at']);
-
-});
-
-\`\`\`
-
-No \`updated\_at\`.
-
-`OrderHistory` uses `SoftDeletes` for explicit Trash/Restore, but History should remain append-oriented during normal business workflow.
-
-\---
-**# 67. Laravel Migration Blueprint — Payment Submissions**
-
-\`\`\`php
-
-Schema::create('payment\_submissions', function (Blueprint $table) {
-
-    $table->id();
-
-    $table->foreignId('order\_id')
-
-        ->unique()
-
-        ->constrained('orders')
-
-        ->restrictOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->foreignId('payment\_method\_id')
-
-        ->constrained('payment\_methods')
-
-        ->restrictOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->string('transaction\_id', 100)->index();
-
-    $table->decimal('amount', 12, 2);
-
-    $table->string('status', 20)
-
-        ->default('submitted')
-
-        ->index();
-
-    $table->foreignId('verified\_by')
-
-        ->nullable()
-
-        ->constrained('users')
-
-        ->nullOnDelete()
-
-        ->cascadeOnUpdate();
-
-    $table->timestamp('verified\_at')->nullable();
-
-    $table->text('rejection\_note')->nullable();
-
-    $table->timestamps();
-
-    $table->softDeletes();
-
-});
-
-\`\`\`
-
-Critical:
-
-\`\`\`text
-
-transaction\_id is indexed but NOT UNIQUE.
-
-\`\`\`
-
-This preserves the existing TBD duplicate-ID policy.
-
-\---
-**# 68. Package Migration Strategy**
-
-Install packages and publish/use their migrations.
-
-**## Spatie Permission**
-
-Do not duplicate:
-
-\`\`\`text
-
-roles
-
-permissions
-
-model\_has\_roles
-
-model\_has\_permissions
-
-role\_has\_permissions
-
-\`\`\`
-
-with custom tables.
-
-**## Media Library**
-
-Do not duplicate:
-
-\`\`\`text
-
-media
-
-\`\`\`
-
-with a custom media table.
-
-When package versions change, use the package migration appropriate to the installed version.
-
-\---
-
-**# 69. Seeder Data Requirements**
-
-P0 seeders should create:
-
-**## Roles**
-
-\`\`\`text
-
+```text
+Super Admin
 Admin
-
 Manager
-
 Agent
+```
 
-Customer
+Physical schema:
 
-\`\`\`
+| Column | Type | Null | Default | Key / Index | Notes |
+|---|---|---:|---|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK | |
+| `name` | VARCHAR(120) | No | — | — | Admin display name |
+| `email` | VARCHAR(191) | No | — | UNIQUE | Admin login |
+| `email_verified_at` | TIMESTAMP | Yes | NULL | — | Optional verification |
+| `password` | VARCHAR(255) | No | — | — | Hashed |
+| `status` | VARCHAR(20) | No | `active` | INDEX | active/inactive |
+| `remember_token` | VARCHAR(100) | Yes | NULL | — | Laravel auth |
+| `created_at` | TIMESTAMP | Yes | NULL | — | |
+| `updated_at` | TIMESTAMP | Yes | NULL | — | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | INDEX optional | SoftDelete |
 
-Do not create:
+Migration:
 
-\`\`\`text
+```php
+Schema::create('admins', function (Blueprint $table) {
+    $table->id();
 
-Guest
+    $table->string('name', 120);
+    $table->string('email', 191)->unique();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
 
-\`\`\`
+    $table->string('status', 20)
+        ->default('active')
+        ->index();
 
-as a Spatie role.
+    $table->rememberToken();
 
-\---
+    $table->timestamps();
+    $table->softDeletes();
+});
+```
 
-**## Permissions**
+### Screenshot Mapping
 
-Seed the approved granular permission catalogue.
+Admin list UI may show:
 
-Examples:
+```text
+Name
+Email
+Roles
+Status
+Actions
+```
 
-\`\`\`text
+Database mapping:
 
-dashboard.view
+```text
+Name   → admins.name
+Email  → admins.email
+Status → admins.status
+Roles  → Spatie relationship, NOT an admins column
+```
 
-users.view
+Example:
 
-users.update
+```php
+$admin->roles;
+```
 
-customers.view
+---
 
+# 7. `users` Table
+
+**Model:** `App\Models\User`
+
+Purpose:
+
+```text
+Authenticated Customer accounts
+```
+
+Guest customers do not require a User record.
+
+Physical schema:
+
+| Column | Type | Null | Default | Key / Index | Notes |
+|---|---|---:|---|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK | |
+| `name` | VARCHAR(120) | No | — | — | |
+| `email` | VARCHAR(191) | No | — | UNIQUE | Customer login |
+| `email_verified_at` | TIMESTAMP | Yes | NULL | — | |
+| `password` | VARCHAR(255) | No | — | — | Hashed |
+| `remember_token` | VARCHAR(100) | Yes | NULL | — | |
+| `created_at` | TIMESTAMP | Yes | NULL | — | |
+| `updated_at` | TIMESTAMP | Yes | NULL | — | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | — | SoftDelete |
+
+Migration:
+
+```php
+Schema::create('users', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('name', 120);
+    $table->string('email', 191)->unique();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
+
+    $table->rememberToken();
+
+    $table->timestamps();
+    $table->softDeletes();
+});
+```
+
+Do not add a `role` column.
+
+If Customer uses Spatie role:
+
+```text
+role name  = customer
+guard_name = web
+```
+
+---
+
+# 8. Custom `Role` Model + `roles` Table
+
+Spatie already creates the `roles` table.
+
+Do **not** replace the package migration.
+
+Create custom model:
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Models\Role as SpatieRole;
+
+class Role extends SpatieRole
+{
+    use SoftDeletes;
+}
+```
+
+Configure:
+
+```php
+// config/permission.php
+
+'models' => [
+    'permission' => App\Models\Permission::class,
+    'role' => App\Models\Role::class,
+],
+```
+
+Final physical columns:
+
+| Column | Type | Null | Default | Key / Index | Notes |
+|---|---|---:|---|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK | Spatie |
+| `team_id` | BIGINT UNSIGNED | Conditional | NULL | INDEX | Only if Spatie teams enabled |
+| `name` | VARCHAR(255) | No | — | Composite UNIQUE | |
+| `guard_name` | VARCHAR(255) | No | — | Composite UNIQUE | `admin` / `web` |
+| `created_at` | TIMESTAMP | Yes | NULL | — | |
+| `updated_at` | TIMESTAMP | Yes | NULL | — | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | — | Custom SoftDelete |
+
+When teams are disabled:
+
+```text
+UNIQUE(name, guard_name)
+```
+
+Example rows:
+
+```text
+super_admin | admin
+admin       | admin
+manager     | admin
+agent       | admin
+customer    | web
+```
+
+### Screenshot Mapping
+
+Roles List may show:
+
+```text
+Role Name
+Guard Name
+Permissions Count
+Users Count
+Actions
+```
+
+Only these are stored directly:
+
+```text
+name
+guard_name
+```
+
+These are calculated:
+
+```text
+Permissions Count
+Users/Admins Count
+```
+
+Use relationship counts such as:
+
+```php
+Role::withCount('permissions');
+```
+
+Admin/User count may be calculated from the morph relation according to the desired screen.
+
+### Protected Super Admin
+
+Recommended application rule:
+
+```text
+role name = super_admin
+guard_name = admin
+```
+
+is protected from normal Trash/Delete/Rename unless explicitly allowed.
+
+No `is_protected` DB column is required for P0.
+
+---
+
+# 9. Custom `Permission` Model + `permissions` Table
+
+Spatie already creates the `permissions` table.
+
+Use custom model:
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Models\Permission as SpatiePermission;
+
+class Permission extends SpatiePermission
+{
+    use SoftDeletes;
+}
+```
+
+Final columns:
+
+| Column | Type | Null | Default | Key / Index | Notes |
+|---|---|---:|---|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK | |
+| `name` | VARCHAR(255) | No | — | Composite UNIQUE | Permission code |
+| `guard_name` | VARCHAR(255) | No | — | Composite UNIQUE | `admin` / `web` |
+| `group_name` | VARCHAR(100) | Yes | NULL | INDEX | UI grouping |
+| `created_at` | TIMESTAMP | Yes | NULL | — | |
+| `updated_at` | TIMESTAMP | Yes | NULL | — | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | — | SoftDelete |
+
+Unique rule remains:
+
+```text
+UNIQUE(name, guard_name)
+```
+
+Example permission groups:
+
+```text
+Admins
+Roles
+Permissions
+Categories
+Products
+Stock
+Coupons
+Orders
+Payments
+Payment Methods
+Customers
+Reports
+Settings
+```
+
+Example permission names:
+
+```text
 staff.view
-
 staff.create
-
 staff.update
-
 staff.delete
+staff.restore
 
 roles.view
-
 roles.manage
 
 permissions.view
-
 permissions.manage
 
-categories.view
-
-categories.create
-
-categories.update
-
-categories.delete
-
-categories.restore
-
 products.view
-
 products.create
-
 products.update
-
 products.delete
-
 products.restore
 
-stock.view
-
-stock.update
-
-coupons.view
-
-coupons.create
-
-coupons.update
-
-coupons.delete
-
 orders.view
-
 orders.update
-
 orders.assign
-
 orders.cancel
-
 orders.restore
 
 payments.view
-
 payments.verify
-
 payments.reject
+```
 
-payment-methods.view
+### Screenshot Mapping
 
-payment-methods.manage
+Permissions screen:
 
-reports.view
+```text
+ID              → permissions.id
+Permission Name → permissions.name
+Guard Name      → permissions.guard_name
+Group Name      → permissions.group_name
+Created At      → permissions.created_at
+```
 
-settings.view
+---
 
-settings.update
+# 10. Additive Migration for Role / Permission SoftDeletes
 
-\`\`\`
+Do not edit Spatie's published migration after installation.
 
-Do not seed duplicate umbrella aliases unless deliberately approved.
+Create a new application migration:
 
-\---
+```php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-**## Payment Methods**
+return new class extends Migration {
+    public function up(): void
+    {
+        $tableNames = config('permission.table_names');
 
-Recommended initial rows:
+        Schema::table($tableNames['roles'], function (Blueprint $table) {
+            $table->softDeletes();
+        });
 
-\`\`\`text
+        Schema::table($tableNames['permissions'], function (Blueprint $table) {
+            $table->string('group_name', 100)
+                ->nullable()
+                ->index()
+                ->after('guard_name');
 
+            $table->softDeletes();
+        });
+    }
+
+    public function down(): void
+    {
+        $tableNames = config('permission.table_names');
+
+        Schema::table($tableNames['permissions'], function (Blueprint $table) {
+            $table->dropIndex(['group_name']);
+            $table->dropColumn('group_name');
+            $table->dropSoftDeletes();
+        });
+
+        Schema::table($tableNames['roles'], function (Blueprint $table) {
+            $table->dropSoftDeletes();
+        });
+    }
+};
+```
+
+After Role/Permission mutation:
+
+```php
+app(\Spatie\Permission\PermissionRegistrar::class)
+    ->forgetCachedPermissions();
+```
+
+Important:
+
+Soft-deleting a Role/Permission does not hard-delete pivot rows.
+
+Therefore restoration can preserve prior assignments.
+
+Also note:
+
+```text
+UNIQUE(name, guard_name)
+```
+
+still sees a soft-deleted record at database level.
+
+If the same role/permission name is needed again:
+
+```text
+Restore the trashed record
+```
+
+instead of creating a duplicate.
+
+---
+
+# 11. `model_has_roles` — Spatie Pivot
+
+Use the package migration exactly according to installed Spatie version.
+
+Core columns:
+
+```text
+role_id
+model_type
+model_id
+```
+
+If teams enabled:
+
+```text
+team_id
+```
+
+Examples:
+
+```text
+role_id    = manager role
+model_type = App\Models\Admin
+model_id   = 5
+```
+
+or:
+
+```text
+role_id    = customer role
+model_type = App\Models\User
+model_id   = 20
+```
+
+No application Model is required.
+
+No `deleted_at` required.
+
+---
+
+# 12. `model_has_permissions` — Spatie Pivot
+
+Core columns:
+
+```text
+permission_id
+model_type
+model_id
+```
+
+Optional teams column:
+
+```text
+team_id
+```
+
+No SoftDelete.
+
+No custom Eloquent application model needed.
+
+---
+
+# 13. `role_has_permissions` — Spatie Pivot
+
+Core columns:
+
+```text
+permission_id
+role_id
+```
+
+Composite primary key from Spatie.
+
+No SoftDelete.
+
+No timestamps required unless package version explicitly provides them.
+
+---
+
+# 14. `categories` Table
+
+**Model:** `App\Models\Category`
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `name` | VARCHAR(150) | No | — | |
+| `slug` | VARCHAR(200) | No | — | UNIQUE |
+| `description` | TEXT | Yes | NULL | |
+| `status` | VARCHAR(20) | No | `active` | INDEX |
+| `sort_order` | INT UNSIGNED | No | `0` | INDEX |
+| `created_at` | TIMESTAMP | Yes | NULL | |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | |
+
+Migration:
+
+```php
+Schema::create('categories', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('name', 150);
+    $table->string('slug', 200)->unique();
+    $table->text('description')->nullable();
+
+    $table->string('status', 20)
+        ->default('active')
+        ->index();
+
+    $table->unsignedInteger('sort_order')
+        ->default(0)
+        ->index();
+
+    $table->timestamps();
+    $table->softDeletes();
+});
+```
+
+Media:
+
+```text
+category_image
+```
+
+through Spatie Media Library.
+
+---
+
+# 15. `products` Table
+
+**Model:** `App\Models\Product`
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `category_id` | BIGINT UNSIGNED | No | — | FK + INDEX |
+| `name` | VARCHAR(180) | No | — | |
+| `slug` | VARCHAR(200) | No | — | UNIQUE |
+| `sku` | VARCHAR(100) | No | — | UNIQUE |
+| `short_description` | VARCHAR(500) | Yes | NULL | |
+| `description` | LONGTEXT | Yes | NULL | |
+| `regular_price` | DECIMAL(12,2) | No | — | |
+| `sale_price` | DECIMAL(12,2) | Yes | NULL | |
+| `stock_quantity` | INT UNSIGNED | No | `0` | INDEX |
+| `status` | VARCHAR(20) | No | `active` | INDEX |
+| `featured` | BOOLEAN | No | `false` | INDEX |
+| `created_at` | TIMESTAMP | Yes | NULL | |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | |
+
+FK:
+
+```text
+products.category_id
+→ categories.id
+ON DELETE RESTRICT
+```
+
+Migration:
+
+```php
+Schema::create('products', function (Blueprint $table) {
+    $table->id();
+
+    $table->foreignId('category_id')
+        ->constrained('categories')
+        ->restrictOnDelete()
+        ->cascadeOnUpdate();
+
+    $table->string('name', 180);
+    $table->string('slug', 200)->unique();
+    $table->string('sku', 100)->unique();
+
+    $table->string('short_description', 500)->nullable();
+    $table->longText('description')->nullable();
+
+    $table->decimal('regular_price', 12, 2);
+    $table->decimal('sale_price', 12, 2)->nullable();
+
+    $table->unsignedInteger('stock_quantity')
+        ->default(0)
+        ->index();
+
+    $table->string('status', 20)
+        ->default('active')
+        ->index();
+
+    $table->boolean('featured')
+        ->default(false)
+        ->index();
+
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->index(['category_id', 'status']);
+    $table->index(['status', 'featured']);
+});
+```
+
+Media collections:
+
+```text
+product_thumbnail
+product_gallery
+```
+
+---
+
+# 16. `coupons` Table
+
+**Model:** `App\Models\Coupon`
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `code` | VARCHAR(80) | No | — | UNIQUE |
+| `discount_type` | VARCHAR(20) | No | — | |
+| `discount_value` | DECIMAL(12,2) | No | — | |
+| `minimum_order_amount` | DECIMAL(12,2) | No | `0.00` | |
+| `start_date` | DATETIME | No | — | INDEX |
+| `end_date` | DATETIME | No | — | INDEX |
+| `status` | VARCHAR(20) | No | `active` | INDEX |
+| `created_at` | TIMESTAMP | Yes | NULL | |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | |
+
+Values:
+
+```text
+discount_type:
+fixed
+percentage
+
+status:
+active
+inactive
+expired
+```
+
+Migration:
+
+```php
+Schema::create('coupons', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('code', 80)->unique();
+    $table->string('discount_type', 20);
+    $table->decimal('discount_value', 12, 2);
+    $table->decimal('minimum_order_amount', 12, 2)->default(0);
+
+    $table->dateTime('start_date')->index();
+    $table->dateTime('end_date')->index();
+
+    $table->string('status', 20)
+        ->default('active')
+        ->index();
+
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->index(['status', 'end_date']);
+});
+```
+
+---
+
+# 17. `payment_methods` Table
+
+**Model:** `App\Models\PaymentMethod`
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `name` | VARCHAR(100) | No | — | |
+| `code` | VARCHAR(50) | No | — | UNIQUE |
+| `account_number` | VARCHAR(50) | No | — | |
+| `account_type` | VARCHAR(50) | No | — | |
+| `instruction` | TEXT | No | — | |
+| `status` | VARCHAR(20) | No | `active` | INDEX |
+| `created_at` | TIMESTAMP | Yes | NULL | |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | |
+
+Examples:
+
+```text
 bkash
-
 nagad
-
 rocket
+```
 
-\`\`\`
+Migration:
 
-with safe development/test numbers/instructions.
+```php
+Schema::create('payment_methods', function (Blueprint $table) {
+    $table->id();
 
-Production numbers should be configured by authorized staff.
+    $table->string('name', 100);
+    $table->string('code', 50)->unique();
 
-\---
+    $table->string('account_number', 50);
+    $table->string('account_type', 50);
+    $table->text('instruction');
 
-**# 70. Factory / Testing Data Guidance**
+    $table->string('status', 20)
+        ->default('active')
+        ->index();
 
-Factories should support:
+    $table->timestamps();
+    $table->softDeletes();
+});
+```
 
-\`\`\`text
+---
 
-User
+# 18. `orders` Table
 
-Category
+**Model:** `App\Models\Order`
 
-Product
+Important ownership decision:
 
-Coupon
+```text
+Customer relation
+→ users.id
 
-Order
-
-OrderItem
-
-OrderHistory
-
-PaymentMethod
-
-PaymentSubmission
-
-\`\`\`
-
-Critical variants:
-
-\`\`\`text
+Assigned Agent relation
+→ admins.id
+```
 
 Guest Order:
 
-user\_id = null
-
-Authenticated Order:
-
-user\_id = customer id
-
-Unassigned Order:
-
-assigned\_agent\_id = null
-
-Assigned Order:
-
-assigned\_agent\_id = agent id
-
-Submitted Payment:
-
-verified\_by = null
-
-verified\_at = null
-
-Verified Payment:
-
-verified\_by = authorized staff id
-
-verified\_at != null
-
-\`\`\`
-
-\---
-
-**# 71. Critical Schema Test Cases**
-
-**## Test 1 — Guest Order**
-
-Must succeed:
-
-\`\`\`text
-
-orders.user\_id = null
-
-\`\`\`
-
-with required snapshots.
-
-\---
-
-**## Test 2 — Authenticated Customer Order**
-
-Must persist:
-
-\`\`\`text
-
-orders.user\_id = customer.id
-
-\`\`\`
-
-plus buyer snapshot.
-
-\---
-
-**## Test 3 — Invalid Agent FK**
-
-Non-existing:
-
-\`\`\`text
-
-assigned\_agent\_id
-
-\`\`\`
-
-must fail FK validation at DB level.
-
-Wrong-role existing User is rejected by application business logic.
-
-\---
-
-**## Test 4 — Duplicate Order Number**
-
-Must fail unique constraint.
-
-\---
-
-**## Test 5 — Duplicate SKU**
-
-Must fail unique constraint.
-
-\---
-
-**## Test 6 — Duplicate Product Slug**
-
-Must fail unique constraint.
-
-\---
-
-**## Test 7 — Duplicate PaymentSubmission per Order**
-
-Second \`payment\_submissions.order\_id\` for same Order must fail.
-
-\---
-
-**## Test 8 — Duplicate Transaction ID**
-
-Database may allow it in P0 because uniqueness rule is still TBD.
-
-Application must not falsely treat duplicate acceptance as proof of payment verification.
-
-\---
-
-**## Test 9 — Hard Delete Product With Historical Item**
-
-Should be blocked by FK RESTRICT.
-
-Normal application uses SoftDelete.
-
-\---
-
-**## Test 10 — Hard Delete Order With History**
-
-Should be blocked by historical child FKs.
-
-\---
-
-**## Test 11 — Hard Delete Customer User**
-
-Order may survive with:
-
-\`\`\`text
-
-user\_id = null
-
-\`\`\`
-
-while snapshots remain.
-
-\---
-
-**## Test 12 — Hard Delete Agent User**
-
-Assigned Order may survive with:
-
-\`\`\`text
-
-assigned\_agent\_id = null
-
-\`\`\`
-
-\---
-
-**## Test 13 — Soft-Deleted Product**
-
-Must remain hidden from normal Storefront through application query scope.
-
-\---
-
-**## Test 14 — Payment Submission Initial State**
-
-Must begin:
-
-\`\`\`text
-
+```text
+user_id = NULL
+```
+
+Final columns:
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `order_number` | VARCHAR(40) | No | — | UNIQUE |
+| `user_id` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX |
+| `assigned_agent_id` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX |
+| `coupon_id` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX |
+| `coupon_code` | VARCHAR(80) | Yes | NULL | INDEX optional |
+| `buyer_name` | VARCHAR(150) | No | — | |
+| `buyer_phone` | VARCHAR(30) | No | — | |
+| `buyer_email` | VARCHAR(191) | No | — | |
+| `shipping_address` | TEXT | No | — | |
+| `city_or_area` | VARCHAR(150) | No | — | |
+| `subtotal` | DECIMAL(12,2) | No | — | |
+| `discount` | DECIMAL(12,2) | No | `0.00` | |
+| `shipping` | DECIMAL(12,2) | No | `0.00` | |
+| `grand_total` | DECIMAL(12,2) | No | — | |
+| `payment_status` | VARCHAR(20) | No | `unpaid` | INDEX |
+| `order_status` | VARCHAR(20) | No | `pending` | INDEX |
+| `customer_note` | TEXT | Yes | NULL | |
+| `internal_note` | TEXT | Yes | NULL | |
+| `created_at` | TIMESTAMP | Yes | NULL | INDEX |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | |
+
+FKs:
+
+```text
+orders.user_id
+→ users.id
+ON DELETE SET NULL
+
+orders.assigned_agent_id
+→ admins.id
+ON DELETE SET NULL
+
+orders.coupon_id
+→ coupons.id
+ON DELETE SET NULL
+```
+
+Migration:
+
+```php
+Schema::create('orders', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('order_number', 40)->unique();
+
+    $table->foreignId('user_id')
+        ->nullable()
+        ->constrained('users')
+        ->nullOnDelete()
+        ->cascadeOnUpdate();
+
+    $table->foreignId('assigned_agent_id')
+        ->nullable()
+        ->constrained('admins')
+        ->nullOnDelete()
+        ->cascadeOnUpdate();
+
+    $table->foreignId('coupon_id')
+        ->nullable()
+        ->constrained('coupons')
+        ->nullOnDelete()
+        ->cascadeOnUpdate();
+
+    $table->string('coupon_code', 80)->nullable();
+
+    $table->string('buyer_name', 150);
+    $table->string('buyer_phone', 30);
+    $table->string('buyer_email', 191);
+
+    $table->text('shipping_address');
+    $table->string('city_or_area', 150);
+
+    $table->decimal('subtotal', 12, 2);
+    $table->decimal('discount', 12, 2)->default(0);
+    $table->decimal('shipping', 12, 2)->default(0);
+    $table->decimal('grand_total', 12, 2);
+
+    $table->string('payment_status', 20)
+        ->default('unpaid')
+        ->index();
+
+    $table->string('order_status', 20)
+        ->default('pending')
+        ->index();
+
+    $table->text('customer_note')->nullable();
+    $table->text('internal_note')->nullable();
+
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->index(['user_id', 'created_at']);
+    $table->index(['assigned_agent_id', 'order_status']);
+    $table->index('coupon_code');
+});
+```
+
+Order status:
+
+```text
+pending
+confirmed
+processing
+shipped
+delivered
+cancelled
+```
+
+Payment status:
+
+```text
+unpaid
 submitted
-
-\`\`\`
-
-not:
-
-\`\`\`text
-
 verified
+rejected
+```
 
-\`\`\`
+---
 
-\---
+# 19. `order_items` Table
+id` | BIGINT UNSIGNED | No | auto | PK |
+| `order_id` | BIGINT UNSIGNED | No | — | FK |
+| `product_id` | BIGINT UNSIGNED | No | — | FK |
+| `product_name` | VARCHAR(180) | No | — | Snapshot |
+| `sku` | VARCHAR(100) | No | — | Snapshot |
+| `unit_price` | DECIMAL(12,2) | No | — | Snapshot |
+| `quantity` | INT UNSIGNED | No | — | |
+| `line_total` | DECIMAL(12,2) | No | — | Snapshot |
+| `created_at` | TIMESTAMP | Yes | NULL | |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | SoftDelete |
 
-**# 72. Remaining Business TBDs — No Schema Automation**
+FKs:
 
-These source-level rules remain unresolved and are **\*\*not\*\*** solved with hidden database automation.
+```text
+order_items.order_id
+→ orders.id
+ON DELETE RESTRICT
 
-**## TBD — Shipping Calculation**
+order_items.product_id
+→ products.id
+ON DELETE RESTRICT
+```
 
-Schema only stores:
+Migration:
 
-\`\`\`text
+```php
+Schema::create('order_items', function (Blueprint $table) {
+    $table->id();
 
-shipping
+    $table->foreignId('order_id')
+        ->constrained('orders')
+        ->restrictOnDelete()
+        ->cascadeOnUpdate();
 
-\`\`\`
+    $table->foreignId('product_id')
+        ->constrained('products')
+        ->restrictOnDelete()
+        ->cascadeOnUpdate();
 
-No shipping engine.
+    $table->string('product_name', 180);
+    $table->string('sku', 100);
 
-\---
+    $table->decimal('unit_price', 12, 2);
+    $table->unsignedInteger('quantity');
+    $table->decimal('line_total', 12, 2);
 
-**## TBD — Stock Restore After Cancellation**
+    $table->timestamps();
+    $table->softDeletes();
+});
+```
 
-No DB trigger.
+Normal Checkout/Order workflow must not delete historical OrderItems.
 
-Do not auto-restore until business rule is approved.
+---
 
-\---
+# 20. `order_histories` Table
 
-**## TBD — Rejected Payment → Order Status**
+**Model:** `App\Models\OrderHistory`
 
-No trigger that changes:
+Because staff now uses `Admin` model and customers use `User` model, history actor is stored with two nullable FKs.
 
-\`\`\`text
+Final columns:
 
-order\_status
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `order_id` | BIGINT UNSIGNED | No | — | FK + INDEX |
+| `admin_id` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX |
+| `user_id` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX |
+| `from_status` | VARCHAR(20) | Yes | NULL | |
+| `to_status` | VARCHAR(20) | Yes | NULL | |
+| `note` | TEXT | Yes | NULL | |
+| `created_at` | TIMESTAMP | No | CURRENT | INDEX |
+| `deleted_at` | TIMESTAMP | Yes | NULL | SoftDelete |
 
-\`\`\`
+Actor rules:
 
-when payment becomes rejected.
+```text
+Admin/Manager/Agent event
+→ admin_id populated
+→ user_id NULL
 
-\---
+Customer event
+→ user_id populated
+→ admin_id NULL
 
-**## TBD — Verification Before Fulfillment**
+Guest/System event
+→ admin_id NULL
+→ user_id NULL
+```
 
-No database constraint requires:
+Application must not populate both actor columns for the same event.
 
-\`\`\`text
+FKs:
 
-payment\_status = verified
+```text
+order_histories.order_id
+→ orders.id
+ON DELETE RESTRICT
 
-\`\`\`
+order_histories.admin_id
+→ admins.id
+ON DELETE SET NULL
 
-before processing.
+order_histories.user_id
+→ users.id
+ON DELETE SET NULL
+```
 
-\---
+Migration:
 
-**## TBD — Assignment Timing**
+```php
+Schema::create('order_histories', function (Blueprint $table) {
+    $table->id();
 
-Schema allows:
+    $table->foreignId('order_id')
+        ->constrained('orders')
+        ->restrictOnDelete()
+        ->cascadeOnUpdate();
 
-\`\`\`text
+    $table->foreignId('admin_id')
+        ->nullable()
+        ->constrained('admins')
+        ->nullOnDelete()
+        ->cascadeOnUpdate();
 
-assigned\_agent\_id nullable
+    $table->foreignId('user_id')
+        ->nullable()
+        ->constrained('users')
+        ->nullOnDelete()
+        ->cascadeOnUpdate();
 
-\`\`\`
+    $table->string('from_status', 20)->nullable();
+    $table->string('to_status', 20)->nullable();
 
-and does not enforce payment-before-assignment or assignment-before-payment.
+    $table->text('note')->nullable();
 
-\---
+    $table->timestamp('created_at')->useCurrent();
+    $table->softDeletes();
 
-**## Resolved in 07 — PaymentSubmission Cardinality**
+    $table->index(['order_id', 'created_at']);
+});
+```
 
-P0:
+No `updated_at` is required.
 
-\`\`\`text
+History remains append-oriented in normal workflow.
 
+---
+
+# 21. `payment_submissions` Table
+
+**Model:** `App\Models\PaymentSubmission`
+
+Only authorized Admin-side staff verifies/rejects payment.
+
+Therefore verifier FK points to:
+
+```text
+admins.id
+```
+
+Final columns:
+
+| Column | Type | Null | Default | Key / Index |
+|---|---|---:|---|---|
+| `id` | BIGINT UNSIGNED | No | auto | PK |
+| `order_id` | BIGINT UNSIGNED | No | — | FK + UNIQUE |
+| `payment_method_id` | BIGINT UNSIGNED | No | — | FK |
+| `transaction_id` | VARCHAR(100) | No | — | INDEX, NOT UNIQUE |
+| `amount` | DECIMAL(12,2) | No | — | |
+| `status` | VARCHAR(20) | No | `submitted` | INDEX |
+| `verified_by_admin_id` | BIGINT UNSIGNED | Yes | NULL | FK + INDEX |
+| `verified_at` | TIMESTAMP | Yes | NULL | |
+| `rejection_note` | TEXT | Yes | NULL | |
+| `created_at` | TIMESTAMP | Yes | NULL | |
+| `updated_at` | TIMESTAMP | Yes | NULL | |
+| `deleted_at` | TIMESTAMP | Yes | NULL | SoftDelete |
+
+P0 cardinality:
+
+```text
 Order hasOne PaymentSubmission
+```
 
-\`\`\`
+Physical enforcement:
 
-implemented by:
+```text
+UNIQUE(order_id)
+```
 
-\`\`\`text
+Transaction ID rule:
 
-UNIQUE(payment\_submissions.order\_id)
+```text
+INDEX(transaction_id)
+NOT UNIQUE
+```
 
-\`\`\`
+Migration:
 
-\---
+```php
+Schema::create('payment_submissions', function (Blueprint $table) {
+    $table->id();
 
-**## TBD — Transaction ID Global Uniqueness**
+    $table->foreignId('order_id')
+        ->unique()
+        ->constrained('orders')
+        ->restrictOnDelete()
+        ->cascadeOnUpdate();
 
-No unique constraint.
+    $table->foreignId('payment_method_id')
+        ->constrained('payment_methods')
+        ->restrictOnDelete()
+        ->cascadeOnUpdate();
 
-\---
+    $table->string('transaction_id', 100)->index();
+    $table->decimal('amount', 12, 2);
 
-**## Resolved in 08 — Coupon Case Handling**
+    $table->string('status', 20)
+        ->default('submitted')
+        ->index();
 
-P0 schema uses case-insensitive default collation + unique Coupon code.
+    $table->foreignId('verified_by_admin_id')
+        ->nullable()
+        ->constrained('admins')
+        ->nullOnDelete()
+        ->cascadeOnUpdate();
 
-\---
+    $table->timestamp('verified_at')->nullable();
+    $table->text('rejection_note')->nullable();
 
-**## TBD — Sale Price Activation**
+    $table->timestamps();
+    $table->softDeletes();
+});
+```
 
-No sale date columns or DB rule.
+Payment submission statuses:
 
-\---
+```text
+submitted
+verified
+rejected
+```
 
-**## P1 — Guest Tracking**
+Critical invariant:
 
-No P0 tracking token columns.
-
-\---
-
-**# 73. Schema Anti-Patterns**
-
-Do not:
-
-**## 73.1 Use FLOAT for Money**
-
-Wrong:
-
-\`\`\`text
-
-FLOAT price
-
-\`\`\`
-
-Use:
-
-\`\`\`text
-
-DECIMAL(12,2)
-
-\`\`\`
-
-\---
-
-**## 73.2 Put Roles in a \`users.role\` String**
-
-Use Spatie Permission.
-
-\---
-
-**## 73.3 Make Guest a Database Role**
-
-Guest is public actor, not Spatie role.
-
-\---
-
-**## 73.4 Require \`orders.user\_id\`**
-
-It must be nullable for Guest Checkout.
-
-\---
-
-**## 73.5 Cascade Delete Historical Orders**
-
-Do not destroy:
-
-\`\`\`text
-
-OrderItems
-
-OrderHistories
-
-PaymentSubmissions
-
-\`\`\`
-
-\---
-
-**## 73.6 Make Transaction ID Automatically Verified**
-
-A Transaction ID string is only submitted information.
-
-\---
-
-**## 73.7 Add Cart Tables**
-
-P0 Cart is Session-based.
-
-\---
-
-**## 73.8 Add Product Variant Tables**
-
-Out of scope.
-
-\---
-
-**## 73.9 Add Inventory Ledger**
-
-Out of scope.
-
-\---
-
-**## 73.10 Add Gateway Webhook Tables**
-
-Out of scope.
-
-\---
-
-**## 73.11 Duplicate Spatie Package Tables**
-
-Use vendor/package migrations.
-
-\---
-
-**## 73.12 Store Historical Order Name/Price Only Through Product FK**
-
-OrderItem snapshots are mandatory.
-
-\---
-
-**# 74. Schema Review Checklist**
-
-\- [ ] MySQL / InnoDB assumed.
-
-\- [ ] \`utf8mb4\` used.
-
-\- [ ] Application PKs use BIGINT UNSIGNED.
-
-\- [ ] Money uses DECIMAL.
-
-\- [ ] PHP Enums map to VARCHAR status columns.
-
-\- [ ] \`users\` uses SoftDelete.
-
-\- [ ] \`categories\` uses SoftDelete.
-
-\- [ ] \`products\` uses SoftDelete.
-
-\- [ ] \`coupons\` uses SoftDelete.
-
-\- [ ] \`orders\` uses SoftDelete.
-
-\- [ ] \`payment\_methods\` uses SoftDelete.
-
-\- [ ] Every application-owned Eloquent model uses SoftDeletes.
-
-\- [ ] `order\_items` has `deleted\_at`.
-
-\- [ ] `order\_histories` has `deleted\_at`.
-
-\- [ ] `payment\_submissions` has `deleted\_at`.
-
-\- [ ] Historical models are not deleted by normal workflow; Trash is explicit/admin-controlled.
-
-\- [ ] Guest Orders allow \`user\_id = null\`.
-
-\- [ ] Auth Customer Orders link \`user\_id\`.
-
-\- [ ] Every Order stores buyer/shipping snapshot.
-
-\- [ ] Agent assignment is nullable.
-
-\- [ ] Product has simple \`stock\_quantity\`.
-
-\- [ ] Product \`slug\` unique.
-
-\- [ ] Product \`sku\` unique.
-
-\- [ ] Order number unique.
-
-\- [ ] Coupon code unique.
-
-\- [ ] Payment Method code unique.
-
-\- [ ] Order has max one PaymentSubmission in P0.
-
-\- [ ] \`payment\_submissions.order\_id\` unique.
-
-\- [ ] \`transaction\_id\` is not unique.
-
-\- [ ] OrderItem stores Product snapshots.
-
-\- [ ] OrderHistory is append-oriented.
-
-\- [ ] Payment verifier is nullable User.
-
-\- [ ] Coupon identity + code + discount history is preserved.
-
-\- [ ] No P0 Cart tables.
-
-\- [ ] No P0 Customer duplicate table.
-
-\- [ ] No variants.
-
-\- [ ] No warehouse ledger.
-
-\- [ ] No real gateway tables.
-
-\- [ ] Spatie tables come from package migrations.
-
-\- [ ] Media table comes from package migration.
-
-\- [ ] Historical child hard deletes are protected.
-
-\- [ ] Remaining business TBDs are not hidden in triggers.
-
-\- [ ] Every application-owned model has a documented Trash view.
-
-\- [ ] Trash queries use `onlyTrashed()`.
-
-\- [ ] Restore actions call `restore()`.
-
-\- [ ] Force Delete is not exposed in P0 by default.
-
-\---
-
-**# 75. Definition of Schema Complete**
-
-Database Schema is complete for P0 when the following are unambiguous:
-
-\`\`\`text
-
-Table names
-
-Column names
-
-Data types
-
-Nullable behavior
-
-Defaults
-
-Primary keys
-
-Foreign keys
-
-Unique constraints
-
-Indexes
-
-Composite indexes
-
-SoftDelete columns on every application-owned model
-
-Trash/Restore view contract
-
-FK delete actions
-
-Guest ownership behavior
-
-Agent assignment behavior
-
-Buyer snapshots
-
-Product snapshots
-
-Coupon persistence
-
-PaymentSubmission hasOne constraint
-
-Transaction ID non-unique TBD behavior
-
-Status storage
-
-Package table boundaries
-
-Migration dependency order
-
-Critical migration blueprints
-
-\`\`\`
-
-\---
-
-**# 76. Final Schema Summary**
-
-ShopPilot P0 physical data model is:
-
-\`\`\`text
-
-users
-
-    │
-
-    ├── orders.user\_id nullable
-
-    ├── orders.assigned\_agent\_id nullable
-
-    ├── order\_histories.user\_id nullable
-
-    └── payment\_submissions.verified\_by nullable
-
-categories
-
-    └── products
-
-            └── order\_items
-
-coupons
-
-    └── orders.coupon\_id nullable
-
-            + coupon\_code snapshot
-
-            + discount snapshot
-
-orders
-
-    ├── order\_items
-
-    ├── order\_histories
-
-    └── payment\_submissions 0..1
-
-payment\_methods
-
-    └── payment\_submissions
-
-\`\`\`
-
-Universal application persistence rule:
-
-\`\`\`text
-
-Every application-owned Eloquent model
-→ uses SoftDeletes
-→ has deleted_at
-→ has an authorized Trash view / Restore flow
-
-\`\`\`
-
-Historical models remain protected from normal workflow deletion.
-
-Critical P0 database invariants:
-
-\`\`\`text
-
-Guest Order:
-
-orders.user\_id may be NULL
-
-Authenticated Order:
-
-orders.user\_id references Customer User
-
-Every Order:
-
-buyer/shipping snapshot is stored
-
-Every OrderItem:
-
-product name/SKU/price snapshot is stored
-
-Order → PaymentSubmission:
-
-0..1 through UNIQUE(order\_id)
-
-Transaction ID:
-
-indexed but not UNIQUE while duplicate policy remains TBD
-
-Historical children:
-
-never cascade-destroyed
-
-Cart:
-
-Session only
-
-Stock:
-
-products.stock\_quantity
-
-Payment:
-
+```text
 submitted != verified
+```
 
-\`\`\`
+---
 
-\---
+# 22. Spatie Media Library `media` Table
 
-**# 77. Universal Application Model SoftDelete Contract**
+Use Spatie's published migration.
 
-Every application-owned ShopPilot model must implement:
+Do not redesign package columns.
 
-\`\`\`php
+ShopPilot collections:
 
-use Illuminate\Database\Eloquent\SoftDeletes;
+```text
+category_image
+product_thumbnail
+product_gallery
+admin_avatar     optional
+user_avatar      optional
+```
 
-\`\`\`
+No custom:
 
-Required models:
+```text
+product_images
+category_images
+```
 
-\`\`\`text
+tables are required.
 
+---
+
+# 23. Final Relationship Map
+
+```text
+ADMIN
+├── morphToMany ROLE via model_has_roles
+├── morphToMany PERMISSION via model_has_permissions
+├── hasMany ORDERS as assigned agent
+├── hasMany ORDER_HISTORIES as staff actor
+└── hasMany PAYMENT_SUBMISSIONS as verifier
+
+USER
+├── morphToMany ROLE via model_has_roles
+├── morphToMany PERMISSION via model_has_permissions
+├── hasMany ORDERS as authenticated customer
+└── hasMany ORDER_HISTORIES as customer actor
+
+ROLE
+├── belongsToMany PERMISSION via role_has_permissions
+└── morphToMany ADMIN / USER via model_has_roles
+
+PERMISSION
+├── belongsToMany ROLE via role_has_permissions
+└── morphToMany ADMIN / USER via model_has_permissions
+
+CATEGORY
+└── hasMany PRODUCTS
+
+PRODUCT
+└── belongsTo CATEGORY
+
+ORDER
+├── belongsTo USER nullable
+├── belongsTo ADMIN as assigned agent nullable
+├── belongsTo COUPON nullable
+├── hasMany ORDER_ITEMS
+├── hasMany ORDER_HISTORIES
+└── hasOne PAYMENT_SUBMISSION
+
+ORDER_ITEM
+├── belongsTo ORDER
+└── belongsTo PRODUCT
+
+ORDER_HISTORY
+├── belongsTo ORDER
+├── belongsTo ADMIN nullable
+└── belongsTo USER nullable
+
+PAYMENT_SUBMISSION
+├── belongsTo ORDER
+├── belongsTo PAYMENT_METHOD
+└── belongsTo ADMIN as verifier nullable
+```
+
+---
+
+# 24. Foreign-Key Matrix
+
+| Child Column | Parent | Nullable | On Delete |
+|---|---|---:|---|
+| `products.category_id` | `categories.id` | No | RESTRICT |
+| `orders.user_id` | `users.id` | Yes | SET NULL |
+| `orders.assigned_agent_id` | `admins.id` | Yes | SET NULL |
+| `orders.coupon_id` | `coupons.id` | Yes | SET NULL |
+| `order_items.order_id` | `orders.id` | No | RESTRICT |
+| `order_items.product_id` | `products.id` | No | RESTRICT |
+| `order_histories.order_id` | `orders.id` | No | RESTRICT |
+| `order_histories.admin_id` | `admins.id` | Yes | SET NULL |
+| `order_histories.user_id` | `users.id` | Yes | SET NULL |
+| `payment_submissions.order_id` | `orders.id` | No | RESTRICT |
+| `payment_submissions.payment_method_id` | `payment_methods.id` | No | RESTRICT |
+| `payment_submissions.verified_by_admin_id` | `admins.id` | Yes | SET NULL |
+
+Spatie pivot FK behavior remains package-defined.
+
+---
+
+# 25. Unique Constraints
+
+```text
+admins.email
+users.email
+roles(name, guard_name)              // Spatie
+permissions(name, guard_name)        // Spatie
+categories.slug
+products.slug
+products.sku
+coupons.code
+payment_methods.code
+orders.order_number
+payment_submissions.order_id
+```
+
+Not unique:
+
+```text
+payment_submissions.transaction_id
+```
+
+until duplicate transaction-ID policy is explicitly approved.
+
+---
+
+# 26. Universal SoftDelete Contract
+
+These models must use SoftDeletes:
+
+```text
+Admin
 User
-
+Role
+Permission
 Category
-
 Product
-
 Coupon
-
 PaymentMethod
-
 Order
-
 OrderItem
-
 OrderHistory
-
 PaymentSubmission
+```
 
-\`\`\`
+Normal query:
 
-Corresponding application tables must contain:
+```php
+Model::query();
+```
 
-\`\`\`text
+Trash:
 
-deleted_at TIMESTAMP NULL
+```php
+Model::onlyTrashed();
+```
 
-\`\`\`
+Include all:
 
-**## Required Model Behavior**
-
-Normal Eloquent queries exclude soft-deleted rows automatically.
-
-Trash query:
-
-\`\`\`php
-
-Model::onlyTrashed()
-
-\`\`\`
+```php
+Model::withTrashed();
+```
 
 Restore:
 
-\`\`\`php
-
+```php
 $model = Model::onlyTrashed()->findOrFail($id);
-
 $model->restore();
+```
 
-\`\`\`
+Force Delete:
 
-Use `withTrashed()` only when an authorized administrative screen intentionally needs active + deleted rows.
+```text
+Not enabled by default for P0.
+```
 
-**## Historical Safety**
+Historical models:
 
-For:
-
-\`\`\`text
-
+```text
 OrderItem
-
 OrderHistory
-
 PaymentSubmission
+```
 
-\`\`\`
+use SoftDeletes because this project requires universal Trash/Restore, but normal Order/Payment workflow must never delete them automatically.
 
-SoftDelete exists because the project requires universal model-level Trash/Restore capability.
+---
 
-However these workflows must never delete those rows automatically:
+# 27. Trash Blade View Contract
 
-\`\`\`text
+Each application management module must have a Trash page.
 
-Checkout
+Recommended views:
 
-Payment verification
-
-Order status transitions
-
-Normal reporting
-
-Normal Customer/Agent workflow
-
-\`\`\`
-
-\---
-
-**# 78. Trash Blade View Contract**
-
-Every application-owned model/module must have a Trash screen.
-
-Recommended Blade files:
-
-\`\`\`text
-
-resources/views/backoffice/staff/trash.blade.php
-
+```text
+resources/views/backoffice/admins/trash.blade.php
 resources/views/backoffice/customers/trash.blade.php
+resources/views/backoffice/roles/trash.blade.php
+resources/views/backoffice/permissions/trash.blade.php
 
 resources/views/backoffice/categories/trash.blade.php
-
 resources/views/backoffice/products/trash.blade.php
-
 resources/views/backoffice/coupons/trash.blade.php
-
 resources/views/backoffice/payment-methods/trash.blade.php
 
 resources/views/backoffice/orders/trash.blade.php
-
 resources/views/backoffice/order-items/trash.blade.php
-
 resources/views/backoffice/order-histories/trash.blade.php
-
 resources/views/backoffice/payments/trash.blade.php
+```
 
-\`\`\`
+Every Trash screen should support:
 
-`User` is one model used by Staff and Customer contexts, so separate Staff/Customer Trash screens may filter the same `users` table by role/context.
-
-**## Trash Blade Minimum UI**
-
-Each `trash.blade.php` should contain:
-
-\`\`\`text
-
-Page title
-
-Trashed item list/table
-
-Relevant identifier/name
-
+```text
+Title / Trash Bin
+Search
+Filter where useful
 Deleted At
-
-Search/filter where useful
-
+Relevant name / identifier
 Restore action
-
+Bulk restore where useful
 Back to active list
+Pagination
+Empty state
+```
 
-Empty Trash state
+Suggested active list toolbar inspired by the provided Admin UI:
 
-Pagination where useful
+```text
++ Add New
+Trash Bin
+Bulk Actions
+Search / Filter
+Reset
+```
 
-\`\`\`
+---
 
-Example:
+# 28. Trash Routes / Restore Pattern
 
-\`\`\`blade
+Recommended pattern:
 
-<form method="POST" action="{{ route('admin.products.restore', $product->id) }}">
-    @csrf
-    @method('PATCH')
-
-    <button type="submit">
-        Restore
-    </button>
-</form>
-
-\`\`\`
-
-Do not add a permanent-delete button in P0 by default.
-
-**## Query Rule**
-
-Trash pages must use:
-
-\`\`\`php
-
-Model::onlyTrashed()
-
-\`\`\`
-
-not `withTrashed()` unless the page intentionally displays both active and trashed records.
-
-\---
-
-**# 79. Trash Route / Restore Action Contract**
-
-Recommended route pattern:
-
-\`\`\`text
-
-GET   /<module>/trash
-
-PATCH /<module>/{id}/restore
-
-\`\`\`
+```text
+GET   /admin/<module>/trash
+PATCH /admin/<module>/{id}/restore
+```
 
 Example:
 
-\`\`\`php
-
+```php
 Route::get('/products/trash', [ProductController::class, 'trash'])
     ->name('products.trash');
 
 Route::patch('/products/{id}/restore', [ProductController::class, 'restore'])
     ->name('products.restore');
+```
 
-\`\`\`
+Controller:
 
-Controller pattern:
-
-\`\`\`php
-
+```php
 public function trash()
 {
     $items = Product::onlyTrashed()
@@ -4896,88 +1664,635 @@ public function restore(int $id)
 
     $product->restore();
 
-    return redirect()
-        ->route('admin.products.trash')
-        ->with('success', 'Product restored successfully.');
+    return back()->with('success', 'Product restored successfully.');
 }
+```
 
-\`\`\`
+Role/Permission restore must also clear Spatie cache.
 
-**## Authorization Rule**
+Example:
 
-Trash/Restore is never public.
+```php
+$role->restore();
 
-Use:
+app(\Spatie\Permission\PermissionRegistrar::class)
+    ->forgetCachedPermissions();
+```
 
-\`\`\`text
+---
 
-Authentication
-→ Permission / Role
-→ Policy
-→ Restore
+# 29. Admin / Role / Permission Trash Notes
 
-\`\`\`
+## Admin
 
-Existing explicit restore permissions:
+```text
+SoftDelete Admin
+→ admin cannot authenticate normally
+→ role pivot records remain
+→ restoring Admin preserves role assignments
+```
 
-\`\`\`text
+## Role
 
-categories.restore
+```text
+SoftDelete Role
+→ model_has_roles rows remain
+→ normal Spatie Role queries exclude trashed Role
+→ restoring Role can reactivate old assignments
+```
 
+Protect:
+
+```text
+super_admin
+```
+
+from accidental trash by application rule.
+
+## Permission
+
+```text
+SoftDelete Permission
+→ role_has_permissions/model_has_permissions rows remain
+→ normal Permission queries exclude trashed Permission
+→ restore + clear cache
+```
+
+Because DB uniqueness remains:
+
+```text
+(name, guard_name)
+```
+
+restore a trashed Role/Permission instead of creating the same name again.
+
+---
+
+# 30. Checkout / Order Ownership
+
+Guest:
+
+```text
+orders.user_id = NULL
+```
+
+Authenticated Customer:
+
+```text
+orders.user_id = users.id
+```
+
+Assigned Agent:
+
+```text
+orders.assigned_agent_id = admins.id
+```
+
+Buyer snapshot always stored:
+
+```text
+buyer_name
+buyer_phone
+buyer_email
+shipping_address
+city_or_area
+```
+
+Agent assignment does not change buyer ownership.
+
+---
+
+# 31. Order Item Snapshot
+
+Every `order_items` row preserves:
+
+```text
+product_name
+sku
+unit_price
+quantity
+line_total
+```
+
+Historical Order display must not depend only on current Product values.
+
+---
+
+# 32. Payment Verification Ownership
+
+Payment Submission begins:
+
+```text
+status = submitted
+verified_by_admin_id = NULL
+verified_at = NULL
+```
+
+Authorized staff verification:
+
+```text
+verified_by_admin_id = auth('admin')->id()
+status = verified
+verified_at = now()
+```
+
+Rejection:
+
+```text
+verified_by_admin_id = auth('admin')->id()
+status = rejected
+verified_at = now()
+rejection_note = ...
+```
+
+Order:
+
+```text
+orders.payment_status
+```
+
+must be synchronized by `PaymentService`.
+
+Do not automatically change `order_status` on rejection until that business rule is explicitly approved.
+
+---
+
+# 33. Migration Order
+
+Recommended:
+
+```text
+01 users
+02 admins
+03 Spatie create_permission_tables
+04 alter roles/permissions: group_name + deleted_at
+05 Spatie media table
+06 categories
+07 products
+08 coupons
+09 payment_methods
+10 orders
+11 order_items
+12 order_histories
+13 payment_submissions
+14 optional framework tables
+```
+
+Exact migration timestamps may vary.
+
+FK parent tables must exist before child tables.
+
+---
+
+# 34. Seeder Requirements
+
+## Roles
+
+Admin guard:
+
+```text
+super_admin
+admin
+manager
+agent
+```
+
+Web guard:
+
+```text
+customer
+```
+
+## Super Admin
+
+Seed one bootstrap Admin.
+
+Example concept:
+
+```text
+admins row
++
+super_admin role
+```
+
+Do not store the role ID directly on `admins`.
+
+## Payment Methods
+
+Seed:
+
+```text
+bkash
+nagad
+rocket
+```
+
+with safe development values.
+
+## Permissions
+
+Use grouped permissions.
+
+Example:
+
+```text
+Group: Admins
+staff.view
+staff.create
+staff.update
+staff.delete
+staff.restore
+
+Group: Products
+products.view
+products.create
+products.update
+products.delete
 products.restore
 
+Group: Orders
+orders.view
+orders.update
+orders.assign
+orders.cancel
 orders.restore
 
-\`\`\`
+Group: Payments
+payments.view
+payments.verify
+payments.reject
+```
 
-For modules without a documented dedicated restore permission:
+Exact permission catalogue remains synchronized with:
 
-\`\`\`text
+```text
+04-USER-ROLES-AND-PERMISSIONS.md
+```
 
-Admin-only restore
+---
 
-\`\`\`
+# 35. Model Skeletons
 
-until the permission catalogue is intentionally expanded.
+## Admin
 
-**## Force Delete**
+```php
+namespace App\Models;
 
-P0 rule:
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Traits\HasRoles;
 
-\`\`\`text
+class Admin extends Authenticatable
+{
+    use HasRoles, SoftDeletes;
 
-No public/backoffice force-delete route.
+    protected string $guard_name = 'admin';
+}
+```
 
-No permanent-delete button.
+## User
 
-No forceDelete() workflow by default.
+```php
+namespace App\Models;
 
-\`\`\`
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Traits\HasRoles;
 
-This keeps Trash recoverable and protects historical data.
+class User extends Authenticatable
+{
+    use HasRoles, SoftDeletes;
 
-\---
+    protected string $guard_name = 'web';
+}
+```
 
-**# 80. Next Documentation**
+## Role
 
-Next document:
+```php
+namespace App\Models;
 
-\`\`\`text
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-09-APPLICATION-FLOW\.md
+class Role extends SpatieRole
+{
+    use SoftDeletes;
+}
+```
 
-\`\`\`
+## Permission
 
-Then:
+```php
+namespace App\Models;
 
-\`\`\`text
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Models\Permission as SpatiePermission;
 
-10-FOLDER-STRUCTURE.md
+class Permission extends SpatiePermission
+{
+    use SoftDeletes;
+}
+```
 
+All remaining application models also use:
+
+```php
+use SoftDeletes;
+```
+
+---
+
+# 36. Important Spatie Rules
+
+Do not modify these package pivot structures without need:
+
+```text
+model_has_roles
+model_has_permissions
+role_has_permissions
+```
+
+Spatie's morph relation supports both:
+
+```text
+App\Models\Admin
+App\Models\User
+```
+
+Guard must match:
+
+```text
+Admin model
+→ admin guard
+
+User model
+→ web guard
+```
+
+After Role/Permission create/update/delete/restore:
+
+```php
+app(\Spatie\Permission\PermissionRegistrar::class)
+    ->forgetCachedPermissions();
+```
+
+---
+
+# 37. Important Indexes
+
+Recommended:
+
+```text
+admins.email UNIQUE
+admins.status INDEX
+
+users.email UNIQUE
+
+permissions.group_name INDEX
+
+categories.slug UNIQUE
+categories.status INDEX
+
+products.slug UNIQUE
+products.sku UNIQUE
+products(category_id, status)
+products(status, featured)
+
+coupons.code UNIQUE
+coupons(status, end_date)
+
+payment_methods.code UNIQUE
+
+orders.order_number UNIQUE
+orders.user_id INDEX
+orders.assigned_agent_id INDEX
+orders.order_status INDEX
+orders.payment_status INDEX
+orders(user_id, created_at)
+orders(assigned_agent_id, order_status)
+
+order_items.order_id INDEX
+order_items.product_id INDEX
+
+order_histories.order_id INDEX
+order_histories.admin_id INDEX
+order_histories.user_id INDEX
+order_histories(order_id, created_at)
+
+payment_submissions.order_id UNIQUE
+payment_submissions.payment_method_id INDEX
+payment_submissions.transaction_id INDEX
+payment_submissions.status INDEX
+payment_submissions.verified_by_admin_id INDEX
+```
+
+---
+
+# 38. SoftDelete / Unique Constraint Note
+
+SoftDelete does not remove a row physically.
+
+Therefore these unique values remain reserved while trashed:
+
+```text
+admins.email
+users.email
+roles(name, guard_name)
+permissions(name, guard_name)
+categories.slug
+products.slug
+products.sku
+coupons.code
+payment_methods.code
+orders.order_number
+```
+
+Recommended behavior:
+
+```text
+Restore existing trashed record
+```
+
+rather than creating a duplicate with the same unique value.
+
+---
+
+# 39. Critical Schema Tests
+
+Must test:
+
+```text
+Admin can receive admin-guard role through Spatie.
+User can receive web-guard customer role.
+Guard mismatch is rejected.
+
+Admin soft delete hides Admin from normal query.
+Admin restore works and preserves role pivot.
+
+Role soft delete hides Role.
+Role restore works and Spatie cache is cleared.
+
+Permission soft delete hides Permission.
+Permission restore works and cache is cleared.
+
+Guest Order accepts user_id = NULL.
+Customer Order links users.id.
+
+Agent assignment references admins.id.
+Non-existing Admin agent FK fails.
+
+OrderHistory can store Admin actor.
+OrderHistory can store User actor.
+Guest/System history can have both actor IDs NULL.
+
+Payment verifier references admins.id.
+Payment submission starts submitted.
+submitted != verified.
+
+Second PaymentSubmission for same Order fails UNIQUE(order_id).
+Duplicate transaction_id is not blocked globally by DB.
+
+Every application model supports onlyTrashed().
+Every management module has Trash view.
+Restore returns record to normal query.
+```
+
+---
+
+# 40. Final Canonical Schema Summary
+
+```text
+admins
+├── Super Admin
+├── Admin
+├── Manager
+└── Agent
+    ↓
+Spatie Role / Permission
+guard = admin
+
+users
+└── Customer
+    ↓
+Spatie Role / Permission
+guard = web
+
+Guest
+└── No account required
+```
+
+Core relations:
+
+```text
+admins
+├── assigned Orders
+├── OrderHistory staff actor
+└── Payment verifier
+
+users
+├── Customer Orders
+└── OrderHistory customer actor
+
+orders
+├── user_id → users.id nullable
+├── assigned_agent_id → admins.id nullable
+├── coupon_id → coupons.id nullable
+├── hasMany order_items
+├── hasMany order_histories
+└── hasOne payment_submission
+```
+
+Spatie:
+
+```text
+roles
+permissions
+model_has_roles
+model_has_permissions
+role_has_permissions
+```
+
+Custom Spatie extensions:
+
+```text
+roles.deleted_at
+permissions.group_name
+permissions.deleted_at
+```
+
+Universal project rule:
+
+```text
+Admin
+User
+Role
+Permission
+Category
+Product
+Coupon
+PaymentMethod
+Order
+OrderItem
+OrderHistory
+PaymentSubmission
+
+→ all use SoftDeletes
+→ all have Trash/Restore management
+```
+
+Package pivots/media/framework tables:
+
+```text
+No forced SoftDelete requirement.
+```
+
+Critical invariants:
+
+```text
+Guest checkout does not require login.
+Guest Order user_id may be NULL.
+Customer Order user_id references users.id.
+Agent references admins.id.
+Payment verifier references admins.id.
+Buyer snapshots are stored.
+Product snapshots are stored.
+Cart is Session-based.
+Payment submitted != verified.
+Order status and Payment status remain separate.
+Order hasOne PaymentSubmission.
+transaction_id is indexed but not globally unique.
+Historical rows are never cascade-destroyed.
+```
+
+---
+
+# 41. Documentation Sync Status
+
+The project documentation set has been synchronized to this schema-v2 contract.
+
+Primary synchronized documents:
+
+```text
+01-PROJECT-OVERVIEW-UPDATED.md
+ShopPilot-02-PRD.md
+ShopPilot-03-FEATURES.md
+ShopPilot-04-USER-ROLES-AND-PERMISSIONS.md
+ShopPilot-05-BUSINESS-RULES.md
+ShopPilot-06-ARCHITECTURE.md
+ShopPilot-07-DATABASE-ERD.md
+ShopPilot-08-DATABASE-SCHEMA.md
+ShopPilot-09-APPLICATION-FLOW.md
+ShopPilot-10-FOLDER-STRUCTURE.md
 AGENTS.md
-
 README.md
+```
 
-\`\`\`
+Canonical identity split:
 
-> **Documentation Sync Note:** This revision changes SoftDelete scope from selected models to every application-owned model. `10-FOLDER-STRUCTURE.md` and `AGENTS.md` should be updated next so their Trash/Restore conventions match this schema.
+```text
+Admin / Manager / Agent → Admin model → admins → admin guard
+Customer                → User model  → users  → web guard
+```
+
+`ShopPilot-08-DATABASE-SCHEMA.md` is the canonical physical database design; `ShopPilot-database-schema-v2.md` is retained as the v2 source/reference copy.

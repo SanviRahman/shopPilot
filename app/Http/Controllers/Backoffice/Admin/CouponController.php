@@ -68,7 +68,7 @@ class CouponController extends Controller
         return redirect()->route('admin.coupons.index')->with('success', 'Coupon created successfully.');
     }
 
-    public function show(Request $request, Coupon $coupon): View|JsonResponse
+    public function show(Request $request, Coupon $coupon): JsonResponse|RedirectResponse
     {
         $this->authorizeAction('coupons.view');
 
@@ -78,10 +78,11 @@ class CouponController extends Controller
                 'coupon' => [
                     'id' => $coupon->id,
                     'code' => $coupon->code,
-                    'type' => ucfirst($coupon->type),
-                    'value' => $coupon->value,
-                    'min_order_amount' => $coupon->min_order_amount ?? 'N/A',
-                    'expires_at' => optional($coupon->expires_at)->format('d M Y, h:i A') ?? 'No Expiry',
+                    'discount_type' => ucfirst($coupon->discount_type),
+                    'discount_value' => $coupon->discount_value,
+                    'minimum_order_amount' => $coupon->minimum_order_amount,
+                    'start_date' => optional($coupon->start_date)->format('d M Y, h:i A'),
+                    'end_date' => optional($coupon->end_date)->format('d M Y, h:i A'),
                     'status' => ucfirst($coupon->status),
                     'created_at' => optional($coupon->created_at)->format('d M Y, h:i A'),
                     'updated_at' => optional($coupon->updated_at)->format('d M Y, h:i A'),
@@ -89,7 +90,7 @@ class CouponController extends Controller
             ]);
         }
 
-        return view('backoffice.admin.coupons.show', compact('coupon'));
+        return redirect()->route('admin.coupons.index');
     }
 
     public function edit(Request $request, Coupon $coupon): JsonResponse|View
@@ -102,10 +103,11 @@ class CouponController extends Controller
                 'coupon' => [
                     'id' => $coupon->id,
                     'code' => $coupon->code,
-                    'type' => $coupon->type,
-                    'value' => $coupon->value,
-                    'min_order_amount' => $coupon->min_order_amount,
-                    'expires_at' => optional($coupon->expires_at)->format('Y-m-d\TH:i'),
+                    'discount_type' => $coupon->discount_type,
+                    'discount_value' => $coupon->discount_value,
+                    'minimum_order_amount' => $coupon->minimum_order_amount,
+                    'start_date' => optional($coupon->start_date)->format('Y-m-d\TH:i'),
+                    'end_date' => optional($coupon->end_date)->format('Y-m-d\TH:i'),
                     'status' => $coupon->status,
                 ],
             ]);
@@ -187,6 +189,7 @@ class CouponController extends Controller
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Invalid bulk action.'], 422);
             }
+
             return back()->withErrors(['action' => 'Invalid bulk action.']);
         }
 

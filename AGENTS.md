@@ -13,6 +13,8 @@
 > **Payment:** Manual bKash / Nagad / Rocket Submission  
 > **Primary Goal:** Complete, secure, practice-oriented 13-day Laravel build  
 > **Status:** Coding-Agent Instruction File  
+> **Schema Alignment:** Follow synchronized `docs/ShopPilot-08-DATABASE-SCHEMA.md` / `ShopPilot-database-schema-v2.md` v2.0. Staff identity is `Admin`/`admins`/`admin` guard; Customer identity is `User`/`users`/`web` guard.
+
 > **Applies To:** Claude Code, Codex, ChatGPT coding agents, IDE agents, and human contributors using AI assistance  
 > **Version:** 1.0  
 > **Language:** English + Bangla  
@@ -579,7 +581,7 @@ is valid.
 Authenticated Customer Order:
 
 ```text
-orders.user_id = auth()->id()
+orders.user_id = auth('web')->id()
 ```
 
 ---
@@ -680,7 +682,7 @@ separate.
 Customer can only access own Order:
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 ---
@@ -690,7 +692,7 @@ order.user_id == auth()->id()
 Agent can only process assigned Order by default:
 
 ```text
-order.assigned_agent_id == auth()->id()
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 ---
@@ -763,6 +765,16 @@ Optional Queue Job
 ```
 
 System actions do not bypass business rules.
+
+Canonical identity/auth mapping:
+
+```text
+Admin / Manager / Agent → App\Models\Admin → admins → admin guard
+Customer                → App\Models\User  → users  → web guard
+Guest                   → no account row required
+```
+
+Never compare `orders.assigned_agent_id` or `payment_submissions.verified_by_admin_id` to a web-guard Customer ID.
 
 ---
 
@@ -979,7 +991,7 @@ These permissions do not grant global Order access.
 Mandatory policy condition:
 
 ```text
-order.assigned_agent_id == auth()->id()
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 Agent does not receive by default:
@@ -1048,6 +1060,7 @@ dashboard.view
 
 users.view
 users.update
+# users.* applies only to customer User records; staff accounts use staff.* on Admin.
 
 customers.view
 
@@ -1404,14 +1417,17 @@ ValidOrderStatusTransition
 Core application Models:
 
 ```text
+Admin
 User
+Role
+Permission
 Category
 Product
 Coupon
+PaymentMethod
 Order
 OrderItem
 OrderHistory
-PaymentMethod
 PaymentSubmission
 ```
 
@@ -1729,10 +1745,13 @@ Do not use `FLOAT` / `DOUBLE` for authoritative money.
 
 # 36. Core Tables
 
-Application-owned P0:
+Application/authentication P0 tables:
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
@@ -1743,16 +1762,16 @@ order_histories
 payment_submissions
 ```
 
-Package-managed:
+Package-managed supporting tables:
 
 ```text
-roles
-permissions
 model_has_roles
 model_has_permissions
 role_has_permissions
 media
 ```
+
+`Role` and `Permission` use custom application models extending Spatie; the polymorphic pivot tables remain package-owned.
 
 Framework/configuration-dependent:
 
@@ -1901,26 +1920,24 @@ Historical OrderHistory is append-oriented.
 
 # 39. SoftDelete Rules
 
-SoftDelete-enabled:
+Every canonical application-owned model uses SoftDeletes:
 
 ```text
-users
-categories
-products
-coupons
-orders
-payment_methods
+Admin              → admins
+User               → users
+Role               → roles
+Permission         → permissions
+Category           → categories
+Product            → products
+Coupon             → coupons
+PaymentMethod      → payment_methods
+Order              → orders
+OrderItem          → order_items
+OrderHistory       → order_histories
+PaymentSubmission  → payment_submissions
 ```
 
-Historical tables do not use SoftDelete:
-
-```text
-order_items
-order_histories
-payment_submissions
-```
-
-Never cascade-delete historical Order data.
+Historical tables still remain preservation-oriented in normal workflow. Never cascade-delete historical Order data.
 
 Force delete is not a P0 requirement.
 
@@ -2225,7 +2242,7 @@ At successful manual MFS Checkout:
 ```text
 PaymentSubmission.status = submitted
 Order.payment_status = submitted
-verified_by = null
+verified_by_admin_id = null
 verified_at = null
 ```
 
@@ -2251,7 +2268,7 @@ Verify:
 
 ```text
 status = verified
-verified_by = staff user id
+verified_by_admin_id = auth('admin')->id()
 verified_at = now()
 ```
 
@@ -2259,7 +2276,7 @@ Reject:
 
 ```text
 status = rejected
-verified_by = staff user id
+verified_by_admin_id = auth('admin')->id()
 verified_at = now()
 rejection_note = ...
 ```
@@ -2340,7 +2357,7 @@ AssignOrderRequest
    ↓
 OrderAssignmentService
    ↓
-Validate selected User is eligible Agent
+Validate selected `Admin` record has the `agent` role on the `admin` guard
    ↓
 Set assigned_agent_id
    ↓
@@ -2449,7 +2466,7 @@ Customer route must require authentication.
 Order detail must enforce:
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 Direct ID guessing must not bypass Policy.
@@ -2575,7 +2592,7 @@ Never trust client input for authoritative fields such as:
 ```text
 payment_status
 order_status
-verified_by
+verified_by_admin_id
 verified_at
 assigned_agent_id
 grand_total
@@ -2671,13 +2688,11 @@ AdminUserSeeder
 PaymentMethodSeeder
 ```
 
-Seed roles:
+Seed roles by guard:
 
 ```text
-Admin
-Manager
-Agent
-Customer
+admin guard → super_admin, admin, manager, agent
+web guard   → customer
 ```
 
 Do not seed:
@@ -3269,7 +3284,7 @@ unless a concrete approved need appears.
 
 ## Spatie Permission
 
-Use package-managed:
+Use Spatie's published base tables/migrations:
 
 ```text
 roles
@@ -3279,7 +3294,7 @@ model_has_permissions
 role_has_permissions
 ```
 
-Do not custom-rebuild RBAC tables.
+ShopPilot uses custom `App\Models\Role` and `App\Models\Permission` classes extending Spatie, plus an additive migration for approved fields/SoftDeletes on `roles` and `permissions`. Do not recreate or fork Spatie's base RBAC tables; the pivot tables remain package-owned and do not use ShopPilot SoftDeletes.
 
 ---
 
@@ -3547,7 +3562,10 @@ Permission != ownership.
 # 99. Quick Reference — Critical Tables
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
@@ -3583,7 +3601,7 @@ payment_submissions.order_id
 payment_submissions.transaction_id
 → indexed, not globally unique
 
-payment_submissions.verified_by
+payment_submissions.verified_by_admin_id
 → nullable until staff action
 ```
 

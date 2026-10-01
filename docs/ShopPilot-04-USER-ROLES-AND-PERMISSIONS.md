@@ -11,7 +11,9 @@
 > **Authenticated Roles:** Admin, Manager, Agent, Customer  
 > **Public Actor:** Guest Customer / Visitor  
 > **Document Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Role & Permission Definition  
 > **Next Document:** `05-BUSINESS-RULES.md`
 
@@ -149,7 +151,32 @@ Agent
 Customer
 ```
 
-These users exist in the application `users` model and may use Spatie roles.
+Authentication storage is intentionally split:
+
+```text
+Admin / Manager / Agent
+→ App\Models\Admin
+→ admins table
+→ admin guard
+→ Spatie guard_name = admin
+
+Customer
+→ App\Models\User
+→ users table
+→ web guard
+→ Spatie guard_name = web
+```
+
+Canonical role names by guard:
+
+```text
+admin guard: super_admin, admin, manager, agent
+web guard:   customer
+```
+
+`super_admin` is a protected bootstrap role on the `admin` guard. It is not a separate business actor in the UI matrix; it represents the highest Admin-side access level and must receive the intended protected administrative permissions during seeding.
+
+Do not add `role_id` columns to `admins` or `users`; Spatie polymorphic pivots own role assignment.
 
 ## 3.2 Public Actor
 
@@ -239,6 +266,8 @@ dashboard.view
 users.view
 users.update
 ```
+
+`users.*` refers only to customer `User` records in the `users` table. Staff account management uses `staff.*` and targets the `Admin` model / `admins` table.
 
 ## Customers
 
@@ -459,7 +488,7 @@ Important:
 `OrderPolicy` must scope Agent access to:
 
 ```text
-order.assigned_agent_id == authenticated_agent.id
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 unless a broader permission/business decision is explicitly introduced later.
@@ -1408,7 +1437,7 @@ Permission and Policy must work together.
 Rule:
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 for authenticated Customer Order access.
@@ -1444,7 +1473,7 @@ user_id = null
 Default Agent resource rule:
 
 ```text
-order.assigned_agent_id == auth()->id()
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 Required for:
@@ -1612,7 +1641,7 @@ Protected backend request:
 ```text
 Request
    ↓
-Authenticate User
+Authenticate account with the correct guard (`admin` for staff, `web` for Customer)
    ↓
 Check Role Context
    ↓
@@ -1769,7 +1798,7 @@ Agent
 Customer
 ```
 
-roles to application users.
+roles to the appropriate authenticatable model (`Admin` or `User`) through Spatie polymorphic pivots.
 
 ## Manager
 
@@ -1971,8 +2000,9 @@ Do not create speculative permissions for out-of-scope modules.
 # 49. Implementation Checklist
 
 - [ ] Install/configure Spatie Laravel Permission.
-- [ ] Add `HasRoles` to User model.
-- [ ] Seed Admin, Manager, Agent, Customer roles.
+- [ ] Add `HasRoles` to both `Admin` and `User` models.
+- [ ] Configure `admin` guard → `Admin`/`admins` and `web` guard → `User`/`users`.
+- [ ] Seed `super_admin`, `admin`, `manager`, `agent` with `guard_name=admin` and `customer` with `guard_name=web`.
 - [ ] Seed explicit permission catalogue.
 - [ ] Assign full explicit permissions to Admin.
 - [ ] Assign default operational permissions to Manager.

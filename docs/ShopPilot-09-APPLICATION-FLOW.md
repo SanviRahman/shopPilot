@@ -21,7 +21,9 @@
 > **Cart:** Session-Based  
 > **Payment:** Manual bKash / Nagad / Rocket Submission  
 > **Document Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Implementation-Ready Application Flow Definition  
 > **Next Document:** `10-FOLDER-STRUCTURE.md`
 
@@ -250,6 +252,23 @@ Admin
 Manager
 Agent
 System
+```
+
+Authentication context:
+
+```text
+Admin / Manager / Agent
+→ auth('admin')
+→ App\Models\Admin
+→ admins.id
+
+Customer
+→ auth('web')
+→ App\Models\User
+→ users.id
+
+Guest
+→ no authenticated model
 ```
 
 ## Guest Customer
@@ -751,11 +770,11 @@ Guest Checkout must not force registration.
 ```text
 CheckoutService
     ↓
-Check authenticated User
+Check authenticated Customer on the `web` guard
     ↓
 [IF authenticated Customer]
     → Buyer Type = Customer
-    → user_id = auth()->id()
+    → user_id = auth('web')->id()
 
 [ELSE]
     → Buyer Type = Guest
@@ -839,7 +858,7 @@ CheckoutService
 Atomic Checkout Transaction
         ↓
 Order:
-user_id = auth()->id()
+user_id = auth('web')->id()
 buyer snapshot = final checkout values
         ↓
 Thank You
@@ -1205,7 +1224,7 @@ payment_method_id = selected active method
 transaction_id = submitted value
 amount = applicable submitted amount
 status = submitted
-verified_by = null
+verified_by_admin_id = null
 verified_at = null
 ```
 
@@ -1345,7 +1364,7 @@ Own Order Details
 Order lookup must remain scoped to:
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 ---
@@ -1360,7 +1379,7 @@ My Orders Route
 Authentication
         ↓
 Query:
-orders.user_id = auth()->id()
+orders.user_id = auth('web')->id()
         ↓
 Paginated Customer Orders
         ↓
@@ -1386,7 +1405,7 @@ OrderPolicy
         ↓
 Check ownership
         ↓
-[IF order.user_id == auth()->id()]
+[IF order.user_id == auth('web')->id()]
     → Load Order
     → Load OrderItems
     → Load payment display state
@@ -1533,9 +1552,9 @@ Cancelled
 # 45. Role-Aware Dashboard Flow
 
 ```text
-Authenticated User
+Authenticated Account
         ↓
-Resolve Role / Context
+Resolve guard + role/context
         ↓
 Admin
     → Admin Dashboard
@@ -1713,7 +1732,7 @@ Validate current submission state
         ↓
 Update PaymentSubmission:
 status = verified
-verified_by = staff id
+verified_by_admin_id = auth('admin')->id()
 verified_at = now()
         ↓
 Update Order:
@@ -1753,7 +1772,7 @@ PaymentService
         ↓
 Update PaymentSubmission:
 status = rejected
-verified_by = staff id
+verified_by_admin_id = auth('admin')->id()
 verified_at = now()
 rejection_note = ...
         ↓
@@ -1822,13 +1841,13 @@ Policy
         ↓
 AssignOrderRequest
         ↓
-Validate selected User exists
+Validate selected Admin account exists
         ↓
-Validate selected User is eligible Agent
+Validate selected Admin account has the `agent` role on the `admin` guard
         ↓
 OrderAssignmentService
         ↓
-orders.assigned_agent_id = Agent User ID
+orders.assigned_agent_id = selected Admin/Agent ID
         ↓
 Create OrderHistory:
 Assigned To Agent
@@ -1852,7 +1871,7 @@ orders.view
 OrderPolicy
         ↓
 Check:
-order.assigned_agent_id == auth()->id()
+order.assigned_agent_id == auth('admin')->id()
         ↓
 [PASS]
 Load assigned Order
@@ -2034,11 +2053,18 @@ Business Action succeeds
 OrderHistory row created
         ↓
 order_id
+admin_id nullable
 user_id nullable
 from_status nullable
 to_status nullable
 note
 created_at
+deleted_at nullable
+
+Actor mapping:
+Admin/Manager/Agent → admin_id only
+Customer            → user_id only
+Guest/System        → both actor IDs null
 ```
 
 History should be preserved.
@@ -2449,7 +2475,7 @@ Never mass-assign trusted server fields directly from client input, such as:
 ```text
 payment_status
 order_status
-verified_by
+verified_by_admin_id
 assigned_agent_id
 grand_total
 discount
@@ -2920,7 +2946,7 @@ sequenceDiagram
     HTTP->>PAY: verify(submission, staff)
     PAY->>DB: Validate current state
     PAY->>DB: Update PaymentSubmission = verified
-    PAY->>DB: Set verified_by + verified_at
+    PAY->>DB: Set verified_by_admin_id + verified_at
     PAY->>DB: Update Order.payment_status = verified
     PAY->>DB: Insert OrderHistory
     PAY-->>HTTP: Success

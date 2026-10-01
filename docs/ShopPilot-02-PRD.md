@@ -9,14 +9,16 @@
 > **Backend:** PHP + Laravel  
 > **Frontend:** Laravel Blade  
 > **Database:** MySQL  
-> **Roles:** Admin, Manager, Agent, User / Customer  
+> **Roles:** Admin, Manager, Agent, Customer  
 > **Public Buyer:** Guest Customer / Visitor  
 > **RBAC:** Spatie Laravel Permission  
 > **Media:** Spatie Laravel Media Library  
 > **Reusable Components:** Services, Observers, Traits, Console Commands, Custom Rules, Policies, Form Requests, Enums  
 > **Payment:** Manual bKash / Nagad / Rocket submission, optional COD  
 > **Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Implementation-Ready Product Requirements  
 > **Next:** `03-FEATURES.md`
 
@@ -177,6 +179,14 @@ System
 ```
 
 Guest Customer is a public buyer, not an authenticated RBAC role.
+
+Canonical authentication mapping:
+
+```text
+Admin / Manager / Agent → App\Models\Admin → admins → admin guard
+Customer                → App\Models\User  → users  → web guard
+Guest                   → no account row / no Spatie role
+```
 
 ---
 
@@ -448,6 +458,7 @@ dashboard.view
 users.view
 users.update
 
+# `users.*` applies to customer `User` records only; staff accounts live in `admins`.
 staff.view
 staff.create
 staff.update
@@ -925,7 +936,7 @@ payment_method_id
 transaction_id
 amount
 status
-verified_by
+verified_by_admin_id
 verified_at
 rejection_note
 ```
@@ -1044,7 +1055,7 @@ Order and Payment statuses are separate.
 Order preserves historical buyer data.
 
 ### ORDER-007
-Selected Order records may use SoftDelete.
+Order uses SoftDeletes under the canonical schema.
 
 ---
 
@@ -1155,16 +1166,20 @@ Suggested entity:
 order_histories
 ```
 
-Possible data:
+Canonical data:
 
 ```text
 order_id
+admin_id nullable
 user_id nullable
-from_status
-to_status
-note
+from_status nullable
+to_status nullable
+note nullable
 created_at
+deleted_at nullable
 ```
+
+Admin/Manager/Agent events use `admin_id`; Customer events use `user_id`; Guest/System events may leave both actor IDs null.
 
 ### HISTORY-001
 Order creation may create initial timeline event.
@@ -1482,26 +1497,24 @@ Enums define values; Service/Rule defines allowed transitions.
 
 # 42. Soft Delete Requirements
 
-Recommended SoftDeletes:
+Schema v2 requires SoftDeletes on every application-owned Eloquent model:
 
 ```text
-users
-categories
-products
-coupons
-orders
-payment_methods
+Admin              → admins
+User               → users
+Role               → roles
+Permission         → permissions
+Category           → categories
+Product            → products
+Coupon             → coupons
+PaymentMethod      → payment_methods
+Order              → orders
+OrderItem          → order_items
+OrderHistory       → order_histories
+PaymentSubmission  → payment_submissions
 ```
 
-Historical:
-
-```text
-order_items
-order_histories
-payment_submissions
-```
-
-should be preserved as required.
+Historical Order data remains append/preservation-oriented in normal workflow. SoftDelete does not authorize cascade destruction of historical children.
 
 ### SOFT-001
 Deleted Product hidden from Storefront.
@@ -1612,7 +1625,10 @@ Payment-method configuration protected.
 Application-owned entities:
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
@@ -1630,16 +1646,16 @@ addresses
 activity_logs
 ```
 
-Package-managed:
+Package-managed/supporting persistence:
 
 ```text
-roles
-permissions
 model_has_roles
 model_has_permissions
 role_has_permissions
 media
 ```
+
+`Role` and `Permission` are custom application models extending Spatie and are part of the application-owned SoftDelete contract.
 
 Framework:
 
@@ -1660,9 +1676,15 @@ Final physical schema belongs in:
 # 47. Logical Relationships
 
 ```text
+Admin
+├── hasMany Assigned Orders as Agent
+├── hasMany OrderHistories as staff actor
+├── hasMany PaymentSubmissions as verifier
+└── Roles / Permissions
+
 User
-├── hasMany Orders
-├── hasMany Assigned Orders
+├── hasMany Orders as authenticated Customer
+├── hasMany OrderHistories as Customer actor
 └── Roles / Permissions
 
 Category
@@ -1673,16 +1695,16 @@ Product
 
 Order
 ├── belongsTo Customer/User nullable
-├── belongsTo Assigned Agent/User nullable
+├── belongsTo Assigned Agent/Admin nullable
 ├── stores Buyer/Shipping Snapshot
 ├── hasMany OrderItems
 ├── hasMany OrderHistories
-└── hasOne / hasMany PaymentSubmission
+└── hasOne PaymentSubmission
 
 PaymentSubmission
 ├── belongsTo Order
 ├── belongsTo PaymentMethod
-└── belongsTo Verifier/User nullable
+└── belongsTo Verifier/Admin nullable
 ```
 
 ---
@@ -1738,7 +1760,7 @@ Product edits do not rewrite Order Item history.
 Important Order changes are traceable.
 
 ## BR-017 — Soft Delete
-Selected recoverable business records use SoftDeletes.
+All canonical application-owned Eloquent models use SoftDeletes; normal history-preservation rules still apply.
 
 ## BR-018 — Thank You Meaning
 Thank You confirms successful Order/payment-information submission, not independent provider verification.
@@ -1848,7 +1870,7 @@ Avoid obvious N+1 problems.
 Order creation should be atomic.
 
 ### NFR-007 — Recoverability
-SoftDelete where selected.
+SoftDeletes on every canonical application-owned Eloquent model.
 
 ### NFR-008 — Testability
 Critical flows require automated tests.

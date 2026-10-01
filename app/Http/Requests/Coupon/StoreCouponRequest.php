@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Coupon;
 
+use App\Models\Coupon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCouponRequest extends FormRequest
 {
@@ -11,15 +13,46 @@ class StoreCouponRequest extends FormRequest
         return auth('admin')->user()?->can('coupons.create') ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'code' => strtoupper(trim((string) $this->input('code'))),
+            'minimum_order_amount' => $this->filled('minimum_order_amount')
+                ? $this->input('minimum_order_amount')
+                : 0,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', 'unique:coupons,code'],
-            'type' => ['required', 'in:fixed,percentage'],
-            'value' => ['required', 'numeric', 'min:0'],
-            'min_order_amount' => ['nullable', 'numeric', 'min:0'],
-            'expires_at' => ['nullable', 'date'],
-            'status' => ['required', 'in:active,inactive,expired'],
+            'code' => ['required', 'string', 'max:80', 'unique:coupons,code'],
+            'discount_type' => ['required', Rule::in([Coupon::TYPE_FIXED, Coupon::TYPE_PERCENTAGE])],
+            'discount_value' => [
+                'required',
+                'numeric',
+                'gt:0',
+                Rule::when(
+                    $this->input('discount_type') === Coupon::TYPE_PERCENTAGE,
+                    ['max:100']
+                ),
+            ],
+            'minimum_order_amount' => ['required', 'numeric', 'min:0'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after:start_date'],
+            'status' => ['required', Rule::in([
+                Coupon::STATUS_ACTIVE,
+                Coupon::STATUS_INACTIVE,
+                Coupon::STATUS_EXPIRED,
+            ])],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'discount_value.max' => 'Percentage discount cannot be greater than 100%.',
+            'end_date.after' => 'End date must be after the start date.',
         ];
     }
 }

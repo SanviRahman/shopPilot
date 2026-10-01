@@ -21,7 +21,9 @@
 > **Payment:** Manual bKash / Nagad / Rocket Submission; optional COD  
 > **Queue:** Optional / P1 — not a core dependency  
 > **Document Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Approved Architecture Definition  
 > **Next Document:** `07-DATABASE-ERD.md`
 
@@ -766,7 +768,21 @@ Agent
 Customer
 ```
 
-Guest requires no authentication.
+Canonical authentication split:
+
+```text
+admin guard
+→ App\Models\Admin
+→ admins
+→ super_admin / admin / manager / agent
+
+web guard
+→ App\Models\User
+→ users
+→ customer
+```
+
+Guest requires no authentication and no database account.
 
 Authenticated account areas:
 
@@ -875,6 +891,8 @@ Manager
 Agent
 → Agent + assigned-resource Policy
 ```
+
+Staff route groups authenticate with the `admin` guard. Customer account routes authenticate with the `web` guard. Never compare an Admin-side ownership FK to the web-guard User ID.
 
 ---
 
@@ -1106,27 +1124,24 @@ Business Rules
 
 # 22. Eloquent Model Architecture
 
-Core application entities currently identified:
+Canonical application-owned Eloquent models:
 
 ```text
+Admin
 User
+Role
+Permission
 Category
 Product
 Coupon
+PaymentMethod
 Order
 OrderItem
 OrderHistory
-PaymentMethod
 PaymentSubmission
 ```
 
-Package-managed entities/tables:
-
-```text
-Role
-Permission
-Media
-```
+Package-managed persistence includes Spatie pivot tables and Media Library's `media` table. `Role` and `Permission` are custom application models extending Spatie and therefore follow the application SoftDelete contract.
 
 Final relationships/cardinality belong to ERD/Schema documents.
 
@@ -1143,7 +1158,7 @@ MySQL
 +
 Database Transactions
 +
-SoftDeletes where approved
+SoftDeletes on every canonical application-owned model
 ```
 
 No separate persistence microservice.
@@ -2637,7 +2652,7 @@ Architecture is acceptable when:
 - [ ] Order History preserves important changes.
 - [ ] Product/Order historical snapshots remain stable.
 - [ ] Media uses Spatie Media Library.
-- [ ] SoftDeletes are used only where approved.
+- [ ] Every canonical application-owned model uses SoftDeletes; historical child rows are still protected from cascade destruction.
 - [ ] Observers stay lightweight.
 - [ ] Traits stay genuinely reusable.
 - [ ] Console command reuses Service logic where appropriate.

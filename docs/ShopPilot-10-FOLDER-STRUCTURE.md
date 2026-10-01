@@ -20,7 +20,9 @@
 > **RBAC:** Spatie Laravel Permission  
 > **Media:** Spatie Laravel Media Library  
 > **Document Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Implementation-Ready Folder & File Placement Definition  
 > **Next Document:** `AGENTS.md`
 
@@ -468,14 +470,17 @@ shoppilot/
 │   │           └── VerifyPaymentRequest.php
 │   │
 │   ├── Models/
+│   │   ├── Admin.php
 │   │   ├── User.php
+│   │   ├── Role.php
+│   │   ├── Permission.php
 │   │   ├── Category.php
 │   │   ├── Product.php
 │   │   ├── Coupon.php
+│   │   ├── PaymentMethod.php
 │   │   ├── Order.php
 │   │   ├── OrderItem.php
 │   │   ├── OrderHistory.php
-│   │   ├── PaymentMethod.php
 │   │   └── PaymentSubmission.php
 │   │
 │   ├── Observers/
@@ -535,7 +540,9 @@ shoppilot/
 │   │
 │   ├── migrations/
 │   │   ├── *_create_users_table.php
+│   │   ├── *_create_admins_table.php
 │   │   ├── *_create_permission_tables.php
+│   │   ├── *_add_soft_delete_and_shop_pilot_fields_to_roles_permissions.php
 │   │   ├── *_create_media_table.php
 │   │   ├── *_create_categories_table.php
 │   │   ├── *_create_products_table.php
@@ -748,14 +755,17 @@ app/Models/
 P0 models:
 
 ```text
+Admin.php
 User.php
+Role.php
+Permission.php
 Category.php
 Product.php
 Coupon.php
+PaymentMethod.php
 Order.php
 OrderItem.php
 OrderHistory.php
-PaymentMethod.php
 PaymentSubmission.php
 ```
 
@@ -765,7 +775,7 @@ Responsibilities:
 Eloquent table mapping
 Relationships
 Casts
-SoftDeletes where approved
+SoftDeletes on every canonical application-owned model
 Media Library interfaces/traits where required
 Simple scopes
 Small model helpers
@@ -1403,7 +1413,7 @@ OrderController.php
 Agent OrderController is separate because Agent view/actions are strongly scoped to:
 
 ```text
-assigned_agent_id == auth()->id()
+assigned_agent_id == auth('admin')->id()
 ```
 
 It should call the same shared:
@@ -1717,6 +1727,9 @@ Application-owned migration order concept:
 
 ```text
 users
+admins
+Spatie permission tables
+additive Role/Permission customization migration
 categories
 products
 coupons
@@ -1777,16 +1790,14 @@ PaymentMethodSeeder.php
 
 ## RolePermissionSeeder
 
-Seeds:
+Seeds guard-specific roles:
 
 ```text
-Admin
-Manager
-Agent
-Customer
+admin guard → super_admin, admin, manager, agent
+web guard   → customer
 ```
 
-and approved permissions.
+and approved permissions with matching `guard_name`.
 
 Guest is not seeded as a Role.
 
@@ -1794,7 +1805,7 @@ Guest is not seeded as a Role.
 
 ## AdminUserSeeder
 
-Creates development/admin bootstrap account.
+Creates the development/bootstrap `Admin` record in `admins` and assigns the configured Admin-side role (normally `super_admin` for the bootstrap account). The legacy seeder filename may remain `AdminUserSeeder.php` until code cleanup.
 
 Credentials must not be hard-coded insecurely for production use.
 
@@ -2661,7 +2672,7 @@ DB Transaction
 
 ```text
 Order
-User
+Admin (target Agent)
 OrderHistory
 ```
 
@@ -2678,7 +2689,7 @@ OrderHistory
 PaymentSubmission
 PaymentMethod
 Order
-User
+Admin (verifier)
 OrderHistory
 ```
 
@@ -2694,7 +2705,10 @@ Read-only aggregate queries
 
 | Model | Table |
 |---|---|
+| `Admin` | `admins` |
 | `User` | `users` |
+| `Role` | `roles` |
+| `Permission` | `permissions` |
 | `Category` | `categories` |
 | `Product` | `products` |
 | `Coupon` | `coupons` |
@@ -2704,11 +2718,16 @@ Read-only aggregate queries
 | `PaymentMethod` | `payment_methods` |
 | `PaymentSubmission` | `payment_submissions` |
 
-Package:
+Package/application boundary:
 
 ```text
-Spatie Permission
+Spatie Permission base persistence
 → roles / permissions / model_has_* / role_has_permissions
+
+ShopPilot custom models
+→ App\Models\Role / App\Models\Permission
+→ extend Spatie models
+→ additive migration adds approved application fields + deleted_at
 
 Spatie Media Library
 → media
@@ -3050,6 +3069,15 @@ Do not force custom Auth Service unless actual logic requires it.
 
 Laravel authentication should remain framework-native.
 
+Canonical guard/provider mapping:
+
+```text
+admin guard → App\Models\Admin → admins
+web guard   → App\Models\User  → users
+```
+
+Admin/Manager/Agent route surfaces use the `admin` guard. Customer account routes use the `web` guard.
+
 ---
 
 # 73. Guest Checkout Placement
@@ -3094,7 +3122,7 @@ app/Policies/OrderPolicy.php
 Rule:
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 Supporting route:
@@ -3124,7 +3152,7 @@ OrderPolicy.php
 Rule:
 
 ```text
-order.assigned_agent_id == authenticated_agent.id
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 Agent routes:
@@ -3930,7 +3958,10 @@ Recommended folder/file implementation sequence aligned with the 13-day plan:
 ## Phase 1 — Foundation
 
 ```text
+app/Models/Admin.php
 app/Models/User.php
+app/Models/Role.php
+app/Models/Permission.php
 app/Enums/
 database/migrations/
 database/seeders/RolePermissionSeeder.php
@@ -4112,7 +4143,7 @@ AGENTS.md
 - [ ] No separate Customer model/table.
 - [ ] No inventory ledger.
 - [ ] No real gateway models.
-- [ ] Spatie tables are package-managed.
+- [ ] Spatie base RBAC tables/migrations remain package-managed; ShopPilot only adds approved Role/Permission model extensions and additive columns/SoftDeletes.
 - [ ] Media table is package-managed.
 - [ ] Migrations align with `08-DATABASE-SCHEMA.md`.
 

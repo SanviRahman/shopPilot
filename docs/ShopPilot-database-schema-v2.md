@@ -2267,29 +2267,32 @@ Historical rows are never cascade-destroyed.
 
 ---
 
-# 41. Documentation Sync Required
+# 41. Documentation Sync Status
 
-Because this schema changes the earlier single-`users` staff/customer design, these documents should be synchronized next:
+The project documentation set has now been synchronized to this schema-v2 contract.
+
+Synchronized documents:
 
 ```text
-04-USER-ROLES-AND-PERMISSIONS.md
-06-ARCHITECTURE.md
-07-DATABASE-ERD.md
-09-APPLICATION-FLOW.md
-10-FOLDER-STRUCTURE.md
+01-PROJECT-OVERVIEW-UPDATED.md
+ShopPilot-02-PRD.md
+ShopPilot-03-FEATURES.md
+ShopPilot-04-USER-ROLES-AND-PERMISSIONS.md
+ShopPilot-05-BUSINESS-RULES.md
+ShopPilot-06-ARCHITECTURE.md
+ShopPilot-07-DATABASE-ERD.md
+ShopPilot-08-DATABASE-SCHEMA.md
+ShopPilot-09-APPLICATION-FLOW.md
+ShopPilot-10-FOLDER-STRUCTURE.md
 AGENTS.md
 README.md
 ```
 
-Main sync change:
+Canonical identity split:
 
 ```text
-Old:
-Admin / Manager / Agent / Customer → users
-
-New:
-Admin / Manager / Agent → admins
-Customer → users
+Admin / Manager / Agent → Admin model → admins → admin guard
+Customer                → User model  → users  → web guard
 ```
 
-This `08-DATABASE-SCHEMA.md` is now the canonical physical database design for that new model separation.
+`ShopPilot-08-DATABASE-SCHEMA.md` is the canonical physical database design; this file is retained as the v2 source/reference copy.

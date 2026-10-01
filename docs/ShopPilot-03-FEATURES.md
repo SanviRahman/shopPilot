@@ -9,14 +9,16 @@
 > **Backend:** PHP + Laravel  
 > **Frontend:** Laravel Blade  
 > **Database:** MySQL  
-> **Roles:** Admin, Manager, Agent, User / Customer  
+> **Roles:** Admin, Manager, Agent, Customer  
 > **Public Buyer:** Guest Customer / Visitor  
 > **RBAC:** Spatie Laravel Permission  
 > **Media:** Spatie Laravel Media Library  
 > **Reusable Components:** Services, Observers, Traits, Console Commands, Custom Rules, Policies, Form Requests, Enums  
 > **Payment:** Manual bKash / Nagad / Rocket submission; optional COD  
 > **Document Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Feature Definition  
 > **Next Document:** `04-USER-ROLES-AND-PERMISSIONS.md`
 
@@ -123,6 +125,13 @@ System
 Important:
 
 > **Guest Customer is a public buyer, not an authenticated Spatie role.**
+
+Canonical authentication mapping:
+
+```text
+Admin / Manager / Agent → App\Models\Admin → admins → admin guard
+Customer                → App\Models\User  → users  → web guard
+```
 
 ---
 
@@ -1305,7 +1314,7 @@ payment_method_id
 transaction_id
 amount
 status
-verified_by
+verified_by_admin_id
 verified_at
 rejection_note
 ```
@@ -1430,7 +1439,7 @@ ORD-2026-000001
 **Priority:** P0
 
 ## FEAT-ORDER-013 — Order SoftDelete
-**Priority:** P0 if retained in final schema
+**Priority:** P0 — required by schema v2
 
 ---
 
@@ -1557,16 +1566,20 @@ Suggested entity:
 order_histories
 ```
 
-Possible data:
+Canonical data:
 
 ```text
 order_id
+admin_id nullable
 user_id nullable
-from_status
-to_status
-note
+from_status nullable
+to_status nullable
+note nullable
 created_at
+deleted_at nullable
 ```
+
+Admin/Manager/Agent history events use `admin_id`; Customer events use `user_id`; Guest/System events may leave both null.
 
 ## FEAT-HISTORY-001 — Order Created Entry
 **Priority:** P0
@@ -1652,22 +1665,28 @@ Order Updated
 
 # 33. Soft Delete Features
 
-Recommended resources:
+Required schema-v2 application models:
 
 ```text
-users
-categories
-products
-coupons
-orders
-payment_methods
+Admin
+User
+Role
+Permission
+Category
+Product
+Coupon
+PaymentMethod
+Order
+OrderItem
+OrderHistory
+PaymentSubmission
 ```
 
 ## FEAT-SOFT-001 — Soft Delete
-**Priority:** P0 where selected
+**Priority:** P0 for every canonical application-owned model
 
 ## FEAT-SOFT-002 — Restore
-**Priority:** P0 where selected
+**Priority:** P0 for management modules that expose Trash/Restore UI
 
 ## FEAT-SOFT-003 — Storefront Exclusion
 **Priority:** P0
@@ -1975,12 +1994,15 @@ Core Checkout and Order creation must not depend on unnecessary Queue complexity
 ## FEAT-SEC-010 — Protected Payment Status
 **Priority:** P0
 
-Customer/Guest cannot decide:
+Customer/Guest cannot decide authoritative Payment state:
 
 ```text
+submitted
 verified
-paid
+rejected
 ```
+
+Checkout creates `submitted`; only authorized Admin-side staff may transition a submission to `verified` or `rejected`.
 
 ## FEAT-SEC-011 — Internal Note Protection
 **Priority:** P0
@@ -2084,7 +2106,7 @@ Snapshot saved
 | Policy | Ownership / Authorization |
 | Request | Form Requests |
 | Enum | Status Enums |
-| SoftDelete | Selected recoverable resources |
+| SoftDelete | All canonical application-owned models |
 | Testing | Critical Feature Tests |
 
 ---

@@ -16,7 +16,9 @@
 > **RBAC:** Spatie Laravel Permission  
 > **Media:** Spatie Laravel Media Library  
 > **Document Version:** 1.0  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Approved Business Behavior Definition  
 > **Next Document:** `06-ARCHITECTURE.md`
 
@@ -547,7 +549,7 @@ Customer may access only own Orders.
 Ownership condition:
 
 ```text
-order.user_id == auth()->id()
+order.user_id == auth('web')->id()
 ```
 
 ---
@@ -686,7 +688,7 @@ Agent's primary domain is assigned Order processing.
 Default Agent resource condition:
 
 ```text
-order.assigned_agent_id == auth()->id()
+order.assigned_agent_id == auth('admin')->id()
 ```
 
 ---
@@ -831,7 +833,7 @@ Category management requires appropriate staff permission.
 
 ## BR-CAT-003 — Category Soft Delete
 
-Category may use SoftDelete according to approved scope.
+Category uses SoftDeletes under the canonical schema-v2 contract.
 
 ---
 
@@ -2002,16 +2004,24 @@ Guest has no authenticated dashboard.
 
 # 37. Soft Delete Rules
 
-Recommended SoftDeletes:
+Required schema-v2 SoftDeletes:
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
-orders
 payment_methods
+orders
+order_items
+order_histories
+payment_submissions
 ```
+
+Spatie pivot tables, Media Library's package `media` table, and framework tables are outside this universal application-owned SoftDelete contract.
 
 ## BR-SOFT-001 — Public Product Exclusion
 
@@ -2021,15 +2031,7 @@ Soft-deleted Product must not appear in normal Storefront.
 
 ## BR-SOFT-002 — Historical Children
 
-Historical data such as:
-
-```text
-order_items
-order_histories
-payment_submissions
-```
-
-should be preserved according to approved history requirements.
+Historical data such as `order_items`, `order_histories`, and `payment_submissions` also uses SoftDeletes, but normal business workflow must preserve it and must not cascade-destroy it. Trash/Restore is recovery behavior, not normal Order lifecycle behavior.
 
 ---
 
@@ -2495,10 +2497,10 @@ Payment Submission belongs to:
 ```text
 Order
 Payment Method
-Verifier/User nullable
+Verifier/Admin nullable
 ```
 
-Exact `Order → PaymentSubmission` cardinality remains deferred to final schema because source documents allow `hasOne / hasMany`.
+Canonical schema-v2 decision: `Order hasOne PaymentSubmission`, enforced by `UNIQUE(payment_submissions.order_id)`. `PaymentSubmission` belongs to one Order and one Payment Method.
 
 ---
 
@@ -2795,15 +2797,17 @@ TBD
 
 ---
 
-## TBD-006 — Payment Submission Cardinality
+## RESOLVED-006 — Payment Submission Cardinality
 
-Current source allows:
+Schema v2 resolves this as:
 
 ```text
-Order hasOne / hasMany PaymentSubmission
+Order hasOne PaymentSubmission
+PaymentSubmission belongsTo Order
+UNIQUE(payment_submissions.order_id)
 ```
 
-Final decision belongs to ERD / Database Schema.
+This is no longer TBD.
 
 ---
 

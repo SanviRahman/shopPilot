@@ -8,7 +8,7 @@
 > **Backend Framework:** PHP + Laravel  
 > **Frontend:** Laravel Blade  
 > **Database:** MySQL  
-> **Primary Roles:** Admin, Manager / Agent, User / Customer  
+> **Primary Roles:** Admin, Manager, Agent, Customer  
 > **Public Buyer:** Guest Customer / Visitor  
 > **RBAC:** Spatie Laravel Permission  
 > **Media:** Spatie Laravel Media Library  
@@ -16,7 +16,9 @@
 > **Reusable Components:** Services, Observers, Traits, Console Commands, Custom Rules  
 > **Payment Type:** Manual Mobile Financial Service Payment (bKash / Nagad / Rocket) + optional COD  
 > **Document Version:** 1.1  
-> **Language:** English + Bangla  
+> **Language:** English + Bangla
+> **Schema Alignment:** Synchronized with `ShopPilot-database-schema-v2.md` v2.0 (separate `Admin`/`User` authentication models, `admin`/`web` guards, canonical FK ownership, and universal SoftDeletes for application-owned models).
+  
 > **Status:** Project Definition / Practice Build Scope  
 > **Target Completion Window:** 13 Days  
 
@@ -93,6 +95,14 @@ Role এবং permission manage করতে ব্যবহার হবে:
 
 ```text
 Spatie Laravel Permission
+```
+
+Canonical authentication mapping:
+
+```text
+Admin / Manager / Agent → App\Models\Admin → admins → admin guard
+Customer                → App\Models\User  → users  → web guard
+Guest                   → no account row / no Spatie role
 ```
 
 Authorization layers:
@@ -732,7 +742,7 @@ payment_method_id
 transaction_id
 amount
 status
-verified_by
+verified_by_admin_id
 verified_at
 rejection_note
 created_at
@@ -882,16 +892,20 @@ Suggested:
 order_histories
 ```
 
-Possible fields:
+Canonical actor fields:
 
 ```text
 order_id
-user_id
-from_status
-to_status
-note
+admin_id nullable
+user_id nullable
+from_status nullable
+to_status nullable
+note nullable
 created_at
+deleted_at nullable
 ```
+
+Actor rule: Admin/Manager/Agent actions populate `admin_id`; Customer actions populate `user_id`; Guest/System may leave both null.
 
 ---
 
@@ -1158,28 +1172,26 @@ Avoid critical status magic strings.
 
 # 34. Soft Delete
 
-Use `SoftDeletes` where appropriate.
+Schema v2 standardizes SoftDeletes across every ShopPilot application-owned Eloquent model.
 
-Recommended:
-
-```text
-users
-categories
-products
-coupons
-orders
-payment_methods
-```
-
-Historical records such as:
+Required SoftDelete models/tables:
 
 ```text
-order_items
-order_histories
-payment_submissions
+Admin              → admins
+User               → users
+Role               → roles
+Permission         → permissions
+Category           → categories
+Product            → products
+Coupon             → coupons
+PaymentMethod      → payment_methods
+Order              → orders
+OrderItem          → order_items
+OrderHistory       → order_histories
+PaymentSubmission  → payment_submissions
 ```
 
-should be preserved according to history requirements.
+Historical child rows still must not be cascade-destroyed. SoftDelete support exists for recovery/trash workflows; normal Order workflow remains history-preserving.
 
 ---
 
@@ -1188,7 +1200,10 @@ should be preserved according to history requirements.
 Application-owned initial entities:
 
 ```text
+admins
 users
+roles
+permissions
 categories
 products
 coupons
@@ -1206,16 +1221,16 @@ addresses
 activity_logs
 ```
 
-Package-managed:
+Package-managed/supporting persistence:
 
 ```text
-roles
-permissions
 model_has_roles
 model_has_permissions
 role_has_permissions
 media
 ```
+
+`Role` and `Permission` are custom application models extending Spatie and are included in the application-owned SoftDelete contract.
 
 Framework tables may include:
 
@@ -1232,9 +1247,15 @@ depending on configuration.
 # 36. Main Relationships
 
 ```text
+Admin
+├── hasMany Assigned Orders as Agent
+├── hasMany OrderHistories as staff actor
+├── hasMany PaymentSubmissions as verifier
+└── Roles / Permissions
+
 User
-├── hasMany Orders (authenticated purchases only)
-├── hasMany Assigned Orders
+├── hasMany Orders (authenticated Customer purchases only)
+├── hasMany OrderHistories as Customer actor
 └── Roles / Permissions
 
 Category
@@ -1246,15 +1267,15 @@ Product
 Order
 ├── belongsTo Customer/User nullable (guest checkout supported)
 ├── stores Customer + Shipping snapshots
-├── belongsTo Assigned Agent/User nullable
+├── belongsTo Assigned Agent/Admin nullable
 ├── hasMany OrderItems
 ├── hasMany OrderHistories
-└── hasMany / hasOne PaymentSubmission depending final schema
+└── hasOne PaymentSubmission
 
 PaymentSubmission
 ├── belongsTo Order
 ├── belongsTo PaymentMethod
-└── belongsTo Verifier/User nullable
+└── belongsTo Verifier/Admin nullable
 ```
 
 ---
@@ -1307,7 +1328,7 @@ Manager/Agent needs required permission for every protected backend action.
 
 ## BR-012 — Soft Delete
 
-Selected recoverable business records use SoftDeletes.
+All canonical application-owned Eloquent models use SoftDeletes; historical records remain protected from normal cascade deletion.
 
 ## BR-013 — Guest Checkout Allowed
 
@@ -1610,7 +1631,7 @@ Project is complete when:
 - [ ] Console Command exists.
 - [ ] Policies protect resources.
 - [ ] Enums control statuses.
-- [ ] Soft Delete works where selected.
+- [ ] SoftDeletes work on every canonical application-owned model, with Trash/Restore where the module exposes management UI.
 - [ ] Critical tests pass.
 
 ---
