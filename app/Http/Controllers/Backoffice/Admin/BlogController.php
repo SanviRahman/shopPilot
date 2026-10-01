@@ -61,6 +61,10 @@ class BlogController extends Controller
     {
         $this->authorizeAction('blogs.create');
 
+        if ($request->filled('slug')) {
+            $request->merge(['slug' => Str::slug($request->string('slug')->toString())]);
+        }
+
         $validated = $request->validate([
             'title'   => ['required', 'string', 'max:255'],
             'slug'    => ['nullable', 'string', 'max:255', 'unique:blogs,slug'],
@@ -92,7 +96,7 @@ class BlogController extends Controller
         return redirect()->route('admin.blogs.index')->with('success', 'Blog created successfully.');
     }
 
-    public function show(Request $request, Blog $blog): View|JsonResponse
+    public function show(Request $request, Blog $blog): JsonResponse|RedirectResponse
     {
         $this->authorizeAction('blogs.view');
 
@@ -113,7 +117,7 @@ class BlogController extends Controller
             ]);
         }
 
-        return view('backoffice.admin.blogs.show', compact('blog'));
+        return redirect()->route('admin.blogs.index');
     }
 
     public function edit(Request $request, Blog $blog): JsonResponse|View
@@ -140,6 +144,10 @@ class BlogController extends Controller
     public function update(Request $request, Blog $blog): JsonResponse|RedirectResponse
     {
         $this->authorizeAction('blogs.update');
+
+        if ($request->filled('slug')) {
+            $request->merge(['slug' => Str::slug($request->string('slug')->toString())]);
+        }
 
         $validated = $request->validate([
             'title'   => ['required', 'string', 'max:255'],

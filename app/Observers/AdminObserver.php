@@ -3,49 +3,43 @@
 namespace App\Observers;
 
 use App\Models\Admin;
-use Illuminate\Support\Str;
 
 class AdminObserver
 {
     /**
-     * Handle the Admin "created" event.
+     * Create one deterministic default blog when a new admin account is created.
      */
     public function created(Admin $admin): void
     {
-        $admin->blogs()->create([
-            'author_type' => Admin::class,
-            'author_id'   => $admin->id,
-            'title'       => $admin->name . "'s Staff Blog",
-            'slug'        => Str::slug($admin->name . '-staff-' . uniqid()),
-            'content'     => 'Staff profile initialized. This is an automatically generated administrative blog post.',
-        ]);
+        $admin->blogs()->firstOrCreate(
+            ['slug' => "admin-{$admin->id}-staff-blog"],
+            [
+                'author_type' => Admin::class,
+                'author_id' => $admin->id,
+                'title' => $admin->name . "'s Staff Blog",
+                'content' => 'Staff profile initialized. This is an automatically generated administrative blog post.',
+            ],
+        );
     }
 
     /**
-     * Handle the Admin "deleted" event (Cascade Soft/Force Delete).
+     * Keep the admin-owned blogs aligned with an admin soft delete / force delete.
      */
     public function deleted(Admin $admin): void
     {
         if (method_exists($admin, 'isForceDeleting') && $admin->isForceDeleting()) {
             $admin->blogs()->withTrashed()->forceDelete();
-        } else {
-            $admin->blogs()->delete();
+            return;
         }
+
+        $admin->blogs()->delete();
     }
 
     /**
-     * Handle the Admin "restored" event (Cascade Restore).
+     * Restore the admin-owned blogs when the admin account is restored.
      */
     public function restored(Admin $admin): void
     {
         $admin->blogs()->onlyTrashed()->restore();
-    }
-
-    /**
-     * Handle the Admin "force deleted" event.
-     */
-    public function forceDeleted(Admin $admin): void
-    {
-        $admin->blogs()->withTrashed()->forceDelete();
     }
 }

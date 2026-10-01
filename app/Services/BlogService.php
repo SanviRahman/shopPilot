@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Blog;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class BlogService
@@ -30,20 +33,22 @@ class BlogService
     }
 
     /**
-     * Store a new blog post.
+     * Store a new blog post and keep direct FK ownership in sync with the morph author.
      */
-    public function create(array $data, $author = null): Blog
+    public function create(array $data, ?Model $author = null): Blog
     {
-        $slug = ! empty($data['slug'])
-            ? Str::slug($data['slug'])
-            : Str::slug($data['title']) . '-' . uniqid();
+        $slug = $this->uniqueSlug(
+            ! empty($data['slug']) ? (string) $data['slug'] : (string) $data['title'],
+        );
 
         return Blog::create([
-            'author_type' => $author ? get_class($author) : null,
-            'author_id'   => $author?->id,
-            'title'       => $data['title'],
-            'slug'        => $slug,
-            'content'     => $data['content'] ?? null,
+            'admin_id' => $author instanceof Admin ? $author->id : null,
+            'user_id' => $author instanceof User ? $author->id : null,
+            'author_type' => $author ? $author::class : null,
+            'author_id' => $author?->getKey(),
+            'title' => $data['title'],
+            'slug' => $slug,
+            'content' => $data['content'] ?? null,
         ]);
     }
 
@@ -52,13 +57,12 @@ class BlogService
      */
     public function update(Blog $blog, array $data): bool
     {
-        $slug = ! empty($data['slug'])
-            ? Str::slug($data['slug'])
-            : Str::slug($data['title']) . '-' . $blog->id;
+        $baseSlug = ! empty($data['slug']) ? (string) $data['slug'] : (string) $data['title'];
+        $slug = $this->uniqueSlug($baseSlug, $blog->id);
 
         return $blog->update([
-            'title'   => $data['title'],
-            'slug'    => $slug,
+            'title' => $data['title'],
+            'slug' => $slug,
             'content' => $data['content'] ?? null,
         ]);
     }
@@ -77,6 +81,7 @@ class BlogService
     public function restore(int $id): bool
     {
         $blog = Blog::onlyTrashed()->findOrFail($id);
+
         return (bool) $blog->restore();
     }
 
@@ -86,6 +91,7 @@ class BlogService
     public function forceDelete(int $id): bool
     {
         $blog = Blog::onlyTrashed()->findOrFail($id);
+
         return (bool) $blog->forceDelete();
     }
 
@@ -99,9 +105,9 @@ class BlogService
 
         foreach ($uniqueIds as $id) {
             $blog = match ($action) {
-                'delete'                  => Blog::query()->find($id),
+                'delete' => Blog::query()->find($id),
                 'restore', 'force-delete' => Blog::onlyTrashed()->find($id),
-                default                   => null,
+                default => null,
             };
 
             if (! $blog) {
@@ -109,8 +115,8 @@ class BlogService
             }
 
             match ($action) {
-                'delete'       => $blog->delete(),
-                'restore'      => $blog->restore(),
+                'delete' => $blog->delete(),
+                'restore' => $blog->restore(),
                 'force-delete' => $blog->forceDelete(),
             };
 
@@ -118,5 +124,23 @@ class BlogService
         }
 
         return $processed;
+    }
+
+    private function uniqueSlug(string $value, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($value);
+        $base = $base !== '' ? $base : 'blog';
+        $slug = $base;
+        $suffix = 2;
+
+        while (Blog::withTrashed()
+            ->where('slug', $slug)
+            ->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = $base . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $slug;
     }
 }
