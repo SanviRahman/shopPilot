@@ -43,6 +43,16 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Blog::class, 'user_id');
     }
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function orderHistories(): HasMany
+    {
+        return $this->hasMany(OrderHistory::class);
+    }
+
     /**
      * Spatie Media Library collection registration
      */

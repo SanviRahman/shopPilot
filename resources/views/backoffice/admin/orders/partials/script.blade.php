@@ -98,6 +98,7 @@ $(function () {
         e.preventDefault();
         clearFormErrors();
         $('#orderAjaxForm')[0].reset();
+        $('#order-status option').prop('disabled', false);
         $('#orderFormMethod').val('POST');
         $('#orderAjaxForm').attr('action', '{{ route("admin.orders.store") }}');
         $('#orderFormModalTitle span').text('Create New Order');
@@ -105,7 +106,7 @@ $(function () {
         $('#order-discount').val('0.00');
         $('#order-shipping').val('0.00');
         $('#order-grand-total').val('0.00');
-        $('#order-status').val('pending');
+        $('#order-status').val('pending').prop('disabled', true);
         $('#payment-status').val('unpaid');
         $('#assigned-agent-id').val('');
         $('#orderFormModal').modal('show');
@@ -140,7 +141,11 @@ $(function () {
                     $('#order-shipping').val(order.shipping);
                     $('#order-grand-total').val(order.grand_total);
 
-                    $('#order-status').val(order.order_status);
+                    const allowedStatuses = [order.order_status, ...(order.allowed_next_statuses || [])];
+                    $('#order-status option').each(function () {
+                        $(this).prop('disabled', !allowedStatuses.includes($(this).val()));
+                    });
+                    $('#order-status').prop('disabled', false).val(order.order_status);
                     $('#payment-status').val(order.payment_status);
                     $('#assigned-agent-id').val(order.assigned_agent_id);
                     $('#customer-note').val(order.customer_note);

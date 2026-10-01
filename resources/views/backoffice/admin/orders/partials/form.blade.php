@@ -101,26 +101,24 @@
                             <label for="order-status" class="font-weight-600">Order Status <span class="text-danger">*</span></label>
                             <select id="order-status" name="order_status" class="custom-select custom-select-sm" required>
                                 <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
                                 <option value="processing">Processing</option>
                                 <option value="shipped">Shipped</option>
                                 <option value="delivered">Delivered</option>
                                 <option value="cancelled">Cancelled</option>
-                                <option value="refunded">Refunded</option>
-                                <option value="failed">Failed</option>
                             </select>
                             <div class="invalid-feedback d-block" id="err-order_status"></div>
                         </div>
 
                         <div class="form-group col-md-4 mb-3">
-                            <label for="payment-status" class="font-weight-600">Payment Status <span class="text-danger">*</span></label>
-                            <select id="payment-status" name="payment_status" class="custom-select custom-select-sm" required>
+                            <label for="payment-status" class="font-weight-600">Payment Status</label>
+                            <select id="payment-status" class="custom-select custom-select-sm bg-light" disabled>
                                 <option value="unpaid">Unpaid</option>
-                                <option value="paid">Paid</option>
-                                <option value="partially_paid">Partially Paid</option>
-                                <option value="refunded">Refunded</option>
-                                <option value="failed">Failed</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="verified">Verified</option>
+                                <option value="rejected">Rejected</option>
                             </select>
-                            <div class="invalid-feedback d-block" id="err-payment_status"></div>
+                            <small class="form-text text-muted">Managed by the payment submission workflow.</small>
                         </div>
 
                         <div class="form-group col-md-4 mb-3">

@@ -45,6 +45,21 @@ class Admin extends Authenticatable implements HasMedia
         return $this->hasMany(Blog::class, 'admin_id');
     }
 
+    public function assignedOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'assigned_agent_id');
+    }
+
+    public function orderHistories(): HasMany
+    {
+        return $this->hasMany(OrderHistory::class, 'admin_id');
+    }
+
+    public function verifiedPaymentSubmissions(): HasMany
+    {
+        return $this->hasMany(PaymentSubmission::class, 'verified_by_admin_id');
+    }
+
     /**
      * Spatie Media Library collection registration
      */

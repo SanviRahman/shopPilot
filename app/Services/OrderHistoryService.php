@@ -18,8 +18,20 @@ class OrderHistoryService
             $data['user_id']     = null;
             $data['from_status'] = $order->order_status;
 
-            // If to_status is provided and changed, update the order status as well
+            // If to_status is provided and changed, validate the canonical order transition first.
             if (! empty($data['to_status']) && $data['to_status'] !== $order->order_status) {
+                if (! $order->canTransitionTo($data['to_status'])) {
+                    throw ValidationException::withMessages([
+                        'to_status' => "Invalid order status transition from {$order->order_status} to {$data['to_status']}.",
+                    ]);
+                }
+
+                if ($data['to_status'] === Order::STATUS_CANCELLED && ! auth('admin')->user()?->can('orders.cancel')) {
+                    throw ValidationException::withMessages([
+                        'to_status' => 'You are not authorized to cancel this order.',
+                    ]);
+                }
+
                 $order->update(['order_status' => $data['to_status']]);
             } else {
                 $data['to_status'] = $order->order_status;
@@ -38,10 +50,27 @@ class OrderHistoryService
                 'note' => $data['note'],
             ];
 
-            // If to_status is updated, reflect it in the parent Order as well
+            // If to_status is updated, validate against the parent Order's current state.
             if (! empty($data['to_status']) && $data['to_status'] !== $history->to_status) {
+                $order = $history->order;
+
+                if ($order && $data['to_status'] !== $order->order_status) {
+                    if (! $order->canTransitionTo($data['to_status'])) {
+                        throw ValidationException::withMessages([
+                            'to_status' => "Invalid order status transition from {$order->order_status} to {$data['to_status']}.",
+                        ]);
+                    }
+
+                    if ($data['to_status'] === Order::STATUS_CANCELLED && ! auth('admin')->user()?->can('orders.cancel')) {
+                        throw ValidationException::withMessages([
+                            'to_status' => 'You are not authorized to cancel this order.',
+                        ]);
+                    }
+
+                    $order->update(['order_status' => $data['to_status']]);
+                }
+
                 $updateData['to_status'] = $data['to_status'];
-                $history->order?->update(['order_status' => $data['to_status']]);
             }
 
             $history->update($updateData);

@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Order;
+use App\Models\OrderHistory;
+use App\Models\OrderItem;
+use App\Models\PaymentSubmission;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,67 +17,85 @@ class OrderService
     public function create(array $data): Order
     {
         return DB::transaction(function () use ($data): Order {
-            $currentUser = auth('admin')->user();
+            $currentAdmin = auth('admin')->user();
 
-            // Verify Agent Assignment authorization
-            if (! empty($data['assigned_agent_id']) && ! $currentUser?->can('orders.assign')) {
-                throw new AuthorizationException('You are not authorized to assign agents to orders.');
+            if (! empty($data['assigned_agent_id'])) {
+                if (! $currentAdmin?->can('orders.assign')) {
+                    throw new AuthorizationException('You are not authorized to assign agents to orders.');
+                }
+
+                $this->ensureAssignableAgent((int) $data['assigned_agent_id']);
             }
 
-            // Generate Unique Order Number: ORD-YYYYMMDD-XXXX
             do {
-                $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(Str::random(6));
-            } while (Order::where('order_number', $orderNumber)->exists());
+                $orderNumber = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
+            } while (Order::withTrashed()->where('order_number', $orderNumber)->exists());
 
             $data['order_number'] = $orderNumber;
+            $data['order_status'] = Order::STATUS_PENDING;
+            $data['payment_status'] = Order::PAYMENT_UNPAID;
 
-            // Strict Decimal Calculation for Grand Total
-            $subtotal = (float) ($data['subtotal'] ?? 0);
-            $discount = (float) ($data['discount'] ?? 0);
-            $shipping = (float) ($data['shipping'] ?? 0);
-
-            $data['discount'] = $discount;
-            $data['shipping'] = $shipping;
-            $data['grand_total'] = max(0, round($subtotal - $discount + $shipping, 2));
+            $this->applyCalculatedTotals($data);
 
             $order = Order::create($data);
 
-            return $order->load(['user', 'assignedAgent']);
+            return $order->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
         });
     }
 
     public function update(Order $order, array $data): Order
     {
         return DB::transaction(function () use ($order, $data): Order {
-            $currentUser = auth('admin')->user();
+            $currentAdmin = auth('admin')->user();
 
-            // Check cancellation permission
-            if (isset($data['order_status']) && $data['order_status'] === 'cancelled' && $order->order_status !== 'cancelled') {
-                if (! $currentUser?->can('orders.cancel')) {
+            $requestedStatus = (string) ($data['order_status'] ?? $order->order_status);
+
+            if ($requestedStatus !== $order->order_status) {
+                if (! $order->canTransitionTo($requestedStatus)) {
+                    throw ValidationException::withMessages([
+                        'order_status' => "Invalid order status transition from {$order->order_status} to {$requestedStatus}.",
+                    ]);
+                }
+
+                if ($requestedStatus === Order::STATUS_CANCELLED && ! $currentAdmin?->can('orders.cancel')) {
                     throw new AuthorizationException('You are not authorized to cancel this order.');
                 }
             }
 
-            // Check agent assignment permission
             if (array_key_exists('assigned_agent_id', $data)) {
                 $newAgentId = ! empty($data['assigned_agent_id']) ? (int) $data['assigned_agent_id'] : null;
-                if ($newAgentId !== $order->assigned_agent_id && ! $currentUser?->can('orders.assign')) {
-                    throw new AuthorizationException('You are not authorized to assign agents to orders.');
+
+                if ($newAgentId !== $order->assigned_agent_id) {
+                    if (! $currentAdmin?->can('orders.assign')) {
+                        throw new AuthorizationException('You are not authorized to assign agents to orders.');
+                    }
+
+                    if ($newAgentId !== null) {
+                        $this->ensureAssignableAgent($newAgentId);
+                    }
                 }
             }
 
-            // Re-calculate Grand Total
-            $subtotal = isset($data['subtotal']) ? (float) $data['subtotal'] : (float) $order->subtotal;
-            $discount = isset($data['discount']) ? (float) $data['discount'] : (float) $order->discount;
-            $shipping = isset($data['shipping']) ? (float) $data['shipping'] : (float) $order->shipping;
+            // Payment state is owned by the payment workflow, never by the general Order form.
+            unset($data['payment_status']);
 
-            $data['discount'] = $discount;
-            $data['shipping'] = $shipping;
-            $data['grand_total'] = max(0, round($subtotal - $discount + $shipping, 2));
+            $previousStatus = $order->order_status;
+            $this->applyCalculatedTotals($data, $order);
 
             $order->update($data);
 
-            return $order->refresh()->load(['user', 'assignedAgent']);
+            if ($requestedStatus !== $previousStatus) {
+                OrderHistory::create([
+                    'order_id' => $order->id,
+                    'admin_id' => $currentAdmin?->id,
+                    'user_id' => null,
+                    'from_status' => $previousStatus,
+                    'to_status' => $requestedStatus,
+                    'note' => "Order status changed from {$previousStatus} to {$requestedStatus}.",
+                ]);
+            }
+
+            return $order->refresh()->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
         });
     }
 
@@ -89,6 +111,16 @@ class OrderService
 
     public function forceDelete(Order $order): void
     {
+        $hasItems = OrderItem::withTrashed()->where('order_id', $order->id)->exists();
+        $hasHistories = OrderHistory::withTrashed()->where('order_id', $order->id)->exists();
+        $hasPayment = PaymentSubmission::withTrashed()->where('order_id', $order->id)->exists();
+
+        if ($hasItems || $hasHistories || $hasPayment) {
+            throw ValidationException::withMessages([
+                'order' => 'This order has related items, history, or payment records and cannot be permanently deleted.',
+            ]);
+        }
+
         $order->forceDelete();
     }
 
@@ -109,10 +141,10 @@ class OrderService
 
                 try {
                     match ($action) {
-                        'delete'       => $this->delete($order),
-                        'restore'      => $this->restoreTrashed($order),
+                        'delete' => $this->delete($order),
+                        'restore' => $this->restoreTrashed($order),
                         'force-delete' => $this->forceDeleteTrashed($order),
-                        default        => throw ValidationException::withMessages([
+                        default => throw ValidationException::withMessages([
                             'action' => 'Invalid bulk action.',
                         ]),
                     };
@@ -126,21 +158,60 @@ class OrderService
         });
     }
 
-    private function restoreTrashed(Order $order): void
+    private function ensureAssignableAgent(int $adminId): void
     {
-        if (! $order->trashed()) {
-            return;
+        $isAssignableAgent = Admin::query()
+            ->whereKey($adminId)
+            ->where('status', 'active')
+            ->whereHas('roles', function ($query): void {
+                $query->where('name', 'agent')->where('guard_name', 'admin');
+            })
+            ->exists();
+
+        if (! $isAssignableAgent) {
+            throw ValidationException::withMessages([
+                'assigned_agent_id' => 'The selected account is not an active Agent.',
+            ]);
+        }
+    }
+
+    private function applyCalculatedTotals(array &$data, ?Order $order = null): void
+    {
+        $subtotal = array_key_exists('subtotal', $data)
+            ? (float) $data['subtotal']
+            : (float) ($order?->subtotal ?? 0);
+
+        $discount = array_key_exists('discount', $data)
+            ? (float) ($data['discount'] ?? 0)
+            : (float) ($order?->discount ?? 0);
+
+        $shipping = array_key_exists('shipping', $data)
+            ? (float) ($data['shipping'] ?? 0)
+            : (float) ($order?->shipping ?? 0);
+
+        if ($discount > $subtotal) {
+            throw ValidationException::withMessages([
+                'discount' => 'Discount cannot be greater than the order subtotal.',
+            ]);
         }
 
-        $this->restore($order);
+        $data['subtotal'] = round($subtotal, 2);
+        $data['discount'] = round($discount, 2);
+        $data['shipping'] = round($shipping, 2);
+        $data['grand_total'] = round(($subtotal - $discount) + $shipping, 2);
+    }
+
+    private function restoreTrashed(Order $order): void
+    {
+        if ($order->trashed()) {
+            $this->restore($order);
+        }
     }
 
     private function forceDeleteTrashed(Order $order): void
     {
-        if (! $order->trashed()) {
-            return;
+        if ($order->trashed()) {
+            $this->forceDelete($order);
         }
-
-        $this->forceDelete($order);
     }
 }

@@ -26,7 +26,7 @@ class OrderController extends Controller
         $this->authorizeAction('orders.view');
 
         $orders = Order::query()
-            ->with(['user', 'assignedAgent'])
+            ->with(['user', 'assignedAgent', 'coupon', 'paymentSubmission'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
                 $query->where(function ($q) use ($search) {
@@ -53,7 +53,11 @@ class OrderController extends Controller
             ]);
         }
 
-        $agents = Admin::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']);
+        $agents = Admin::query()
+            ->where('status', 'active')
+            ->whereHas('roles', fn ($q) => $q->where('name', 'agent')->where('guard_name', 'admin'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('backoffice.admin.orders.index', [
             'title'  => 'Orders Management',
@@ -67,7 +71,7 @@ class OrderController extends Controller
         $this->authorizeAction('orders.view');
 
         $orders = Order::onlyTrashed()
-            ->with(['user', 'assignedAgent'])
+            ->with(['user', 'assignedAgent', 'coupon', 'paymentSubmission'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
                 $query->where(function ($q) use ($search) {
@@ -112,11 +116,11 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.index')->with('success', "Order #{$order->order_number} created successfully.");
     }
 
-    public function show(Request $request, Order $order): JsonResponse|View
+    public function show(Request $request, Order $order): JsonResponse|RedirectResponse
     {
         $this->authorizeAction('orders.view');
 
-        $order->load(['user', 'assignedAgent']);
+        $order->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
 
         if ($request->ajax()) {
             return response()->json([
@@ -139,6 +143,7 @@ class OrderController extends Controller
                     'payment_badge'    => $order->payment_status_badge,
                     'agent_name'       => $order->assignedAgent?->name ?? 'Unassigned',
                     'coupon_code'      => $order->coupon_code ?? 'None',
+                    'payment_submission_status' => $order->paymentSubmission?->status,
                     'customer_note'    => $order->customer_note ?: 'No note provided',
                     'internal_note'    => $order->internal_note ?: 'No internal notes',
                     'created_at'       => optional($order->created_at)->format('d M Y, h:i A'),
@@ -147,7 +152,7 @@ class OrderController extends Controller
             ]);
         }
 
-        return view('backoffice.admin.orders.show', compact('order'));
+        return redirect()->route('admin.orders.index', ['search' => $order->order_number]);
     }
 
     public function edit(Request $request, Order $order): JsonResponse
@@ -170,6 +175,7 @@ class OrderController extends Controller
                 'grand_total'       => $order->grand_total,
                 'order_status'      => $order->order_status,
                 'payment_status'    => $order->payment_status,
+                'allowed_next_statuses' => $order->allowedNextStatuses(),
                 'assigned_agent_id' => $order->assigned_agent_id,
                 'customer_note'     => $order->customer_note,
                 'internal_note'     => $order->internal_note,

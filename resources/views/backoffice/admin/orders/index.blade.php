@@ -47,11 +47,11 @@
                     <select name="order_status" id="order_status" class="custom-select custom-select-sm">
                         <option value="">All Order Status</option>
                         <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
                         <option value="processing">Processing</option>
                         <option value="shipped">Shipped</option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
-                        <option value="refunded">Refunded</option>
                     </select>
                 </div>
 
@@ -59,9 +59,9 @@
                     <select name="payment_status" id="payment_status" class="custom-select custom-select-sm">
                         <option value="">All Payment Status</option>
                         <option value="unpaid">Unpaid</option>
-                        <option value="paid">Paid</option>
-                        <option value="partially_paid">Partially Paid</option>
-                        <option value="refunded">Refunded</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="verified">Verified</option>
+                        <option value="rejected">Rejected</option>
                     </select>
                 </div>
 

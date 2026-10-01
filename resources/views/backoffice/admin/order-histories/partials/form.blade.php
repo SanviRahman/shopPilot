@@ -39,12 +39,11 @@
                         <select name="to_status" id="to_status" class="custom-select custom-select-sm">
                             <option value="">-- Keep Current Status --</option>
                             <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
                             <option value="processing">Processing</option>
                             <option value="shipped">Shipped</option>
                             <option value="delivered">Delivered</option>
                             <option value="cancelled">Cancelled</option>
-                            <option value="refunded">Refunded</option>
-                            <option value="failed">Failed</option>
                         </select>
                         <small class="form-text text-muted">Selecting a status will automatically update the parent order status.</small>
                         <div class="invalid-feedback d-block" id="err-to_status"></div>

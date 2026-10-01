@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Order;
 use App\Models\PaymentSubmission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +25,7 @@ class PaymentSubmissionService
                 'rejection_note' => null,
             ]);
 
-            $paymentSubmission->order()->update(['payment_status' => 'verified']);
+            $paymentSubmission->order()->update(['payment_status' => Order::PAYMENT_VERIFIED]);
 
             return $paymentSubmission->load(['order', 'paymentMethod', 'verifier']);
         });
@@ -40,7 +41,7 @@ class PaymentSubmissionService
                 'rejection_note' => $note,
             ]);
 
-            $paymentSubmission->order()->update(['payment_status' => 'rejected']);
+            $paymentSubmission->order()->update(['payment_status' => Order::PAYMENT_REJECTED]);
 
             return $paymentSubmission->load(['order', 'paymentMethod', 'verifier']);
         });
