@@ -8,11 +8,11 @@
                     <input type="checkbox" data-select-all="#{{ $isTrash ? 'trash-items-list' : 'order-items-list' }}">
                 </th>
                 <th>Order #</th>
-                <th>Product & Variant</th>
+                <th>Product</th>
                 <th>SKU</th>
                 <th>Unit Price</th>
                 <th class="text-center">Qty</th>
-                <th>Subtotal</th>
+                <th>Line Total</th>
                 @if($isTrash)
                     <th>Deleted At</th>
                 @else
@@ -38,12 +38,9 @@
                     </td>
                     <td class="align-middle">
                         <div class="font-weight-600 text-dark">{{ $item->product_name }}</div>
-                        @if($item->variant_name)
-                            <small class="badge badge-light border text-secondary">{{ $item->variant_name }}</small>
-                        @endif
                     </td>
                     <td class="align-middle">
-                        <code>{{ $item->sku ?: '—' }}</code>
+                        <code>{{ $item->sku }}</code>
                     </td>
                     <td class="align-middle">
                         ৳{{ number_format((float) $item->unit_price, 2) }}
@@ -52,7 +49,7 @@
                         <span class="badge badge-secondary px-2 py-1">{{ $item->quantity }}</span>
                     </td>
                     <td class="align-middle font-weight-bold text-dark">
-                        ৳{{ number_format((float) $item->subtotal, 2) }}
+                        ৳{{ number_format((float) $item->line_total, 2) }}
                     </td>
                     <td class="align-middle text-nowrap">
                         @if($isTrash)

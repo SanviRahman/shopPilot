@@ -50,7 +50,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
                         </div>
-                        <input type="search" name="search" id="search" class="form-control border-left-0" placeholder="Search by Product Name, Variant, SKU or Order Number...">
+                        <input type="search" name="search" id="search" class="form-control border-left-0" placeholder="Search by Product Name, SKU or Order Number...">
                     </div>
                 </div>
 
@@ -76,7 +76,7 @@
         </div>
     </div>
 
-    @include('backoffice.admin.order-items.partials.form', ['orders' => $orders])
+    @include('backoffice.admin.order-items.partials.form', ['orders' => $orders, 'products' => $products])
     @include('backoffice.admin.order-items.partials.show')
 
     {{-- Confirmation Modal --}}

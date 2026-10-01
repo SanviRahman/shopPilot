@@ -27,22 +27,33 @@
                     </div>
 
                     <div class="form-group mb-3">
-                        <label for="product_name" class="font-weight-600">Product Name <span class="text-danger">*</span></label>
-                        <input type="text" id="product_name" name="product_name" class="form-control form-control-sm" placeholder="e.g. Classic Cotton T-Shirt" required>
-                        <div class="invalid-feedback d-block" id="err-product_name"></div>
+                        <label for="product_id" class="font-weight-600">Product <span class="text-danger">*</span></label>
+                        <select name="product_id" id="product_id" class="custom-select custom-select-sm" required>
+                            <option value="">-- Choose Product --</option>
+                            @foreach($products as $product)
+                                @php($currentPrice = $product->sale_price ?? $product->regular_price)
+                                <option
+                                    value="{{ $product->id }}"
+                                    data-name="{{ $product->name }}"
+                                    data-sku="{{ $product->sku }}"
+                                    data-price="{{ number_format((float) $currentPrice, 2, '.', '') }}"
+                                >
+                                    {{ $product->name }} ({{ $product->sku }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="invalid-feedback d-block" id="err-product_id"></div>
                     </div>
 
                     <div class="row">
-                        <div class="form-group col-md-6 mb-3">
-                            <label for="variant_name" class="font-weight-600">Variant Name</label>
-                            <input type="text" id="variant_name" name="variant_name" class="form-control form-control-sm" placeholder="e.g. Black / XL">
-                            <div class="invalid-feedback d-block" id="err-variant_name"></div>
+                        <div class="form-group col-md-7 mb-3">
+                            <label class="font-weight-600">Product Snapshot</label>
+                            <input type="text" id="product_name_preview" class="form-control form-control-sm bg-white" readonly placeholder="Select a product">
                         </div>
 
-                        <div class="form-group col-md-6 mb-3">
-                            <label for="sku" class="font-weight-600">SKU Code</label>
-                            <input type="text" id="sku" name="sku" class="form-control form-control-sm" placeholder="TSHIRT-BLK-XL">
-                            <div class="invalid-feedback d-block" id="err-sku"></div>
+                        <div class="form-group col-md-5 mb-3">
+                            <label class="font-weight-600">SKU Snapshot</label>
+                            <input type="text" id="sku_preview" class="form-control form-control-sm bg-white" readonly placeholder="—">
                         </div>
                     </div>
 
@@ -58,15 +69,15 @@
 
                         <div class="form-group col-md-4 mb-2">
                             <label for="quantity" class="font-weight-600">Quantity <span class="text-danger">*</span></label>
-                            <input type="number" min="1" id="quantity" name="quantity" class="form-control form-control-sm item-calc-field" value="1" required>
+                            <input type="number" min="1" max="10000" id="quantity" name="quantity" class="form-control form-control-sm item-calc-field" value="1" required>
                             <div class="invalid-feedback d-block" id="err-quantity"></div>
                         </div>
 
                         <div class="form-group col-md-4 mb-2">
-                            <label class="font-weight-600">Subtotal</label>
+                            <label class="font-weight-600">Line Total</label>
                             <div class="input-group input-group-sm">
                                 <div class="input-group-prepend"><span class="input-group-text font-weight-bold">৳</span></div>
-                                <input type="text" id="item_subtotal" class="form-control font-weight-bold text-primary bg-white" readonly value="0.00">
+                                <input type="text" id="item_line_total" class="form-control font-weight-bold text-primary bg-white" readonly value="0.00">
                             </div>
                         </div>
                     </div>

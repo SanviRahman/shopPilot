@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProductService
 {
@@ -51,7 +52,13 @@ class ProductService
 
     public function forceDelete(Product $product): void
     {
-        DB::transaction(function () use ($product) {
+        DB::transaction(function () use ($product): void {
+            if ($product->orderItems()->withTrashed()->exists()) {
+                throw ValidationException::withMessages([
+                    'product' => 'This product is referenced by historical order items and cannot be permanently deleted.',
+                ]);
+            }
+
             $product->clearMediaCollection('product_thumbnail');
             $product->clearMediaCollection('product_gallery');
             $product->clearMediaCollection('product_og_image');
@@ -70,6 +77,15 @@ class ProductService
                 $product = Product::withTrashed()->find($id);
 
                 if (! $product) {
+                    $skipped++;
+                    continue;
+                }
+
+                if (
+                    $action === 'force-delete'
+                    && $product->trashed()
+                    && $product->orderItems()->withTrashed()->exists()
+                ) {
                     $skipped++;
                     continue;
                 }

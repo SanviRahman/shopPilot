@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -12,30 +13,58 @@ class OrderItemService
     public function create(array $data): OrderItem
     {
         return DB::transaction(function () use ($data): OrderItem {
-            $unitPrice = (float) $data['unit_price'];
+            $product = Product::query()->findOrFail((int) $data['product_id']);
+            $unitPrice = round((float) $data['unit_price'], 2);
             $quantity = (int) $data['quantity'];
-            $data['subtotal'] = round($unitPrice * $quantity, 2);
 
-            $orderItem = OrderItem::create($data);
+            $orderItem = OrderItem::create([
+                'order_id' => (int) $data['order_id'],
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'sku' => $product->sku,
+                'unit_price' => $unitPrice,
+                'quantity' => $quantity,
+                'line_total' => round($unitPrice * $quantity, 2),
+            ]);
 
             $this->syncOrderTotals($orderItem->order_id);
 
-            return $orderItem->load('order');
+            return $orderItem->load(['order', 'product']);
         });
     }
 
     public function update(OrderItem $orderItem, array $data): OrderItem
     {
         return DB::transaction(function () use ($orderItem, $data): OrderItem {
-            $unitPrice = (float) ($data['unit_price'] ?? $orderItem->unit_price);
-            $quantity = (int) ($data['quantity'] ?? $orderItem->quantity);
-            $data['subtotal'] = round($unitPrice * $quantity, 2);
+            $productId = (int) $data['product_id'];
+            $unitPrice = round((float) $data['unit_price'], 2);
+            $quantity = (int) $data['quantity'];
 
-            $orderItem->update($data);
+            $snapshot = [
+                'product_id' => $orderItem->product_id,
+                'product_name' => $orderItem->product_name,
+                'sku' => $orderItem->sku,
+            ];
+
+            if ($productId !== (int) $orderItem->product_id) {
+                $product = Product::query()->findOrFail($productId);
+                $snapshot = [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'sku' => $product->sku,
+                ];
+            }
+
+            $orderItem->update([
+                ...$snapshot,
+                'unit_price' => $unitPrice,
+                'quantity' => $quantity,
+                'line_total' => round($unitPrice * $quantity, 2),
+            ]);
 
             $this->syncOrderTotals($orderItem->order_id);
 
-            return $orderItem->refresh()->load('order');
+            return $orderItem->refresh()->load(['order', 'product']);
         });
     }
 
@@ -85,10 +114,10 @@ class OrderItemService
 
                 try {
                     match ($action) {
-                        'delete'       => $orderItem->delete(),
-                        'restore'      => $orderItem->restore(),
-                        'force-delete' => $orderItem->forceDelete(),
-                        default        => throw ValidationException::withMessages([
+                        'delete' => $orderItem->trashed() ? null : $orderItem->delete(),
+                        'restore' => $orderItem->trashed() ? $orderItem->restore() : null,
+                        'force-delete' => $orderItem->trashed() ? $orderItem->forceDelete() : null,
+                        default => throw ValidationException::withMessages([
                             'action' => 'Invalid bulk action.',
                         ]),
                     };
@@ -107,24 +136,26 @@ class OrderItemService
     }
 
     /**
-     * Recalculates parent order subtotal and grand_total strictly
+     * Keep the parent Order commercial totals synchronized with active OrderItems.
      */
     public function syncOrderTotals(int $orderId): void
     {
-        $order = Order::find($orderId);
+        $order = Order::query()->find($orderId);
+
         if (! $order) {
             return;
         }
 
-        $newSubtotal = (float) OrderItem::where('order_id', $orderId)->sum('subtotal');
+        $newSubtotal = round((float) OrderItem::query()
+            ->where('order_id', $orderId)
+            ->sum('line_total'), 2);
+
         $discount = (float) $order->discount;
         $shipping = (float) $order->shipping;
 
-        $newGrandTotal = max(0, round($newSubtotal - $discount + $shipping, 2));
-
         $order->update([
-            'subtotal'    => $newSubtotal,
-            'grand_total' => $newGrandTotal,
+            'subtotal' => $newSubtotal,
+            'grand_total' => max(0, round(($newSubtotal - $discount) + $shipping, 2)),
         ]);
     }
 }

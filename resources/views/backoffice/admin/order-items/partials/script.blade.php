@@ -11,28 +11,51 @@ $(function () {
                 timer: 3000,
                 timerProgressBar: true
             });
-            Toast.fire({
-                icon: type,
-                title: message
-            });
-        } else {
-            alert(message);
+
+            Toast.fire({ icon: type, title: message });
+            return;
         }
+
+        alert(message);
     }
 
-    // Live Calculation for Subtotal
-    function calculateItemSubtotal() {
+    function calculateItemLineTotal() {
         const unitPrice = parseFloat($('#unit_price').val()) || 0;
-        const qty = parseInt($('#quantity').val()) || 0;
-        const subtotal = Math.max(0, unitPrice * qty);
-        $('#item_subtotal').val(subtotal.toFixed(2));
+        const quantity = parseInt($('#quantity').val(), 10) || 0;
+        const lineTotal = Math.max(0, unitPrice * quantity);
+        $('#item_line_total').val(lineTotal.toFixed(2));
     }
 
-    $(document).on('input', '.item-calc-field', function () {
-        calculateItemSubtotal();
+    function syncProductPreview(updatePrice = true) {
+        const option = $('#product_id option:selected');
+        const productId = option.val();
+
+        if (!productId) {
+            $('#product_name_preview').val('');
+            $('#sku_preview').val('');
+            if (updatePrice) {
+                $('#unit_price').val('0.00');
+            }
+            calculateItemLineTotal();
+            return;
+        }
+
+        $('#product_name_preview').val(option.data('name') || option.text().trim());
+        $('#sku_preview').val(option.data('sku') || '');
+
+        if (updatePrice) {
+            const price = parseFloat(option.data('price')) || 0;
+            $('#unit_price').val(price.toFixed(2));
+        }
+
+        calculateItemLineTotal();
+    }
+
+    $(document).on('input', '.item-calc-field', calculateItemLineTotal);
+    $(document).on('change', '#product_id', function () {
+        syncProductPreview(true);
     });
 
-    // Load Table Content via AJAX
     function reloadTable(url = fetchUrl) {
         $('#tableOverlay').removeClass('d-none');
         const formData = $('#filterForm').serialize();
@@ -55,11 +78,10 @@ $(function () {
         });
     }
 
-    // Debounced Search & Filter
     let searchTimeout = null;
     $('#search').on('input', function () {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => { reloadTable(); }, 400);
+        searchTimeout = setTimeout(() => reloadTable(), 400);
     });
 
     $('#order_id').on('change', function () {
@@ -71,7 +93,6 @@ $(function () {
         reloadTable();
     });
 
-    // Pagination Click Intercept
     $(document).on('click', '#paginationContainer a.page-link', function (e) {
         e.preventDefault();
         const pageUrl = $(this).attr('href');
@@ -80,7 +101,6 @@ $(function () {
         }
     });
 
-    // Check All Checkboxes
     $(document).on('change', '[data-select-all]', function () {
         const target = $(this).data('selectAll');
         $(`${target} [data-row-checkbox]`).prop('checked', $(this).is(':checked'));
@@ -91,7 +111,6 @@ $(function () {
         $('.form-control, .custom-select').removeClass('is-invalid');
     }
 
-    // Open Create Modal
     $('#btnCreateItem').on('click', function (e) {
         e.preventDefault();
         clearFormErrors();
@@ -101,13 +120,15 @@ $(function () {
         $('#itemFormModalTitle span').text('Add Item to Order');
         $('#orderSelectContainer').removeClass('d-none');
         $('#modal_order_id').prop('required', true);
+        $('#product_id').val('');
+        $('#product_name_preview').val('');
+        $('#sku_preview').val('');
         $('#unit_price').val('0.00');
         $('#quantity').val('1');
-        $('#item_subtotal').val('0.00');
+        $('#item_line_total').val('0.00');
         $('#itemFormModal').modal('show');
     });
 
-    // Open Edit Modal via AJAX
     $(document).on('click', '.btn-edit-item', function (e) {
         e.preventDefault();
         const itemId = $(this).data('id');
@@ -118,25 +139,38 @@ $(function () {
             method: 'GET',
             dataType: 'json',
             success: function (res) {
-                if (res.success) {
-                    const item = res.item;
-                    $('#itemAjaxForm')[0].reset();
-                    $('#itemFormMethod').val('PUT');
-                    $('#itemAjaxForm').attr('action', `/admin/order-items/${itemId}`);
-                    $('#itemFormModalTitle span').text('Edit Item: ' + item.product_name);
-
-                    $('#orderSelectContainer').addClass('d-none');
-                    $('#modal_order_id').prop('required', false);
-
-                    $('#product_name').val(item.product_name);
-                    $('#variant_name').val(item.variant_name);
-                    $('#sku').val(item.sku);
-                    $('#unit_price').val(item.unit_price);
-                    $('#quantity').val(item.quantity);
-
-                    calculateItemSubtotal();
-                    $('#itemFormModal').modal('show');
+                if (!res.success) {
+                    return;
                 }
+
+                const item = res.item;
+                $('#itemAjaxForm')[0].reset();
+                $('#itemFormMethod').val('PUT');
+                $('#itemAjaxForm').attr('action', `/admin/order-items/${itemId}`);
+                $('#itemFormModalTitle span').text('Edit Item: ' + item.product_name);
+
+                $('#orderSelectContainer').addClass('d-none');
+                $('#modal_order_id').prop('required', false);
+
+                if ($(`#product_id option[value="${item.product_id}"]`).length === 0) {
+                    $('#product_id').append(
+                        $('<option>', {
+                            value: item.product_id,
+                            text: `${item.product_name} (${item.sku})`
+                        })
+                        .attr('data-name', item.product_name)
+                        .attr('data-sku', item.sku)
+                        .attr('data-price', item.unit_price)
+                    );
+                }
+
+                $('#product_id').val(String(item.product_id));
+                syncProductPreview(false);
+                $('#unit_price').val(parseFloat(item.unit_price || 0).toFixed(2));
+                $('#quantity').val(item.quantity);
+                calculateItemLineTotal();
+
+                $('#itemFormModal').modal('show');
             },
             error: function () {
                 showToast('Failed to retrieve item details.', 'error');
@@ -144,7 +178,6 @@ $(function () {
         });
     });
 
-    // Submit Create/Edit Form via AJAX
     $('#itemAjaxForm').on('submit', function (e) {
         e.preventDefault();
         clearFormErrors();
@@ -167,14 +200,15 @@ $(function () {
             },
             error: function (xhr) {
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
+                    const errors = xhr.responseJSON?.errors || {};
                     $.each(errors, function (key, messages) {
                         $(`#err-${key}`).text(messages[0]);
                         $(`[name="${key}"]`).addClass('is-invalid');
                     });
-                } else {
-                    showToast(xhr.responseJSON?.message || 'Something went wrong.', 'error');
+                    return;
                 }
+
+                showToast(xhr.responseJSON?.message || 'Something went wrong.', 'error');
             },
             complete: function () {
                 submitBtn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save Item');
@@ -182,7 +216,6 @@ $(function () {
         });
     });
 
-    // View Item Details via AJAX
     $(document).on('click', '.btn-view-item', function (e) {
         e.preventDefault();
         const itemId = $(this).data('id');
@@ -192,20 +225,20 @@ $(function () {
             method: 'GET',
             dataType: 'json',
             success: function (res) {
-                if (res.success) {
-                    const item = res.item;
-                    $('#show-product-name').text(item.product_name);
-                    $('#show-variant-name').text(item.variant_name);
-                    $('#show-order-number').text(item.order_number);
-                    $('#show-buyer-name').text(item.buyer_name);
-                    $('#show-sku').text(item.sku);
-                    $('#show-unit-price').text(item.unit_price);
-                    $('#show-quantity').text(item.quantity);
-                    $('#show-subtotal').text(item.subtotal);
-                    $('#show-created-at').text(item.created_at);
-
-                    $('#itemShowModal').modal('show');
+                if (!res.success) {
+                    return;
                 }
+
+                const item = res.item;
+                $('#show-product-name').text(item.product_name);
+                $('#show-order-number').text(item.order_number);
+                $('#show-buyer-name').text(item.buyer_name);
+                $('#show-sku').text(item.sku);
+                $('#show-unit-price').text(item.unit_price);
+                $('#show-quantity').text(item.quantity);
+                $('#show-line-total').text(item.line_total);
+                $('#show-created-at').text(item.created_at);
+                $('#itemShowModal').modal('show');
             },
             error: function () {
                 showToast('Could not load item details.', 'error');
@@ -213,7 +246,6 @@ $(function () {
         });
     });
 
-    // Universal Action Confirmation Modal (Delete, Restore, Force Delete)
     let pendingAction = null;
 
     $(document).on('click', '.btn-action', function (e) {
@@ -231,7 +263,9 @@ $(function () {
     });
 
     $('#confirmModalBtn').on('click', function () {
-        if (!pendingAction) return;
+        if (!pendingAction) {
+            return;
+        }
 
         const confirmBtn = $(this);
         confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...');
@@ -257,7 +291,6 @@ $(function () {
         });
     });
 
-    // Bulk Actions via AJAX
     $('#bulkActionForm').on('submit', function (e) {
         e.preventDefault();
         const action = $(this).find('[name="action"]').val();
@@ -287,7 +320,7 @@ $(function () {
         };
 
         $('#confirmModalTitle').text('Confirm Bulk Action');
-        $('#confirmModalText').text(`Are you sure you want to ${labels[action] || 'process'}?`);
+        $('#confirmModalText').text(`Are you sure you want to ${labels[action] || 'process selected items'}?`);
         $('#confirmModal').modal('show');
     });
 });

@@ -15,7 +15,7 @@
                         <i class="fas fa-box"></i>
                     </div>
                     <h5 class="font-weight-bold mb-1" id="show-product-name"></h5>
-                    <p class="text-muted small mb-0">Variant: <span id="show-variant-name" class="font-weight-600 text-dark"></span></p>
+                    <p class="text-muted small mb-0">SKU: <code id="show-sku"></code></p>
                 </div>
 
                 <ul class="list-group list-group-flush border rounded">
@@ -28,10 +28,6 @@
                         <span class="font-weight-600 text-dark" id="show-buyer-name"></span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between py-2 small">
-                        <span class="text-muted">SKU:</span>
-                        <code id="show-sku"></code>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between py-2 small">
                         <span class="text-muted">Unit Price:</span>
                         <span class="text-dark">৳<span id="show-unit-price"></span></span>
                     </li>
@@ -40,8 +36,8 @@
                         <span class="badge badge-secondary" id="show-quantity"></span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between py-2 font-weight-bold bg-light">
-                        <span class="text-dark">Line Subtotal:</span>
-                        <span class="text-primary h6 mb-0">৳<span id="show-subtotal"></span></span>
+                        <span class="text-dark">Line Total:</span>
+                        <span class="text-primary h6 mb-0">৳<span id="show-line-total"></span></span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between py-2 small">
                         <span class="text-muted">Added On:</span>

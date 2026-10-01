@@ -14,19 +14,17 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
-        'variant_id',
         'product_name',
-        'variant_name',
         'sku',
         'unit_price',
         'quantity',
-        'subtotal',
+        'line_total',
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
-        'subtotal'   => 'decimal:2',
-        'quantity'   => 'integer',
+        'line_total' => 'decimal:2',
+        'quantity' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -34,16 +32,11 @@ class OrderItem extends Model
 
     public function order(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class)->withTrashed();
     }
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
-    }
-
-    public function variant(): BelongsTo
-    {
-        return $this->belongsTo(ProductVariant::class, 'variant_id');
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
