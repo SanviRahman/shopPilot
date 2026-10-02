@@ -8,6 +8,15 @@
     $dataLayerEnabled = (bool) config('meta-pixel.data_layer.enabled', true);
     $dataLayerName = (string) config('meta-pixel.data_layer.name', 'dataLayer');
     $dataLayerEventMap = (array) config('meta-pixel.event_map', []);
+    $dataLayerLifecycleEnabled = (bool) config('meta-pixel.data_layer.lifecycle.enabled', true);
+    $dataLayerHistoryEnabled = (bool) config('meta-pixel.data_layer.lifecycle.history', true);
+    $dataLayerScrollThresholds = collect(config('meta-pixel.data_layer.lifecycle.scroll_thresholds', [25, 50, 75, 90]))
+        ->map(fn ($threshold) => (int) $threshold)
+        ->filter(fn ($threshold) => $threshold > 0 && $threshold <= 100)
+        ->unique()
+        ->sort()
+        ->values()
+        ->all();
 
     $routeEvent = null;
     if (request()->routeIs('website.products.show') && isset($product)) {
@@ -32,14 +41,161 @@
     <script>
         (function () {
             const layerName = @json($dataLayerName);
-            window[layerName] = window[layerName] || [];
-            window[layerName].push({
-                event: 'shop_pilot_meta_lifecycle',
-                tracking_active: @json($metaPixels->isNotEmpty()),
-                active_config_count: @json($metaPixels->count()),
-                active_pixel_ids: @json($allPixelIds),
-                lifecycle_state: @json($metaPixels->isNotEmpty() ? 'active' : 'inactive')
-            });
+            const lifecycleEnabled = @json($dataLayerLifecycleEnabled);
+            const historyEnabled = @json($dataLayerHistoryEnabled);
+            const scrollThresholds = @json($dataLayerScrollThresholds);
+            const layer = window[layerName] = window[layerName] || [];
+
+            const state = window.__ShopPilotDataLayerLifecycle = window.__ShopPilotDataLayerLifecycle || {
+                gtmJs: false,
+                gtmDom: false,
+                gtmLoad: false,
+                historyWrapped: false,
+                scrollBound: false,
+                scrollTicking: false,
+                scrollFired: {},
+                lastUrl: window.location.href,
+                metaLifecycle: false
+            };
+
+            const push = (eventName, details = {}) => {
+                layer.push(Object.assign({ event: eventName }, details));
+            };
+
+            if (!state.metaLifecycle) {
+                state.metaLifecycle = true;
+                push('shop_pilot_meta_lifecycle', {
+                    tracking_active: @json($metaPixels->isNotEmpty()),
+                    active_config_count: @json($metaPixels->count()),
+                    active_pixel_ids: @json($allPixelIds),
+                    lifecycle_state: @json($metaPixels->isNotEmpty() ? 'active' : 'inactive')
+                });
+            }
+
+            if (!lifecycleEnabled) return;
+
+            if (!state.gtmJs) {
+                state.gtmJs = true;
+                push('gtm.js', {
+                    'gtm.start': Date.now(),
+                    'gtm.uniqueEventId': Date.now()
+                });
+            }
+
+            const fireDom = () => {
+                if (state.gtmDom) return;
+                state.gtmDom = true;
+                push('gtm.dom', {
+                    'gtm.uniqueEventId': Date.now()
+                });
+            };
+
+            const fireLoad = () => {
+                if (state.gtmLoad) return;
+                state.gtmLoad = true;
+                push('gtm.load', {
+                    'gtm.uniqueEventId': Date.now()
+                });
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fireDom, { once: true });
+            } else {
+                fireDom();
+            }
+
+            if (document.readyState === 'complete') {
+                window.setTimeout(fireLoad, 0);
+            } else {
+                window.addEventListener('load', fireLoad, { once: true });
+            }
+
+            if (historyEnabled && !state.historyWrapped) {
+                state.historyWrapped = true;
+
+                const emitHistoryChange = (source, oldUrl, oldState) => {
+                    const newUrl = window.location.href;
+                    if (oldUrl === newUrl) return;
+
+                    let oldFragment = '';
+                    let newFragment = '';
+                    try { oldFragment = new URL(oldUrl).hash.replace(/^#/, ''); } catch (_) {}
+                    try { newFragment = new URL(newUrl).hash.replace(/^#/, ''); } catch (_) {}
+
+                    push('gtm.historyChange-v2', {
+                        'gtm.historyChangeSource': source,
+                        'gtm.oldUrl': oldUrl,
+                        'gtm.newUrl': newUrl,
+                        'gtm.oldUrlFragment': oldFragment,
+                        'gtm.newUrlFragment': newFragment,
+                        'gtm.oldHistoryState': oldState ?? null,
+                        'gtm.newHistoryState': window.history.state ?? null,
+                        'gtm.uniqueEventId': Date.now()
+                    });
+
+                    state.lastUrl = newUrl;
+                };
+
+                ['pushState', 'replaceState'].forEach((method) => {
+                    const original = window.history[method];
+                    if (typeof original !== 'function') return;
+
+                    window.history[method] = function (...args) {
+                        const oldUrl = window.location.href;
+                        const oldState = window.history.state;
+                        const result = original.apply(this, args);
+                        emitHistoryChange(method === 'pushState' ? 'pushState' : 'replaceState', oldUrl, oldState);
+                        return result;
+                    };
+                });
+
+                window.addEventListener('popstate', (event) => {
+                    const oldUrl = state.lastUrl || document.referrer || window.location.href;
+                    const oldState = null;
+                    window.setTimeout(() => emitHistoryChange('popstate', oldUrl, oldState), 0);
+                });
+            }
+
+            if (!state.scrollBound && Array.isArray(scrollThresholds) && scrollThresholds.length) {
+                state.scrollBound = true;
+
+                const onScroll = () => {
+                    if (state.scrollTicking) return;
+                    state.scrollTicking = true;
+
+                    window.requestAnimationFrame(() => {
+                        state.scrollTicking = false;
+
+                        const doc = document.documentElement;
+                        const body = document.body;
+                        const fullHeight = Math.max(
+                            doc.scrollHeight,
+                            doc.offsetHeight,
+                            body ? body.scrollHeight : 0,
+                            body ? body.offsetHeight : 0
+                        );
+                        const viewportBottom = window.scrollY + window.innerHeight;
+                        const percent = fullHeight > 0
+                            ? Math.min(100, Math.floor((viewportBottom / fullHeight) * 100))
+                            : 100;
+
+                        scrollThresholds.forEach((threshold) => {
+                            const key = String(threshold);
+                            if (state.scrollFired[key] || percent < threshold) return;
+
+                            state.scrollFired[key] = true;
+                            push('gtm.scrollDepth', {
+                                'gtm.scrollThreshold': threshold,
+                                'gtm.scrollUnits': 'percent',
+                                'gtm.scrollDirection': 'vertical',
+                                'gtm.uniqueEventId': Date.now()
+                            });
+                        });
+                    });
+                };
+
+                window.addEventListener('scroll', onScroll, { passive: true });
+            }
         })();
     </script>
 @endif

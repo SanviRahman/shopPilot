@@ -31,15 +31,7 @@
 
 <section class="shop-breadcrumb-section">
     <div class="container">
-        <nav class="shop-breadcrumb" aria-label="Breadcrumb" data-shop-reveal>
-            <a href="{{ route('website.home') }}">Home</a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Shop</span>
-            @if($selectedCategories->count() === 1)
-                <i class="fas fa-chevron-right"></i>
-                <strong>{{ $selectedCategories->first()->name }}</strong>
-            @endif
-        </nav>
+        @include('website.shop.partials.breadcrumb')
     </div>
 </section>
 

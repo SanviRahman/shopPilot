@@ -42,6 +42,14 @@ return [
     'data_layer' => [
         'enabled' => env('META_PIXEL_DATALAYER_ENABLED', true),
         'name' => env('META_PIXEL_DATALAYER_NAME', 'dataLayer'),
+        'lifecycle' => [
+            'enabled' => env('META_PIXEL_DATALAYER_LIFECYCLE_ENABLED', true),
+            'history' => env('META_PIXEL_DATALAYER_HISTORY_ENABLED', true),
+            'scroll_thresholds' => array_values(array_filter(array_map(
+                static fn ($value) => (int) trim($value),
+                explode(',', (string) env('META_PIXEL_DATALAYER_SCROLL_THRESHOLDS', '25,50,75,90'))
+            ), static fn ($value) => $value > 0 && $value <= 100)),
+        ],
     ],
 
     /*

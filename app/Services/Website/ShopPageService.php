@@ -146,6 +146,20 @@ class ShopPageService
             + ($minPrice > 0 || $maxPrice < $globalMaxPrice ? 1 : 0)
             + ($searchTerm !== '' ? 1 : 0);
 
+        $shopContext = match (true) {
+            $sort === 'newest' => 'new_arrivals',
+            $sort === 'best_selling' => 'best_sellers',
+            $featuredOnly => 'offers',
+            default => 'shop',
+        };
+
+        $shopContextLabel = match ($shopContext) {
+            'new_arrivals' => 'New Arrivals',
+            'best_sellers' => 'Best Sellers',
+            'offers' => 'Offers',
+            default => 'Shop',
+        };
+
         return [
             'categories' => $categories,
             'products' => $products,
@@ -160,6 +174,8 @@ class ShopPageService
             'sort' => $sort,
             'perPage' => $perPage,
             'activeFilterCount' => $activeFilterCount,
+            'shopContext' => $shopContext,
+            'shopContextLabel' => $shopContextLabel,
         ];
     }
 }

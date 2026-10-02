@@ -26,7 +26,10 @@
     };
 
     const setupReveal = () => {
-        const targets = Array.from(region()?.querySelectorAll('[data-shop-reveal]') || []);
+        // Hero + breadcrumb live outside the AJAX region, while filters/products
+        // live inside it. Observe the whole document so both static and freshly
+        // replaced AJAX content can become visible.
+        const targets = Array.from(document.querySelectorAll('[data-shop-reveal]:not(.is-visible)'));
         if (reducedMotion || !('IntersectionObserver' in window)) {
             targets.forEach((element) => element.classList.add('is-visible'));
             return;
@@ -115,6 +118,22 @@
         } else {
             const nextSearch = parsed.querySelector('[data-shop-search-form] input[name="q"]');
             if (currentSearch) currentSearch.value = nextSearch?.value || '';
+        }
+
+        if (payload && typeof payload.breadcrumb_html === 'string' && payload.breadcrumb_html.trim() !== '') {
+            const currentBreadcrumb = document.querySelector('[data-shop-breadcrumb]');
+            const breadcrumbDocument = new DOMParser().parseFromString(payload.breadcrumb_html, 'text/html');
+            const incomingBreadcrumb = breadcrumbDocument.querySelector('[data-shop-breadcrumb]');
+
+            if (currentBreadcrumb && incomingBreadcrumb) {
+                currentBreadcrumb.replaceWith(document.importNode(incomingBreadcrumb, true));
+            }
+        }
+
+        if (payload && typeof payload.shop_context === 'string') {
+            document.querySelectorAll('[data-shop-nav-context]').forEach((link) => {
+                link.classList.toggle('active', link.dataset.shopNavContext === payload.shop_context);
+            });
         }
     };
 
@@ -252,4 +271,12 @@
     });
 
     setupRegion();
+
+    // Do not allow entrance-animation state to leave content invisible if an
+    // observer callback is delayed by browser extensions/background throttling.
+    window.setTimeout(() => {
+        document.querySelectorAll('[data-shop-reveal]:not(.is-visible)').forEach((element) => {
+            element.classList.add('is-visible');
+        });
+    }, 1200);
 })();

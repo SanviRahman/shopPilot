@@ -1,6 +1,19 @@
 @php
     $cartCount = (int) ($headerCartSummary['count'] ?? 0);
     $cartTotal = (float) ($headerCartSummary['grandTotal'] ?? 0);
+
+    $isShopPage = request()->routeIs('website.shop');
+    $isProductPage = request()->routeIs('website.products.*');
+    $headerShopContext = 'shop';
+
+    if ($isShopPage) {
+        $headerShopContext = match (true) {
+            request('sort') === 'newest' => 'new_arrivals',
+            request('sort') === 'best_selling' => 'best_sellers',
+            request()->boolean('featured') => 'offers',
+            default => 'shop',
+        };
+    }
 @endphp
 
 <header class="site-header" id="siteHeader">
@@ -94,27 +107,28 @@
                 </div>
             </div>
 
-            <div class="desktop-nav-links">
+            <div class="desktop-nav-links" data-shop-nav>
                 <a href="{{ route('website.home') }}" class="{{ request()->routeIs('website.home') ? 'active' : '' }}">Home</a>
-                <a href="{{ route('website.shop') }}" class="{{ request()->routeIs('website.shop') || request()->routeIs('website.products.*') ? 'active' : '' }}">Shop</a>
-                <a href="{{ route('website.shop', ['sort' => 'newest']) }}">New Arrivals</a>
-                <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
-                <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>
+                <a href="{{ route('website.shop') }}" data-shop-nav-context="shop" class="{{ ($isProductPage || ($isShopPage && $headerShopContext === 'shop')) ? 'active' : '' }}">Shop</a>
+                <a href="{{ route('website.shop', ['sort' => 'newest']) }}" data-shop-nav-context="new_arrivals" class="{{ $isShopPage && $headerShopContext === 'new_arrivals' ? 'active' : '' }}">New Arrivals</a>
+                <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}" data-shop-nav-context="best_sellers" class="{{ $isShopPage && $headerShopContext === 'best_sellers' ? 'active' : '' }}">Best Sellers</a>
+                <a href="{{ route('website.shop', ['featured' => 1]) }}" data-shop-nav-context="offers" class="{{ $isShopPage && $headerShopContext === 'offers' ? 'active' : '' }}">Offers</a>
                 <a href="#" data-coming-soon="Frontend blog">Blogs</a>
                 <a href="#contact">Contact</a>
             </div>
         </div>
     </nav>
 
-    <div class="mobile-menu" data-mobile-menu>
+    <div class="mobile-menu" data-mobile-menu data-shop-mobile-nav>
         <a href="{{ route('website.home') }}">Home</a>
         <a href="{{ route('website.shop') }}">Categories</a>
-        <a href="{{ route('website.shop') }}">Shop</a>
+        <a href="{{ route('website.shop') }}" data-shop-nav-context="shop" class="{{ ($isProductPage || ($isShopPage && $headerShopContext === 'shop')) ? 'active' : '' }}">Shop</a>
+        <a href="{{ route('website.shop', ['sort' => 'newest']) }}" data-shop-nav-context="new_arrivals" class="{{ $isShopPage && $headerShopContext === 'new_arrivals' ? 'active' : '' }}">New Arrivals</a>
         <a href="{{ route('website.cart.index') }}">Cart (<span data-mobile-cart-count>{{ $cartCount }}</span>)</a>
         <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}">{{ auth('web')->check() ? 'My Account' : 'Login / Register' }}</a>
         @if(auth('web')->check())<a href="{{ route('website.account.orders') }}">My Orders</a>@endif
-        <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
-        <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>
+        <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}" data-shop-nav-context="best_sellers" class="{{ $isShopPage && $headerShopContext === 'best_sellers' ? 'active' : '' }}">Best Sellers</a>
+        <a href="{{ route('website.shop', ['featured' => 1]) }}" data-shop-nav-context="offers" class="{{ $isShopPage && $headerShopContext === 'offers' ? 'active' : '' }}">Offers</a>
         <a href="#contact">Contact</a>
     </div>
 </header>

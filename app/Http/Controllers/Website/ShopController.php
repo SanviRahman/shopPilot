@@ -22,6 +22,9 @@ class ShopController extends Controller
             return response()->json([
                 'success' => true,
                 'html' => view('website.shop.partials.ajax-region', $data)->render(),
+                'breadcrumb_html' => view('website.shop.partials.breadcrumb', $data)->render(),
+                'shop_context' => (string) $data['shopContext'],
+                'shop_context_label' => (string) $data['shopContextLabel'],
                 'total_count' => (int) $data['products']->total(),
                 'search_query' => (string) $data['searchTerm'],
                 'url' => $request->fullUrl(),
