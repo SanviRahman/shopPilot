@@ -132,18 +132,23 @@
                     @endif
                 </div>
 
-                <div class="quantity-control" data-product-quantity data-max="{{ max(1, (int) $product->stock_quantity) }}">
-                    <button type="button" data-qty-minus aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
-                    <input type="number" value="1" min="1" max="{{ max(1, (int) $product->stock_quantity) }}" data-qty-input aria-label="Quantity">
-                    <button type="button" data-qty-plus aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
-                </div>
+                <form action="{{ route('website.cart.items.store') }}" method="POST" class="product-order-form">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-                <button type="button" class="product-primary-action" data-coming-soon="Cart" {{ $inStock ? '' : 'disabled' }}>
-                    <i class="fas fa-cart-plus"></i> {{ $inStock ? 'Add to Cart' : 'Out of Stock' }}
-                </button>
-                <button type="button" class="product-secondary-action" data-coming-soon="Buy Now" {{ $inStock ? '' : 'disabled' }}>
-                    Buy Now
-                </button>
+                    <div class="quantity-control" data-product-quantity data-max="{{ max(1, (int) $product->stock_quantity) }}">
+                        <button type="button" data-qty-minus aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
+                        <input type="number" name="quantity" value="1" min="1" max="{{ max(1, (int) $product->stock_quantity) }}" data-qty-input aria-label="Quantity">
+                        <button type="button" data-qty-plus aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
+                    </div>
+
+                    <button type="submit" name="redirect_to" value="back" class="product-primary-action" {{ $inStock ? '' : 'disabled' }}>
+                        <i class="fas fa-cart-plus"></i> {{ $inStock ? 'Add to Cart' : 'Out of Stock' }}
+                    </button>
+                    <button type="submit" name="redirect_to" value="cart" class="product-secondary-action" {{ $inStock ? '' : 'disabled' }}>
+                        Buy Now
+                    </button>
+                </form>
                 <button type="button" class="product-wishlist-action" data-coming-soon="Wishlist">
                     <i class="far fa-heart"></i> Add to Wishlist
                 </button>

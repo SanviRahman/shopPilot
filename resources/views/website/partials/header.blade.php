@@ -1,8 +1,6 @@
 @php
-    $cartItems = session('cart.items', session('cart', []));
-    $cartCount = collect(is_array($cartItems) ? $cartItems : [])->sum(function ($item) {
-        return is_array($item) ? (int) ($item['quantity'] ?? 0) : 0;
-    });
+    $cartCount = (int) ($headerCartSummary['count'] ?? 0);
+    $cartTotal = (float) ($headerCartSummary['grandTotal'] ?? 0);
 @endphp
 
 <header class="site-header" id="siteHeader">
@@ -60,12 +58,12 @@
                     <span class="action-copy"><strong>Wishlist</strong><small>Wishlist</small></span>
                 </a>
 
-                <a href="#" class="header-action compact" data-coming-soon="Shopping cart">
+                <a href="{{ route('website.cart.index') }}" class="header-action compact {{ request()->routeIs('website.cart.*') ? 'active' : '' }}">
                     <span class="action-icon badge-holder">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="mini-badge">{{ $cartCount }}</span>
                     </span>
-                    <span class="action-copy"><strong>Cart</strong><small>৳0.00</small></span>
+                    <span class="action-copy"><strong>Cart</strong><small>৳{{ number_format($cartTotal, 2) }}</small></span>
                 </a>
 
                 <button class="mobile-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-mobile-menu-toggle>
@@ -112,6 +110,7 @@
         <a href="{{ route('website.home') }}">Home</a>
         <a href="{{ route('website.shop') }}">Categories</a>
         <a href="{{ route('website.shop') }}">Shop</a>
+        <a href="{{ route('website.cart.index') }}">Cart ({{ $cartCount }})</a>
         <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
         <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>
         <a href="#contact">Contact</a>

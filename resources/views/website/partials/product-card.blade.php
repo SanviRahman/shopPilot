@@ -50,14 +50,19 @@
             {{ $inStock ? 'In stock' : 'Out of stock' }}
         </div>
 
-        <button
-            type="button"
-            class="add-to-cart-button"
-            data-coming-soon="Cart"
-            {{ $inStock ? '' : 'disabled' }}
-        >
-            <i class="fas fa-cart-plus"></i>
-            {{ $inStock ? 'Add to Cart' : 'Out of Stock' }}
-        </button>
+        <form action="{{ route('website.cart.items.store') }}" method="POST" class="product-card-cart-form">
+            @csrf
+            <input type="hidden" name="product_id" value="{{ $product->id }}">
+            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="redirect_to" value="back">
+            <button
+                type="submit"
+                class="add-to-cart-button"
+                {{ $inStock ? '' : 'disabled' }}
+            >
+                <i class="fas fa-cart-plus"></i>
+                {{ $inStock ? 'Add to Cart' : 'Out of Stock' }}
+            </button>
+        </form>
     </div>
 </article>

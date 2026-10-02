@@ -13,6 +13,9 @@
         toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2600);
     }
 
+    const flashMessage = document.body?.dataset.flashMessage;
+    const flashError = document.body?.dataset.flashError;
+
     function completePageLoad() {
         document.body.classList.add('page-loaded');
         const loader = document.getElementById('siteLoader');
@@ -25,6 +28,10 @@
     } else {
         window.addEventListener('load', completePageLoad, { once: true });
         window.setTimeout(completePageLoad, 1200);
+    }
+
+    if (flashMessage || flashError) {
+        window.setTimeout(() => showToast(flashError || flashMessage), 380);
     }
 
     document.addEventListener('click', (event) => {

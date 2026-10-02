@@ -14,7 +14,7 @@
     @stack('styles')
     <script>document.documentElement.classList.add('js');</script>
 </head>
-<body>
+<body data-flash-message="{{ session('success') }}" data-flash-error="{{ $errors->first() }}">
     <div class="site-loader" id="siteLoader" aria-hidden="true">
         <div class="site-loader-inner">
             <div class="loader-brand-mark"><i class="fas fa-shopping-bag"></i></div>
