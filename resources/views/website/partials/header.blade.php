@@ -98,7 +98,7 @@
 
             <div class="desktop-nav-links">
                 <a href="{{ route('website.home') }}" class="{{ request()->routeIs('website.home') ? 'active' : '' }}">Home</a>
-                <a href="{{ route('website.shop') }}" class="{{ request()->routeIs('website.shop') ? 'active' : '' }}">Shop</a>
+                <a href="{{ route('website.shop') }}" class="{{ request()->routeIs('website.shop') || request()->routeIs('website.products.*') ? 'active' : '' }}">Shop</a>
                 <a href="{{ route('website.shop', ['sort' => 'newest']) }}">New Arrivals</a>
                 <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
                 <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>

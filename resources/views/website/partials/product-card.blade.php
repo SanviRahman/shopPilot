@@ -19,16 +19,18 @@
             <i class="far fa-heart"></i>
         </button>
 
-        @if($product->thumbnail_url)
-            <img src="{{ $product->thumbnail_url }}" alt="{{ $product->name }}" loading="lazy">
-        @else
-            <img src="{{ asset('assets/website/images/product-placeholder.svg') }}" alt="{{ $product->name }}" loading="lazy">
-        @endif
+        <a href="{{ route('website.products.show', $product->slug) }}" class="product-image-link" aria-label="View {{ $product->name }} details">
+            @if($product->thumbnail_url)
+                <img src="{{ $product->thumbnail_url }}" alt="{{ $product->name }}" loading="lazy">
+            @else
+                <img src="{{ asset('assets/website/images/product-placeholder.svg') }}" alt="{{ $product->name }}" loading="lazy">
+            @endif
+        </a>
     </div>
 
     <div class="product-card-body">
         <div class="product-category">{{ $product->category?->name ?? 'Uncategorized' }}</div>
-        <h3><a href="#" data-coming-soon="Product details">{{ $product->name }}</a></h3>
+        <h3><a href="{{ route('website.products.show', $product->slug) }}">{{ $product->name }}</a></h3>
         <p class="product-description">{{ \Illuminate\Support\Str::limit($product->short_description ?: 'Quality product selected for ShopPilot customers.', 52) }}</p>
 
         <div class="rating-row" aria-label="Product rating placeholder">
