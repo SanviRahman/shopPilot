@@ -3,6 +3,8 @@
 use App\Http\Controllers\Backoffice\Admin\AdminController;
 use App\Http\Controllers\Backoffice\Admin\BlogController;
 use App\Http\Controllers\Backoffice\Admin\CategoryController;
+use App\Http\Controllers\Backoffice\Admin\CustomerController;
+use App\Http\Controllers\Backoffice\Admin\MetaPixelController;
 use App\Http\Controllers\Backoffice\Admin\CouponController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
@@ -57,6 +59,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{permission}/force-delete', [PermissionController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('permissions', PermissionController::class);
+
+        // Customers
+        Route::prefix('customers')->name('customers.')->group(function () {
+            Route::get('trash', [CustomerController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [CustomerController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{customer}/restore', [CustomerController::class, 'restore'])->name('restore');
+            Route::delete('{customer}/force-delete', [CustomerController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('customers', CustomerController::class);
+
+        // Meta Pixel
+        Route::prefix('meta-pixels')->name('meta-pixels.')->group(function () {
+            Route::get('trash', [MetaPixelController::class, 'trash'])->name('trash');
+            Route::patch('{metaPixel}/restore', [MetaPixelController::class, 'restore'])->name('restore');
+            Route::delete('{metaPixel}/force-delete', [MetaPixelController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('meta-pixels', MetaPixelController::class);
 
         //Admins
         Route::prefix('admins')->name('admins.')->group(function () {

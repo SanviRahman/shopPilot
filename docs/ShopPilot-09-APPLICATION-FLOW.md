@@ -534,6 +534,9 @@ Home / Shop
    ↓
 Search OR Category Filter
    ↓
+AJAX GET when JavaScript is available
+(normal GET remains fallback)
+   ↓
 Query Products
    ↓
 Apply Storefront Visibility Rules
@@ -541,6 +544,11 @@ Apply Storefront Visibility Rules
 Paginated Product Result
    ↓
 Blade Product Grid/List
+   ↓
+AJAX controller returns rendered Blade partial in JSON
+   ↓
+AJAX replaces only the Shop result/filter region
+without changing server-authoritative query rules
 ```
 
 Optional filters/sorting remain limited to approved features.

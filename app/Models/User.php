@@ -20,10 +20,12 @@ class User extends Authenticatable implements HasMedia
         'name',
         'email',
         'password',
+        'status',
     ];
 
     protected $hidden = [
         'password',
+        'status',
         'remember_token',
     ];
 
@@ -84,6 +86,12 @@ class User extends Authenticatable implements HasMedia
     public function adminlte_profile_url(): string
     {
         return route('admin.profile');
+    }
+
+
+    public function isActive(): bool
+    {
+        return ($this->status ?? 'active') === 'active';
     }
 
     public function isStaff(): bool

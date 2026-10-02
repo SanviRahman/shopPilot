@@ -172,6 +172,7 @@
         root.querySelector('[data-coupon-saving]') && (root.querySelector('[data-coupon-saving]').textContent = Math.round(discount).toLocaleString('en-US'));
         couponApplied?.classList.toggle('hidden', !summary.coupon_code);
         couponForm?.classList.toggle('hidden', Boolean(summary.coupon_code));
+        window.ShopPilotAjax?.updateCartHeader?.({ count: summary.count, grand_total: summary.grand_total });
         renderTotals();
     };
 
@@ -184,7 +185,7 @@
         try {
             const response = await fetch(button.dataset.url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf },
                 body: JSON.stringify({ coupon_code: code }),
             });
             const payload = await response.json();
@@ -202,7 +203,7 @@
         try {
             const response = await fetch(window.ShopPilotCheckout.removeCouponUrl, {
                 method: 'DELETE',
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf },
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf },
             });
             const payload = await response.json();
             if (!response.ok) throw new Error(payload?.message || 'Unable to remove coupon.');
@@ -214,14 +215,46 @@
         } finally { setCouponLoading(button, false); }
     });
 
-    form?.addEventListener('submit', (event) => {
-        if (!validateStep(1) || !validateStep(2)) {
-            event.preventDefault();
-            setStep(!validateStep(1) ? 1 : 2);
+    form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const shippingValid = validateStep(1);
+        const paymentValid = shippingValid ? validateStep(2) : false;
+        if (!shippingValid || !paymentValid) {
+            setStep(!shippingValid ? 1 : 2);
             return;
         }
+
+        const ajax = window.ShopPilotAjax;
+        if (!ajax) {
+            form.submit();
+            return;
+        }
+
         const submit = form.querySelector('[data-place-order]');
-        if (submit) { submit.disabled = true; submit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order…'; }
+        ajax.clearFormErrors(form);
+        ajax.setButtonLoading(submit, true, 'Placing Order…');
+
+        try {
+            const payload = await ajax.request(form.action, { method: 'POST', form });
+            ajax.updateCartHeader(payload.cart);
+            ajax.trackMeta(payload.meta_event);
+            ajax.toast(payload.message || 'Order placed successfully.');
+
+            if (payload.redirect_url) {
+                window.setTimeout(() => window.location.assign(payload.redirect_url), 100);
+            }
+        } catch (error) {
+            if (error.status === 422) {
+                const errors = error.payload?.errors || {};
+                ajax.showFormErrors(form, errors);
+                const paymentFields = ['payment_method_id', 'transaction_id'];
+                const firstKey = Object.keys(errors)[0] || '';
+                setStep(paymentFields.includes(firstKey) ? 2 : 1);
+            }
+            ajax.toast(ajax.firstError(error.payload, error.message), 'error');
+            ajax.setButtonLoading(submit, false);
+        }
     });
 
     renderTotals();

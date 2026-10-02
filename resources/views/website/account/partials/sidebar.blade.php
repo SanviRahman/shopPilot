@@ -9,6 +9,6 @@
         <a href="{{ route('website.account.orders') }}" class="{{ request()->routeIs('website.account.orders*') ? 'active' : '' }}"><i class="fas fa-box"></i> My Orders</a>
         <a href="{{ route('website.account.payments') }}" class="{{ request()->routeIs('website.account.payments*') ? 'active' : '' }}"><i class="fas fa-credit-card"></i> Payment Submissions</a>
         <a href="{{ route('website.shop') }}"><i class="fas fa-shopping-bag"></i> Continue Shopping</a>
-        <form method="POST" action="{{ route('website.logout') }}">@csrf<button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
+        <form method="POST" action="{{ route('website.logout') }}" data-ajax-logout>@csrf<button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
     </nav>
 </aside>

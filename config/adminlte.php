@@ -249,6 +249,32 @@ return [
             'active' => ['admin/password*'],
         ],
 
+        // CUSTOMER MANAGEMENT
+        [
+            'header' => 'CUSTOMER MANAGEMENT',
+            'can'    => 'customers.view',
+        ],
+        [
+            'text'   => 'Customers',
+            'route'  => 'admin.customers.index',
+            'icon'   => 'fas fa-fw fa-users',
+            'active' => ['admin/customers*'],
+            'can'    => 'customers.view',
+        ],
+
+        // TRACKING & ANALYTICS
+        [
+            'header' => 'TRACKING & ANALYTICS',
+            'can'    => 'meta-pixels.view',
+        ],
+        [
+            'text'   => 'Meta Pixel',
+            'route'  => 'admin.meta-pixels.index',
+            'icon'   => 'fab fa-fw fa-facebook',
+            'active' => ['admin/meta-pixels*'],
+            'can'    => 'meta-pixels.view',
+        ],
+
         // ACCESS CONTROL
         [
             'header' => 'ACCESS CONTROL',

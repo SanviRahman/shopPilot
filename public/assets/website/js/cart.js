@@ -2,12 +2,16 @@
     'use strict';
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const selectAll = document.querySelector('[data-cart-select-all]');
-    const itemChecks = Array.from(document.querySelectorAll('[data-cart-item-check]'));
-    const removeSelected = document.querySelector('[data-remove-selected]');
+    const ajax = () => window.ShopPilotAjax;
+    const cartRegion = () => document.querySelector('[data-cart-ajax-content]');
+    let refreshController = null;
+    let pendingConfirmForm = null;
+    let previouslyFocusedElement = null;
 
     const syncSelection = () => {
+        const selectAll = cartRegion()?.querySelector('[data-cart-select-all]');
+        const itemChecks = Array.from(cartRegion()?.querySelectorAll('[data-cart-item-check]') || []);
+        const removeSelected = cartRegion()?.querySelector('[data-remove-selected]');
         if (!itemChecks.length) return;
         const selected = itemChecks.filter((input) => input.checked).length;
         if (selectAll) {
@@ -17,228 +21,213 @@
         if (removeSelected) removeSelected.disabled = selected === 0;
     };
 
-    selectAll?.addEventListener('change', () => {
-        itemChecks.forEach((input) => {
-            input.checked = selectAll.checked;
-        });
-        syncSelection();
-    });
-
-    itemChecks.forEach((input) => input.addEventListener('change', syncSelection));
-    syncSelection();
-
-    document.querySelectorAll('[data-cart-quantity-form]').forEach((form) => {
-        const input = form.querySelector('[data-cart-qty-input]');
-        const minus = form.querySelector('[data-cart-qty-minus]');
-        const plus = form.querySelector('[data-cart-qty-plus]');
-        const max = Math.max(1, Number(form.dataset.max || 1));
-        let lastSubmittedValue = Number(input?.value || 1);
-
-        const clamp = (value) => Math.max(1, Math.min(max, Number(value) || 1));
-        const submitValue = (value) => {
-            if (!input) return;
-            const next = clamp(value);
-            input.value = String(next);
-            if (next === lastSubmittedValue) return;
-            lastSubmittedValue = next;
-            form.requestSubmit();
-        };
-
-        minus?.addEventListener('click', () => submitValue(Number(input?.value || 1) - 1));
-        plus?.addEventListener('click', () => submitValue(Number(input?.value || 1) + 1));
-        input?.addEventListener('change', () => submitValue(input.value));
-    });
-
-    const confirmModal = document.querySelector('[data-cart-confirm-modal]');
-    const confirmDialog = confirmModal?.querySelector('.cart-confirm-dialog');
-    const confirmTitle = confirmModal?.querySelector('[data-cart-confirm-title]');
-    const confirmMessage = confirmModal?.querySelector('[data-cart-confirm-message]');
-    const confirmNote = confirmModal?.querySelector('[data-cart-confirm-note] span');
-    const confirmSubmit = confirmModal?.querySelector('[data-cart-confirm-submit]');
-    const confirmCloseButtons = Array.from(confirmModal?.querySelectorAll('[data-cart-confirm-close]') || []);
-    let pendingConfirmForm = null;
-    let previouslyFocusedElement = null;
-
-    const closeConfirmModal = () => {
-        if (!confirmModal) return;
-
-        confirmModal.classList.remove('open');
-        confirmModal.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('cart-confirm-open');
-        pendingConfirmForm = null;
-
-        window.setTimeout(() => previouslyFocusedElement?.focus?.(), reducedMotion ? 0 : 180);
-    };
-
-    const openConfirmModal = (form) => {
-        if (!confirmModal || !confirmDialog || !confirmSubmit) return false;
-
-        pendingConfirmForm = form;
-        previouslyFocusedElement = document.activeElement;
-
-        if (confirmTitle) {
-            confirmTitle.textContent = form.dataset.confirmTitle || 'Please confirm this action';
-        }
-
-        if (confirmMessage) {
-            confirmMessage.textContent = form.dataset.confirmForm || 'This action will update your shopping cart.';
-        }
-
-        if (confirmNote) {
-            confirmNote.textContent = form.dataset.confirmNote || 'Your account and checkout information stay safe.';
-        }
-
-        confirmSubmit.textContent = form.dataset.confirmAction || 'Yes, continue';
-        confirmModal.classList.add('open');
-        confirmModal.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('cart-confirm-open');
-
-        window.requestAnimationFrame(() => confirmDialog.focus());
-        return true;
-    };
-
-    document.querySelectorAll('[data-confirm-form]').forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            if (form.dataset.confirmApproved === 'true') {
-                delete form.dataset.confirmApproved;
-                return;
-            }
-
-            event.preventDefault();
-
-            if (!openConfirmModal(form)) {
-                // Safe fallback for extremely old browsers or markup failures.
-                if (window.confirm(form.dataset.confirmForm || 'Are you sure?')) {
-                    form.dataset.confirmApproved = 'true';
-                    form.requestSubmit();
-                }
+    const setupReveal = () => {
+        const targets = Array.from(cartRegion()?.querySelectorAll('[data-cart-reveal]') || []);
+        targets.forEach((element, index) => {
+            if (!element.style.getPropertyValue('--cart-delay')) {
+                element.style.setProperty('--cart-delay', `${Math.min(index * 55, 320)}ms`);
             }
         });
-    });
 
-    confirmCloseButtons.forEach((button) => button.addEventListener('click', closeConfirmModal));
-
-    confirmSubmit?.addEventListener('click', () => {
-        if (!pendingConfirmForm) return;
-
-        const form = pendingConfirmForm;
-        form.dataset.confirmApproved = 'true';
-        confirmSubmit.disabled = true;
-        confirmSubmit.classList.add('loading');
-
-        window.setTimeout(() => {
-            form.requestSubmit();
-        }, reducedMotion ? 0 : 130);
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !confirmModal?.classList.contains('open')) return;
-        event.preventDefault();
-        closeConfirmModal();
-    });
-
-    const couponToggle = document.querySelector('[data-coupon-toggle]');
-    const couponBody = document.querySelector('[data-coupon-body]');
-    couponToggle?.addEventListener('click', () => {
-        if (!couponBody) return;
-        const open = couponBody.classList.toggle('open');
-        couponToggle.setAttribute('aria-expanded', String(open));
-    });
-
-    const summaryToggle = document.querySelector('[data-cart-summary-toggle]');
-    const summaryBody = document.querySelector('[data-cart-summary-body]');
-    summaryToggle?.addEventListener('click', () => {
-        if (!summaryBody || window.innerWidth > 780) return;
-        const collapsed = summaryBody.classList.toggle('collapsed');
-        summaryToggle.setAttribute('aria-expanded', String(!collapsed));
-    });
-
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 780 && summaryBody) {
-            summaryBody.classList.remove('collapsed');
-            summaryToggle?.setAttribute('aria-expanded', 'true');
+        if (reducedMotion || !('IntersectionObserver' in window)) {
+            targets.forEach((element) => element.classList.add('is-visible'));
+            return;
         }
-    }, { passive: true });
 
-    const revealTargets = Array.from(document.querySelectorAll('[data-cart-reveal]'));
-    revealTargets.forEach((element, index) => {
-        if (!element.style.getPropertyValue('--cart-delay')) {
-            element.style.setProperty('--cart-delay', `${Math.min(index * 55, 320)}ms`);
-        }
-    });
-
-    if (reducedMotion || !('IntersectionObserver' in window)) {
-        revealTargets.forEach((element) => element.classList.add('is-visible'));
-    } else {
         const observer = new IntersectionObserver((entries, instance) => {
             entries.forEach((entry) => {
                 if (!entry.isIntersecting) return;
                 entry.target.classList.add('is-visible');
                 instance.unobserve(entry.target);
             });
-        }, {
-            threshold: .08,
-            rootMargin: '0px 0px -36px 0px',
-        });
+        }, { threshold: .08, rootMargin: '0px 0px -36px 0px' });
+        targets.forEach((element) => observer.observe(element));
+    };
 
-        revealTargets.forEach((element) => observer.observe(element));
-    }
+    const setupRegion = () => {
+        syncSelection();
+        setupReveal();
+    };
 
-    const relatedTrack = document.querySelector('[data-cart-related-track]');
-    if (relatedTrack && !reducedMotion) {
-        const interactiveSelector = 'a, button, input, select, textarea, label, form';
-        const dragThreshold = 7;
-        let pointerDown = false;
-        let dragging = false;
-        let pointerId = null;
-        let startX = 0;
-        let startScroll = 0;
+    const reloadCart = async () => {
+        if (!cartRegion() || !ajax()) return;
+        refreshController?.abort();
+        refreshController = new AbortController();
 
-        relatedTrack.addEventListener('pointerdown', (event) => {
-            // Touch/pen already get smooth native horizontal scrolling. More importantly,
-            // never capture a pointer that started on a real control/link inside a card.
-            if (event.pointerType !== 'mouse' || event.button !== 0) return;
-            if (event.target.closest(interactiveSelector)) return;
+        try {
+            const result = await ajax().fetchFragment(window.location.href, '[data-cart-ajax-content]', {
+                pushState: false,
+                signal: refreshController.signal,
+            });
+            ajax().updateCartHeader(result.payload?.cart);
+            setupRegion();
+        } catch (error) {
+            if (error.name !== 'AbortError') ajax().toast(error.message || 'Unable to refresh the cart.', 'error');
+        }
+    };
 
-            pointerDown = true;
-            dragging = false;
-            pointerId = event.pointerId;
-            startX = event.clientX;
-            startScroll = relatedTrack.scrollLeft;
-        });
+    const submitCartForm = async (form, button = null) => {
+        if (!form || !ajax()) return;
+        const submitButton = button || form.querySelector('button[type="submit"]');
+        ajax().setButtonLoading(submitButton, true, 'Updating…');
 
-        relatedTrack.addEventListener('pointermove', (event) => {
-            if (!pointerDown || event.pointerId !== pointerId) return;
+        try {
+            const payload = await ajax().request(form.action, { method: 'POST', form });
+            ajax().updateCartHeader(payload.cart);
+            ajax().toast(payload.message || 'Cart updated.');
+            await reloadCart();
+        } catch (error) {
+            ajax().toast(ajax().firstError(error.payload, error.message), 'error');
+        } finally {
+            ajax().setButtonLoading(submitButton, false);
+        }
+    };
 
-            const deltaX = event.clientX - startX;
+    const confirmModal = () => document.querySelector('[data-cart-confirm-modal]');
+    const closeConfirmModal = () => {
+        const modal = confirmModal();
+        if (!modal) return;
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('cart-confirm-open');
+        pendingConfirmForm = null;
+        window.setTimeout(() => previouslyFocusedElement?.focus?.(), reducedMotion ? 0 : 180);
+    };
 
-            if (!dragging) {
-                if (Math.abs(deltaX) < dragThreshold) return;
+    const openConfirmModal = (form) => {
+        const modal = confirmModal();
+        const dialog = modal?.querySelector('.cart-confirm-dialog');
+        const submit = modal?.querySelector('[data-cart-confirm-submit]');
+        if (!modal || !dialog || !submit) return false;
 
-                dragging = true;
-                relatedTrack.classList.add('is-dragging');
-                relatedTrack.setPointerCapture?.(event.pointerId);
-            }
+        pendingConfirmForm = form;
+        previouslyFocusedElement = document.activeElement;
+        const title = modal.querySelector('[data-cart-confirm-title]');
+        const message = modal.querySelector('[data-cart-confirm-message]');
+        const note = modal.querySelector('[data-cart-confirm-note] span');
+        if (title) title.textContent = form.dataset.confirmTitle || 'Please confirm this action';
+        if (message) message.textContent = form.dataset.confirmForm || 'This action will update your shopping cart.';
+        if (note) note.textContent = form.dataset.confirmNote || 'Your account and checkout information stay safe.';
+        submit.textContent = form.dataset.confirmAction || 'Yes, continue';
+        submit.disabled = false;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('cart-confirm-open');
+        window.requestAnimationFrame(() => dialog.focus());
+        return true;
+    };
 
+    document.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!cartRegion()?.contains(target)) return;
+
+        if (target.matches('[data-cart-select-all]')) {
+            cartRegion().querySelectorAll('[data-cart-item-check]').forEach((input) => { input.checked = target.checked; });
+            syncSelection();
+            return;
+        }
+
+        if (target.matches('[data-cart-item-check]')) {
+            syncSelection();
+            return;
+        }
+
+        if (target.matches('[data-cart-qty-input]')) {
+            const form = target.closest('[data-cart-quantity-form]');
+            const max = Math.max(1, Number(form?.dataset.max || 1));
+            target.value = String(Math.max(1, Math.min(max, Number(target.value) || 1)));
+            submitCartForm(form);
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+
+        const close = target.closest('[data-cart-confirm-close]');
+        if (close) { event.preventDefault(); closeConfirmModal(); return; }
+
+        const confirmSubmit = target.closest('[data-cart-confirm-submit]');
+        if (confirmSubmit) {
             event.preventDefault();
-            relatedTrack.scrollLeft = startScroll - deltaX;
-        });
+            if (!pendingConfirmForm) return;
+            const form = pendingConfirmForm;
+            closeConfirmModal();
+            submitCartForm(form, form.querySelector('button[type="submit"]'));
+            return;
+        }
 
-        const stopDrag = (event) => {
-            if (pointerId !== null && event?.pointerId !== undefined && event.pointerId !== pointerId) return;
+        if (!cartRegion()?.contains(target)) return;
 
-            if (dragging && pointerId !== null && relatedTrack.hasPointerCapture?.(pointerId)) {
-                relatedTrack.releasePointerCapture?.(pointerId);
+        const minus = target.closest('[data-cart-qty-minus]');
+        const plus = target.closest('[data-cart-qty-plus]');
+        if (minus || plus) {
+            event.preventDefault();
+            const form = target.closest('[data-cart-quantity-form]');
+            const input = form?.querySelector('[data-cart-qty-input]');
+            if (!input) return;
+            const max = Math.max(1, Number(form.dataset.max || 1));
+            const next = Math.max(1, Math.min(max, Number(input.value || 1) + (plus ? 1 : -1)));
+            if (next === Number(input.value)) return;
+            input.value = String(next);
+            submitCartForm(form);
+            return;
+        }
+
+        const couponToggle = target.closest('[data-coupon-toggle]');
+        if (couponToggle) {
+            event.preventDefault();
+            const body = cartRegion().querySelector('[data-coupon-body]');
+            const open = body?.classList.toggle('open');
+            couponToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            return;
+        }
+
+        const summaryToggle = target.closest('[data-cart-summary-toggle]');
+        if (summaryToggle && window.innerWidth <= 780) {
+            event.preventDefault();
+            const body = cartRegion().querySelector('[data-cart-summary-body]');
+            const collapsed = body?.classList.toggle('collapsed');
+            summaryToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        }
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!cartRegion()?.contains(form)) return;
+        if (form.matches('.product-card-cart-form, .product-order-form')) return;
+
+        if (form.matches('[data-confirm-form]')) {
+            event.preventDefault();
+            if (!openConfirmModal(form) && window.confirm(form.dataset.confirmForm || 'Are you sure?')) {
+                submitCartForm(form);
             }
+            return;
+        }
 
-            pointerDown = false;
-            dragging = false;
-            pointerId = null;
-            relatedTrack.classList.remove('is-dragging');
-        };
+        const isCartMutation = form.matches('[data-cart-quantity-form], .coupon-form')
+            || form.action.includes('/cart/coupon');
 
-        relatedTrack.addEventListener('pointerup', stopDrag);
-        relatedTrack.addEventListener('pointercancel', stopDrag);
-        relatedTrack.addEventListener('lostpointercapture', stopDrag);
-    }
+        if (isCartMutation) {
+            event.preventDefault();
+            submitCartForm(form);
+        }
+    });
+
+    document.addEventListener('shoppilot:cart-changed', () => {
+        if (cartRegion()) reloadCart();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && confirmModal()?.classList.contains('open')) closeConfirmModal();
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 780) {
+            const body = cartRegion()?.querySelector('[data-cart-summary-body]');
+            body?.classList.remove('collapsed');
+            cartRegion()?.querySelector('[data-cart-summary-toggle]')?.setAttribute('aria-expanded', 'true');
+        }
+    }, { passive: true });
+
+    setupRegion();
 })();

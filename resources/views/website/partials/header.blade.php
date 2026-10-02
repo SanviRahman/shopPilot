@@ -30,7 +30,7 @@
                 </span>
             </a>
 
-            <form class="header-search" action="{{ route('website.shop') }}" method="GET" role="search">
+            <form class="header-search" action="{{ route('website.shop') }}" method="GET" role="search" data-shop-search-form>
                 <input
                     type="search"
                     name="q"
@@ -61,9 +61,9 @@
                 <a href="{{ route('website.cart.index') }}" class="header-action compact {{ request()->routeIs('website.cart.*') ? 'active' : '' }}">
                     <span class="action-icon badge-holder">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="mini-badge">{{ $cartCount }}</span>
+                        <span class="mini-badge" data-header-cart-count>{{ $cartCount }}</span>
                     </span>
-                    <span class="action-copy"><strong>Cart</strong><small>৳{{ number_format($cartTotal, 2) }}</small></span>
+                    <span class="action-copy"><strong>Cart</strong><small data-header-cart-total>৳{{ number_format($cartTotal, 2) }}</small></span>
                 </a>
 
                 <button class="mobile-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-mobile-menu-toggle>
@@ -110,7 +110,7 @@
         <a href="{{ route('website.home') }}">Home</a>
         <a href="{{ route('website.shop') }}">Categories</a>
         <a href="{{ route('website.shop') }}">Shop</a>
-        <a href="{{ route('website.cart.index') }}">Cart ({{ $cartCount }})</a>
+        <a href="{{ route('website.cart.index') }}">Cart (<span data-mobile-cart-count>{{ $cartCount }}</span>)</a>
         <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}">{{ auth('web')->check() ? 'My Account' : 'Login / Register' }}</a>
         @if(auth('web')->check())<a href="{{ route('website.account.orders') }}">My Orders</a>@endif
         <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>

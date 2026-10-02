@@ -6,11 +6,13 @@ use App\Http\Controllers\Website\CustomerAccountController;
 use App\Http\Controllers\Website\CustomerAuthController;
 use App\Http\Controllers\Website\CustomerPaymentController;
 use App\Http\Controllers\Website\HomeController;
+use App\Http\Controllers\Website\MetaPixelEventController;
 use App\Http\Controllers\Website\ProductController;
 use App\Http\Controllers\Website\ShopController;
 use Illuminate\Support\Facades\Route;
 
 Route::name('website.')->group(function () {
+    Route::post('/tracking/meta/events', MetaPixelEventController::class)->middleware('throttle:120,1')->name('meta-pixel.events');
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/shop', [ShopController::class, 'index'])->name('shop');
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
@@ -43,7 +45,7 @@ Route::name('website.')->group(function () {
     Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
     Route::get('/checkout/thank-you/{orderNumber}', [CheckoutController::class, 'thankYou'])->name('checkout.thank-you');
 
-    Route::middleware('auth:web')->prefix('account')->name('account.')->group(function () {
+    Route::middleware(['auth:web', 'customer.active'])->prefix('account')->name('account.')->group(function () {
         Route::get('/', [CustomerAccountController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [CustomerAccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{orderNumber}', [CustomerAccountController::class, 'order'])->name('orders.show');

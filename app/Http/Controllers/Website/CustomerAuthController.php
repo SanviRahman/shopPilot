@@ -8,6 +8,7 @@ use App\Http\Requests\Website\CustomerRegisterRequest;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,21 +25,54 @@ class CustomerAuthController extends Controller
         return view('website.auth.login');
     }
 
-    public function authenticate(CustomerLoginRequest $request): RedirectResponse
+    public function authenticate(CustomerLoginRequest $request): JsonResponse|RedirectResponse
     {
         $credentials = $request->safe()->only(['email', 'password']);
 
         if (! Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
+            if ($this->wantsJson($request)) {
+                return response()->json([
+                    'message' => 'The provided credentials do not match our records.',
+                    'errors' => ['email' => ['The provided credentials do not match our records.']],
+                ], 422);
+            }
+
             return back()
                 ->withInput($request->only('email', 'remember'))
                 ->withErrors(['email' => 'The provided credentials do not match our records.']);
         }
 
-        $request->session()->regenerate();
+        $user = Auth::guard('web')->user();
+        if (! $user?->isActive()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-        return redirect()
-            ->intended(route('website.account.dashboard'))
-            ->with('success', 'Welcome back to ShopPilot.');
+            if ($this->wantsJson($request)) {
+                return response()->json([
+                    'message' => 'Your account is inactive. Please contact support.',
+                    'errors' => ['email' => ['Your account is inactive. Please contact support.']],
+                    'csrf_token' => csrf_token(),
+                ], 422);
+            }
+
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'Your account is inactive. Please contact support.']);
+        }
+
+        $request->session()->regenerate();
+        $redirect = redirect()->intended(route('website.account.dashboard'));
+
+        if ($this->wantsJson($request)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Welcome back to ShopPilot.',
+                'redirect_url' => $redirect->getTargetUrl(),
+            ]);
+        }
+
+        return $redirect->with('success', 'Welcome back to ShopPilot.');
     }
 
     public function register(): View
@@ -46,7 +80,7 @@ class CustomerAuthController extends Controller
         return view('website.auth.register');
     }
 
-    public function store(CustomerRegisterRequest $request): RedirectResponse
+    public function store(CustomerRegisterRequest $request): JsonResponse|RedirectResponse
     {
         $user = User::create($request->safe()->only(['name', 'email', 'password']));
 
@@ -62,16 +96,37 @@ class CustomerAuthController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
+        $metaEvent = ['name' => 'CompleteRegistration', 'payload' => ['status' => 'registered']];
+        $redirectUrl = route('website.account.dashboard');
+
+        if ($this->wantsJson($request)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your ShopPilot account is ready.',
+                'redirect_url' => $redirectUrl,
+                'meta_event' => $metaEvent,
+            ], 201);
+        }
+
         return redirect()
-            ->route('website.account.dashboard')
-            ->with('success', 'Your ShopPilot account is ready.');
+            ->to($redirectUrl)
+            ->with('success', 'Your ShopPilot account is ready.')
+            ->with('meta_event', $metaEvent);
     }
 
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request): JsonResponse|RedirectResponse
     {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($this->wantsJson($request)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'You have been logged out.',
+                'redirect_url' => route('website.home'),
+            ]);
+        }
 
         return redirect()->route('website.home')->with('success', 'You have been logged out.');
     }
@@ -81,10 +136,24 @@ class CustomerAuthController extends Controller
         return view('website.auth.forgot-password');
     }
 
-    public function sendResetLink(Request $request): RedirectResponse
+    public function sendResetLink(Request $request): JsonResponse|RedirectResponse
     {
         $request->validate(['email' => ['required', 'email:rfc', 'max:191']]);
         $status = Password::broker('users')->sendResetLink($request->only('email'));
+
+        if ($this->wantsJson($request)) {
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json([
+                    'success' => true,
+                    'message' => __($status),
+                ]);
+            }
+
+            return response()->json([
+                'message' => __($status),
+                'errors' => ['email' => [__($status)]],
+            ], 422);
+        }
 
         return $status === Password::RESET_LINK_SENT
             ? back()->with('success', __($status))
@@ -99,7 +168,7 @@ class CustomerAuthController extends Controller
         ]);
     }
 
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(Request $request): JsonResponse|RedirectResponse
     {
         $request->validate([
             'token' => ['required'],
@@ -119,8 +188,28 @@ class CustomerAuthController extends Controller
             },
         );
 
+        if ($this->wantsJson($request)) {
+            if ($status === Password::PASSWORD_RESET) {
+                return response()->json([
+                    'success' => true,
+                    'message' => __($status),
+                    'redirect_url' => route('website.login'),
+                ]);
+            }
+
+            return response()->json([
+                'message' => __($status),
+                'errors' => ['email' => [__($status)]],
+            ], 422);
+        }
+
         return $status === Password::PASSWORD_RESET
             ? redirect()->route('website.login')->with('success', __($status))
             : back()->withErrors(['email' => __($status)]);
+    }
+
+    private function wantsJson(Request $request): bool
+    {
+        return $request->ajax() || $request->expectsJson();
     }
 }

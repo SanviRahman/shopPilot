@@ -1,11 +1,45 @@
 @extends('layouts.admin')
-
-@section('meta_title', 'Admin Dashboard')
-
+@section('meta_title','Admin Dashboard')
+@section('plugins.Chartjs', true)
 @section('page_content')
-    <div class="card">
-        <div class="card-body">
-            Welcome, {{ auth()->user()->name }}.
-        </div>
-    </div>
+<div class="row">
+    <div class="col-lg-3 col-6"><div class="small-box bg-success"><div class="inner"><h3>৳{{ number_format($stats['total_sales'],0) }}</h3><p>Delivered Sales</p></div><div class="icon"><i class="fas fa-money-bill-wave"></i></div><a href="{{ route('admin.orders.index',['order_status'=>'delivered']) }}" class="small-box-footer">View orders <i class="fas fa-arrow-circle-right"></i></a></div></div>
+    <div class="col-lg-3 col-6"><div class="small-box bg-primary"><div class="inner"><h3>{{ number_format($stats['total_orders']) }}</h3><p>Total Orders</p></div><div class="icon"><i class="fas fa-shopping-cart"></i></div><a href="{{ route('admin.orders.index') }}" class="small-box-footer">Manage orders <i class="fas fa-arrow-circle-right"></i></a></div></div>
+    <div class="col-lg-3 col-6"><div class="small-box bg-warning"><div class="inner"><h3>{{ number_format($stats['pending_orders']) }}</h3><p>Orders In Progress</p></div><div class="icon"><i class="fas fa-clock"></i></div><a href="{{ route('admin.orders.index') }}" class="small-box-footer">Order queue <i class="fas fa-arrow-circle-right"></i></a></div></div>
+    <div class="col-lg-3 col-6"><div class="small-box bg-info"><div class="inner"><h3>{{ number_format($stats['customers']) }}</h3><p>Customers</p></div><div class="icon"><i class="fas fa-users"></i></div><a href="{{ route('admin.customers.index') }}" class="small-box-footer">Customers <i class="fas fa-arrow-circle-right"></i></a></div></div>
+</div>
+<div class="row">
+    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-indigo"><i class="fas fa-box"></i></span><div class="info-box-content"><span class="info-box-text">Products</span><span class="info-box-number">{{ $stats['active_products'] }} / {{ $stats['total_products'] }}</span></div></div></div>
+    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></span><div class="info-box-content"><span class="info-box-text">Low Stock</span><span class="info-box-number">{{ $stats['low_stock'] }}</span></div></div></div>
+    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span><div class="info-box-content"><span class="info-box-text">Delivered Orders</span><span class="info-box-number">{{ $stats['delivered_orders'] }}</span></div></div></div>
+    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-purple"><i class="fas fa-user-shield"></i></span><div class="info-box-content"><span class="info-box-text">Staff Listed</span><span class="info-box-number">{{ $staffWorkload->count() }}</span></div></div></div>
+</div>
+<div class="row">
+    <div class="col-lg-8"><div class="card card-outline card-primary shadow-sm"><div class="card-header"><h3 class="card-title font-weight-bold">Sales - Last 12 Months</h3></div><div class="card-body"><canvas id="salesChart" height="110"></canvas></div></div></div>
+    <div class="col-lg-4"><div class="card card-outline card-info shadow-sm"><div class="card-header"><h3 class="card-title font-weight-bold">Order Status</h3></div><div class="card-body"><canvas id="statusChart" height="235"></canvas></div></div></div>
+</div>
+<div class="row">
+    <div class="col-lg-7"><div class="card shadow-sm"><div class="card-header"><h3 class="card-title font-weight-bold">Orders - Last 30 Days</h3></div><div class="card-body"><canvas id="ordersChart" height="125"></canvas></div></div></div>
+    <div class="col-lg-5"><div class="card shadow-sm"><div class="card-header"><h3 class="card-title font-weight-bold">Orders Assigned by Role</h3></div><div class="card-body"><canvas id="roleChart" height="180"></canvas></div></div></div>
+</div>
+<div class="row">
+    <div class="col-lg-6"><div class="card card-outline card-secondary"><div class="card-header"><h3 class="card-title font-weight-bold">Staff / Role Workload</h3></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Staff</th><th>Role</th><th>Total Assigned</th><th>Open</th></tr></thead><tbody>@forelse($staffWorkload as $staff)<tr><td>{{ $staff->name }}</td><td>@foreach($staff->roles as $role)<span class="badge badge-light border text-uppercase">{{ $role->name }}</span>@endforeach</td><td>{{ $staff->assigned_orders_count }}</td><td><span class="badge badge-warning">{{ $staff->open_orders_count }}</span></td></tr>@empty<tr><td colspan="4" class="text-center text-muted py-4">No staff workload.</td></tr>@endforelse</tbody></table></div></div></div></div>
+    <div class="col-lg-6"><div class="card card-outline card-success"><div class="card-header"><h3 class="card-title font-weight-bold">Top Selling Products</h3></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead><tbody>@forelse($topProducts as $item)<tr><td><strong>{{ $item->product_name }}</strong><br><small class="text-muted">{{ $item->sku }}</small></td><td>{{ number_format($item->units_sold) }}</td><td>৳{{ number_format((float)$item->revenue,0) }}</td></tr>@empty<tr><td colspan="3" class="text-center text-muted py-4">No sales data.</td></tr>@endforelse</tbody></table></div></div></div></div>
+</div>
+<div class="row">
+    <div class="col-lg-7"><div class="card"><div class="card-header"><h3 class="card-title font-weight-bold">Recent Orders</h3></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Order</th><th>Customer</th><th>Agent</th><th>Total</th><th>Status</th></tr></thead><tbody>@foreach($recentOrders as $order)<tr><td><a href="{{ route('admin.orders.show',$order) }}">{{ $order->order_number }}</a></td><td>{{ $order->buyer_name }}</td><td>{{ $order->assignedAgent?->name ?? 'Unassigned' }}</td><td>৳{{ number_format((float)$order->grand_total,0) }}</td><td>{!! $order->order_status_badge !!}</td></tr>@endforeach</tbody></table></div></div></div></div>
+    <div class="col-lg-5"><div class="card"><div class="card-header"><h3 class="card-title font-weight-bold">Product History</h3></div><div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Product</th><th>Stock</th><th>Last Updated</th></tr></thead><tbody>@foreach($recentProducts as $product)<tr><td>{{ $product->name }}<br><small class="text-muted">{{ $product->category?->name }}</small></td><td>{{ $product->stock_quantity }}</td><td><small>{{ $product->updated_at?->diffForHumans() }}</small></td></tr>@endforeach</tbody></table></div></div></div>
+</div>
+<div class="card"><div class="card-header"><h3 class="card-title font-weight-bold">Recent Order History / Activity</h3></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Order</th><th>From</th><th>To</th><th>Actor</th><th>Note</th><th>Time</th></tr></thead><tbody>@forelse($recentOrderHistory as $history)<tr><td>{{ $history->order?->order_number }}</td><td>{{ $history->from_status ?? '—' }}</td><td>{{ $history->to_status ?? '—' }}</td><td>{{ $history->admin?->name ?? $history->user?->name ?? 'System' }}</td><td>{{ \Illuminate\Support\Str::limit($history->note,70) }}</td><td><small>{{ $history->created_at?->diffForHumans() }}</small></td></tr>@empty<tr><td colspan="6" class="text-center text-muted py-4">No order history.</td></tr>@endforelse</tbody></table></div></div></div>
 @endsection
+@push('js')
+<script>
+$(function(){
+ const sales=@json($salesChart), orders=@json($ordersChart), status=@json($statusChart), roles=@json($roleChart);
+ new Chart(document.getElementById('salesChart').getContext('2d'),{type:'line',data:{labels:sales.labels,datasets:[{label:'Delivered Sales (BDT)',data:sales.values,borderColor:'#28a745',backgroundColor:'rgba(40,167,69,.12)',pointRadius:3,fill:true,lineTension:.25}]},options:{responsive:true,legend:{display:true},scales:{yAxes:[{ticks:{beginAtZero:true}}]}}});
+ new Chart(document.getElementById('ordersChart').getContext('2d'),{type:'bar',data:{labels:orders.labels,datasets:[{label:'Orders',data:orders.values,backgroundColor:'rgba(0,123,255,.65)'}]},options:{responsive:true,legend:{display:false},scales:{yAxes:[{ticks:{beginAtZero:true,precision:0}}]}}});
+ new Chart(document.getElementById('statusChart').getContext('2d'),{type:'doughnut',data:{labels:status.labels,datasets:[{data:status.values,backgroundColor:['#ffc107','#17a2b8','#007bff','#6c757d','#28a745','#dc3545']}]},options:{responsive:true,legend:{position:'bottom'}}});
+ new Chart(document.getElementById('roleChart').getContext('2d'),{type:'horizontalBar',data:{labels:roles.labels,datasets:[{label:'Assigned Orders',data:roles.values,backgroundColor:['#343a40','#007bff','#17a2b8','#ffc107']}]},options:{responsive:true,legend:{display:false},scales:{xAxes:[{ticks:{beginAtZero:true,precision:0}}]}}});
+});
+</script>
+@endpush

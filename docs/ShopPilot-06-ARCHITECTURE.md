@@ -202,8 +202,12 @@ for the MVP.
 Primary frontend:
 
 ```text
-Laravel Blade
+Laravel Blade + progressive AJAX interactions
 ```
+
+The Storefront remains server-rendered Blade and is **not** a SPA. Implemented interactive flows (product filtering/search/sort/pagination, cart mutations, checkout submission/coupon actions, customer auth submissions, order/payment filtering and customer payment submission) may use same-origin AJAX/Fetch requests while keeping the existing Laravel routes, validation, Services and non-JavaScript redirect fallbacks authoritative.
+
+For list/fragment refreshes, Storefront controllers follow the Backoffice AJAX convention: `X-Requested-With: XMLHttpRequest` requests may return JSON containing rendered Blade partial HTML, while ordinary browser requests continue to render the complete Blade page. Mutations return structured JSON for AJAX and redirects for non-JavaScript fallback.
 
 No SPA architecture is required.
 

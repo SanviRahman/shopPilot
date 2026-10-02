@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('assets/website/css/style.css') }}">
     @stack('styles')
     <script>document.documentElement.classList.add('js');</script>
+    @include('website.partials.meta-pixel')
 </head>
 <body data-flash-message="{{ session('success') }}" data-flash-error="{{ $errors->first() }}">
     <div class="site-loader" id="siteLoader" aria-hidden="true">
@@ -35,6 +36,7 @@
 
     <div class="sp-toast" id="spToast" role="status" aria-live="polite"></div>
 
+    <script src="{{ asset('assets/website/js/ajax.js') }}" defer></script>
     <script src="{{ asset('assets/website/js/app.js') }}" defer></script>
     @stack('scripts')
 </body>

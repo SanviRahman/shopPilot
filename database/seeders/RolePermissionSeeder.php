@@ -15,7 +15,10 @@ class RolePermissionSeeder extends Seeder
         $permissionGroups = [
             'Dashboard'       => ['dashboard.view'],
             'Users'           => ['users.view', 'users.update'],
-            'Customers'       => ['customers.view'],
+            'Customers'       => [
+                'customers.view', 'customers.create', 'customers.update', 'customers.delete',
+                'customers.restore', 'customers.force-delete',
+            ],
             'Staff'           => [
                 'staff.view', 'staff.create', 'staff.update', 'staff.delete',
                 'staff.restore', 'staff.force-delete',
@@ -58,6 +61,10 @@ class RolePermissionSeeder extends Seeder
             ],
             'Reports'         => ['reports.view'],
             'Settings'        => ['settings.view', 'settings.update'],
+            'Meta Pixel'      => [
+                'meta-pixels.view', 'meta-pixels.create', 'meta-pixels.update',
+                'meta-pixels.delete', 'meta-pixels.restore', 'meta-pixels.force-delete',
+            ],
         ];
 
         $allPermissionNames = [];

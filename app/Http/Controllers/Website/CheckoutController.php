@@ -10,6 +10,7 @@ use App\Services\CartService;
 use App\Services\Website\CheckoutService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -45,13 +46,46 @@ class CheckoutController extends Controller
         return view('website.checkout.index', $data);
     }
 
-    public function store(CheckoutRequest $request): RedirectResponse
+    public function store(CheckoutRequest $request): JsonResponse|RedirectResponse
     {
         $order = $this->checkoutService->placeOrder($request->validated());
 
+        $metaEvent = [
+            'name' => 'Purchase',
+            'payload' => [
+                'value' => (float) $order->grand_total,
+                'currency' => 'BDT',
+                'content_type' => 'product',
+                'content_ids' => $order->items->pluck('product_id')->map(fn ($id) => (string) $id)->values()->all(),
+                'num_items' => (int) $order->items->sum('quantity'),
+                'order_id' => $order->order_number,
+            ],
+        ];
+
+        $redirectUrl = route('website.checkout.thank-you', $order->order_number);
+        $message = 'Order placed successfully. Your payment information has been submitted for verification.';
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect_url' => $redirectUrl,
+                'meta_event' => $metaEvent,
+                'cart' => [
+                    'count' => 0,
+                    'subtotal' => 0,
+                    'discount' => 0,
+                    'grand_total' => 0,
+                    'coupon_code' => null,
+                    'can_checkout' => false,
+                ],
+            ]);
+        }
+
         return redirect()
-            ->route('website.checkout.thank-you', $order->order_number)
-            ->with('success', 'Order placed successfully. Your payment information has been submitted for verification.');
+            ->to($redirectUrl)
+            ->with('success', $message)
+            ->with('meta_event', $metaEvent);
     }
 
     public function thankYou(string $orderNumber): View
@@ -71,6 +105,7 @@ class CheckoutController extends Controller
         $this->cartService->applyCoupon($request->validated('coupon_code'));
 
         return response()->json([
+            'success' => true,
             'message' => 'Coupon applied successfully.',
             'summary' => $this->summaryPayload(),
         ]);
@@ -81,6 +116,7 @@ class CheckoutController extends Controller
         $this->cartService->removeCoupon();
 
         return response()->json([
+            'success' => true,
             'message' => 'Coupon removed.',
             'summary' => $this->summaryPayload(),
         ]);

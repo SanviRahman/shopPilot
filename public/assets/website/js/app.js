@@ -13,6 +13,14 @@
         toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2600);
     }
 
+    window.ShopPilotUI = window.ShopPilotUI || {};
+    window.ShopPilotUI.showToast = showToast;
+
+    document.addEventListener('shoppilot:toast', (event) => {
+        const message = event.detail?.message;
+        if (message) showToast(message);
+    });
+
     const flashMessage = document.body?.dataset.flashMessage;
     const flashError = document.body?.dataset.flashError;
 
