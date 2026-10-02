@@ -9,9 +9,18 @@ use Illuminate\Validation\ValidationException;
 
 class CartService
 {
-    private const ITEMS_SESSION_KEY = 'cart.items';
+    private const CART_SESSION_ROOT = 'shoppilot_cart';
+    private const ITEMS_SESSION_KEY = 'shoppilot_cart.items';
+    private const COUPON_SESSION_KEY = 'shoppilot_cart.coupon_code';
+
+    /**
+     * Legacy cart keys kept only so older sessions can be read/migrated safely.
+     * Never write new cart data below the legacy `cart` root because forgetting
+     * that root would also delete nested keys such as `cart.items`.
+     */
     private const LEGACY_SESSION_KEY = 'cart';
-    private const COUPON_SESSION_KEY = 'cart.coupon_code';
+    private const LEGACY_ITEMS_SESSION_KEY = 'cart.items';
+    private const LEGACY_COUPON_SESSION_KEY = 'cart.coupon_code';
 
     public function __construct(private readonly CouponService $couponService)
     {
@@ -135,6 +144,31 @@ class CartService
         ];
     }
 
+    /**
+     * Raw session items for server-authoritative checkout revalidation.
+     *
+     * @return array<int, array{product_id:int,quantity:int}>
+     */
+    public function checkoutItems(): array
+    {
+        return $this->rawItems();
+    }
+
+    public function appliedCouponCode(): ?string
+    {
+        $code = session()->get(self::COUPON_SESSION_KEY);
+
+        if (is_string($code) && trim($code) !== '') {
+            return strtoupper(trim($code));
+        }
+
+        $legacyCode = session()->get(self::LEGACY_COUPON_SESSION_KEY);
+
+        return is_string($legacyCode) && trim($legacyCode) !== ''
+            ? strtoupper(trim($legacyCode))
+            : null;
+    }
+
     public function add(int $productId, int $quantity = 1): void
     {
         $product = $this->activeProduct($productId);
@@ -231,7 +265,7 @@ class CartService
 
     public function clear(): void
     {
-        session()->forget([self::ITEMS_SESSION_KEY, self::LEGACY_SESSION_KEY, self::COUPON_SESSION_KEY]);
+        session()->forget([self::CART_SESSION_ROOT, self::LEGACY_SESSION_KEY]);
     }
 
     public function applyCoupon(string $code): void
@@ -250,7 +284,7 @@ class CartService
 
     public function removeCoupon(): void
     {
-        session()->forget(self::COUPON_SESSION_KEY);
+        session()->forget([self::COUPON_SESSION_KEY, self::LEGACY_COUPON_SESSION_KEY]);
     }
 
     private function activeProduct(int $productId): Product
@@ -277,8 +311,19 @@ class CartService
         $items = session()->get(self::ITEMS_SESSION_KEY);
 
         if (! is_array($items)) {
-            $legacy = session()->get(self::LEGACY_SESSION_KEY, []);
-            $items = is_array($legacy) ? $legacy : [];
+            $legacyItems = session()->get(self::LEGACY_ITEMS_SESSION_KEY);
+
+            if (is_array($legacyItems)) {
+                $items = $legacyItems;
+            } else {
+                $legacy = session()->get(self::LEGACY_SESSION_KEY, []);
+
+                if (is_array($legacy) && isset($legacy['items']) && is_array($legacy['items'])) {
+                    $items = $legacy['items'];
+                } else {
+                    $items = is_array($legacy) ? $legacy : [];
+                }
+            }
         }
 
         $normalized = [];
@@ -321,12 +366,18 @@ class CartService
     {
         $code = session()->get(self::COUPON_SESSION_KEY);
 
+        if (! is_string($code) || trim($code) === '') {
+            $legacyCode = session()->get(self::LEGACY_COUPON_SESSION_KEY);
+            $code = is_string($legacyCode) ? $legacyCode : null;
+        }
+
         if (! is_string($code) || trim($code) === '' || $subtotal <= 0) {
             return [null, 0.0, null];
         }
 
         try {
             $coupon = $this->couponService->resolveApplicableCoupon($code, $subtotal);
+            session()->put(self::COUPON_SESSION_KEY, $coupon->code);
 
             return [
                 $coupon,
@@ -334,7 +385,7 @@ class CartService
                 null,
             ];
         } catch (ValidationException $exception) {
-            session()->forget(self::COUPON_SESSION_KEY);
+            session()->forget([self::COUPON_SESSION_KEY, self::LEGACY_COUPON_SESSION_KEY]);
             $messages = $exception->errors()['coupon_code'] ?? [];
 
             return [null, 0.0, $messages[0] ?? 'The applied coupon is no longer valid.'];
@@ -408,7 +459,7 @@ class CartService
     private function forgetCartIfEmpty(): void
     {
         if ($this->rawItems() === []) {
-            session()->forget([self::ITEMS_SESSION_KEY, self::LEGACY_SESSION_KEY, self::COUPON_SESSION_KEY]);
+            session()->forget([self::CART_SESSION_ROOT, self::LEGACY_SESSION_KEY]);
         }
     }
 }

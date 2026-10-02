@@ -73,7 +73,15 @@
                         </button>
                     </div>
 
-                    <form id="cartRemoveSelectedForm" action="{{ route('website.cart.items.remove-selected') }}" method="POST" data-confirm-form="Remove the selected products from your cart?">
+                    <form
+                        id="cartRemoveSelectedForm"
+                        action="{{ route('website.cart.items.remove-selected') }}"
+                        method="POST"
+                        data-confirm-form="Remove the selected products from your cart?"
+                        data-confirm-title="Remove selected items?"
+                        data-confirm-action="Remove selected"
+                        data-confirm-note="Only the selected products will be removed from your cart."
+                    >
                         @csrf
                         @method('DELETE')
                     </form>
@@ -148,7 +156,14 @@
 
                                 <div class="cart-item-actions">
                                     <button type="button" class="cart-heart" data-coming-soon="Wishlist" aria-label="Move {{ $product->name }} to wishlist"><i class="far fa-heart"></i></button>
-                                    <form action="{{ route('website.cart.items.destroy', $product->id) }}" method="POST" data-confirm-form="Remove {{ $product->name }} from your cart?">
+                                    <form
+                                        action="{{ route('website.cart.items.destroy', $product->id) }}"
+                                        method="POST"
+                                        data-confirm-form="Remove {{ $product->name }} from your cart?"
+                                        data-confirm-title="Remove this item?"
+                                        data-confirm-action="Remove item"
+                                        data-confirm-note="You can add this product again anytime."
+                                    >
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="cart-remove" aria-label="Remove {{ $product->name }}"><i class="far fa-trash-alt"></i></button>
@@ -160,7 +175,14 @@
 
                     <div class="cart-items-footer">
                         <a href="{{ route('website.shop') }}"><i class="fas fa-arrow-left"></i> Continue Shopping</a>
-                        <form action="{{ route('website.cart.clear') }}" method="POST" data-confirm-form="Clear every product from your cart?">
+                        <form
+                            action="{{ route('website.cart.clear') }}"
+                            method="POST"
+                            data-confirm-form="This will remove every product currently saved in your cart."
+                            data-confirm-title="Clear your shopping cart?"
+                            data-confirm-action="Yes, clear cart"
+                            data-confirm-note="This action only clears the current cart. Your account and saved products are not affected."
+                        >
                             @csrf
                             @method('DELETE')
                             <button type="submit"><i class="far fa-trash-alt"></i> Clear Cart</button>
@@ -182,16 +204,19 @@
                             <div class="summary-line shipping"><span>Shipping</span><strong>{{ $shippingLabel }}</strong></div>
                             <div class="summary-total"><span>Total</span><strong>৳{{ number_format($grandTotal, 0) }}</strong></div>
 
-                            <button
-                                type="button"
-                                class="proceed-checkout-button"
-                                data-coming-soon="Checkout"
-                                {{ $canCheckout ? '' : 'disabled' }}
-                            >
-                                <i class="fas fa-lock"></i>
-                                Proceed to Checkout
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
+                            @if($canCheckout)
+                                <a href="{{ route('website.checkout.index') }}" class="proceed-checkout-button">
+                                    <i class="fas fa-lock"></i>
+                                    Proceed to Checkout
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            @else
+                                <button type="button" class="proceed-checkout-button" disabled>
+                                    <i class="fas fa-lock"></i>
+                                    Proceed to Checkout
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            @endif
                             <small class="secure-checkout-note"><i class="fas fa-shield-alt"></i> 100% secure checkout flow</small>
 
                             @if($hasUnavailableItems)
@@ -257,6 +282,39 @@
         @endif
     </div>
 </section>
+
+<div class="cart-confirm-modal" data-cart-confirm-modal aria-hidden="true">
+    <div class="cart-confirm-backdrop" data-cart-confirm-close></div>
+    <section
+        class="cart-confirm-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="cartConfirmTitle"
+        aria-describedby="cartConfirmMessage"
+        tabindex="-1"
+    >
+        <button type="button" class="cart-confirm-close" data-cart-confirm-close aria-label="Close confirmation">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="cart-confirm-icon">
+            <i class="far fa-trash-alt"></i>
+        </div>
+
+        <span class="cart-confirm-eyebrow">Please confirm</span>
+        <h2 id="cartConfirmTitle" data-cart-confirm-title>Clear your shopping cart?</h2>
+        <p id="cartConfirmMessage" data-cart-confirm-message>This action will update the products in your cart.</p>
+        <div class="cart-confirm-note" data-cart-confirm-note>
+            <i class="fas fa-shield-alt"></i>
+            <span>Your account and checkout information stay safe.</span>
+        </div>
+
+        <div class="cart-confirm-actions">
+            <button type="button" class="cart-confirm-cancel" data-cart-confirm-close>Keep shopping</button>
+            <button type="button" class="cart-confirm-submit" data-cart-confirm-submit>Yes, continue</button>
+        </div>
+    </section>
+</div>
 
 <section class="quality-strip-section cart-quality-section">
     <div class="container">

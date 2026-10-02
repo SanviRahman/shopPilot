@@ -13,7 +13,7 @@
                 <span><i class="fas fa-headset"></i> 24/7 Support</span>
             </div>
             <div class="topbar-links">
-                <a href="#" data-coming-soon="Track Order">Track Order</a>
+                <a href="{{ auth('web')->check() ? route('website.account.orders') : route('website.login') }}">Track Order</a>
                 <span class="divider">|</span>
                 <a href="#contact">Help &amp; Support</a>
             </div>
@@ -42,11 +42,11 @@
             </form>
 
             <div class="header-actions">
-                <a href="#" class="header-action" data-coming-soon="Customer account">
+                <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}" class="header-action {{ request()->routeIs('website.account.*') || request()->routeIs('website.login') || request()->routeIs('website.register') ? 'active' : '' }}">
                     <span class="action-icon"><i class="fas fa-user"></i></span>
                     <span class="action-copy">
-                        <strong>{{ auth()->check() ? auth()->user()->name : 'Account' }}</strong>
-                        <small>{{ auth()->check() ? 'My Account' : 'Login / Register' }}</small>
+                        <strong>{{ auth('web')->check() ? auth('web')->user()->name : 'Account' }}</strong>
+                        <small>{{ auth('web')->check() ? 'My Account' : 'Login / Register' }}</small>
                     </span>
                 </a>
 
@@ -111,6 +111,8 @@
         <a href="{{ route('website.shop') }}">Categories</a>
         <a href="{{ route('website.shop') }}">Shop</a>
         <a href="{{ route('website.cart.index') }}">Cart ({{ $cartCount }})</a>
+        <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}">{{ auth('web')->check() ? 'My Account' : 'Login / Register' }}</a>
+        @if(auth('web')->check())<a href="{{ route('website.account.orders') }}">My Orders</a>@endif
         <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
         <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>
         <a href="#contact">Contact</a>

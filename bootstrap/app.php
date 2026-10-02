@@ -18,7 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn () => route('admin.login'));
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin') || $request->is('admin/*')
+            ? route('admin.login')
+            : route('website.login'));
 
         $middleware->redirectUsersTo(function (Request $request) {
             $user = $request->user('admin') ?: $request->user();
@@ -27,15 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('admin.dashboard');
             }
 
-            if ($user?->hasRole('manager')) {
-                return route('manager.dashboard');
+            if ($request->user('web')) {
+                return route('website.account.dashboard');
             }
 
-            if ($user?->hasRole('agent')) {
-                return route('agent.dashboard');
-            }
-
-            return '/';
+            return route('website.home');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

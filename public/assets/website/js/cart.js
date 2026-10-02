@@ -49,11 +49,92 @@
         input?.addEventListener('change', () => submitValue(input.value));
     });
 
+    const confirmModal = document.querySelector('[data-cart-confirm-modal]');
+    const confirmDialog = confirmModal?.querySelector('.cart-confirm-dialog');
+    const confirmTitle = confirmModal?.querySelector('[data-cart-confirm-title]');
+    const confirmMessage = confirmModal?.querySelector('[data-cart-confirm-message]');
+    const confirmNote = confirmModal?.querySelector('[data-cart-confirm-note] span');
+    const confirmSubmit = confirmModal?.querySelector('[data-cart-confirm-submit]');
+    const confirmCloseButtons = Array.from(confirmModal?.querySelectorAll('[data-cart-confirm-close]') || []);
+    let pendingConfirmForm = null;
+    let previouslyFocusedElement = null;
+
+    const closeConfirmModal = () => {
+        if (!confirmModal) return;
+
+        confirmModal.classList.remove('open');
+        confirmModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('cart-confirm-open');
+        pendingConfirmForm = null;
+
+        window.setTimeout(() => previouslyFocusedElement?.focus?.(), reducedMotion ? 0 : 180);
+    };
+
+    const openConfirmModal = (form) => {
+        if (!confirmModal || !confirmDialog || !confirmSubmit) return false;
+
+        pendingConfirmForm = form;
+        previouslyFocusedElement = document.activeElement;
+
+        if (confirmTitle) {
+            confirmTitle.textContent = form.dataset.confirmTitle || 'Please confirm this action';
+        }
+
+        if (confirmMessage) {
+            confirmMessage.textContent = form.dataset.confirmForm || 'This action will update your shopping cart.';
+        }
+
+        if (confirmNote) {
+            confirmNote.textContent = form.dataset.confirmNote || 'Your account and checkout information stay safe.';
+        }
+
+        confirmSubmit.textContent = form.dataset.confirmAction || 'Yes, continue';
+        confirmModal.classList.add('open');
+        confirmModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('cart-confirm-open');
+
+        window.requestAnimationFrame(() => confirmDialog.focus());
+        return true;
+    };
+
     document.querySelectorAll('[data-confirm-form]').forEach((form) => {
         form.addEventListener('submit', (event) => {
-            const message = form.dataset.confirmForm || 'Are you sure?';
-            if (!window.confirm(message)) event.preventDefault();
+            if (form.dataset.confirmApproved === 'true') {
+                delete form.dataset.confirmApproved;
+                return;
+            }
+
+            event.preventDefault();
+
+            if (!openConfirmModal(form)) {
+                // Safe fallback for extremely old browsers or markup failures.
+                if (window.confirm(form.dataset.confirmForm || 'Are you sure?')) {
+                    form.dataset.confirmApproved = 'true';
+                    form.requestSubmit();
+                }
+            }
         });
+    });
+
+    confirmCloseButtons.forEach((button) => button.addEventListener('click', closeConfirmModal));
+
+    confirmSubmit?.addEventListener('click', () => {
+        if (!pendingConfirmForm) return;
+
+        const form = pendingConfirmForm;
+        form.dataset.confirmApproved = 'true';
+        confirmSubmit.disabled = true;
+        confirmSubmit.classList.add('loading');
+
+        window.setTimeout(() => {
+            form.requestSubmit();
+        }, reducedMotion ? 0 : 130);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !confirmModal?.classList.contains('open')) return;
+        event.preventDefault();
+        closeConfirmModal();
     });
 
     const couponToggle = document.querySelector('[data-coupon-toggle]');
@@ -105,25 +186,59 @@
 
     const relatedTrack = document.querySelector('[data-cart-related-track]');
     if (relatedTrack && !reducedMotion) {
-        let isDown = false;
+        const interactiveSelector = 'a, button, input, select, textarea, label, form';
+        const dragThreshold = 7;
+        let pointerDown = false;
+        let dragging = false;
+        let pointerId = null;
         let startX = 0;
         let startScroll = 0;
 
         relatedTrack.addEventListener('pointerdown', (event) => {
-            if (event.pointerType === 'mouse' && event.button !== 0) return;
-            isDown = true;
+            // Touch/pen already get smooth native horizontal scrolling. More importantly,
+            // never capture a pointer that started on a real control/link inside a card.
+            if (event.pointerType !== 'mouse' || event.button !== 0) return;
+            if (event.target.closest(interactiveSelector)) return;
+
+            pointerDown = true;
+            dragging = false;
+            pointerId = event.pointerId;
             startX = event.clientX;
             startScroll = relatedTrack.scrollLeft;
-            relatedTrack.setPointerCapture?.(event.pointerId);
         });
 
         relatedTrack.addEventListener('pointermove', (event) => {
-            if (!isDown) return;
-            relatedTrack.scrollLeft = startScroll - (event.clientX - startX);
+            if (!pointerDown || event.pointerId !== pointerId) return;
+
+            const deltaX = event.clientX - startX;
+
+            if (!dragging) {
+                if (Math.abs(deltaX) < dragThreshold) return;
+
+                dragging = true;
+                relatedTrack.classList.add('is-dragging');
+                relatedTrack.setPointerCapture?.(event.pointerId);
+            }
+
+            event.preventDefault();
+            relatedTrack.scrollLeft = startScroll - deltaX;
         });
 
-        const stopDrag = () => { isDown = false; };
+        const stopDrag = (event) => {
+            if (pointerId !== null && event?.pointerId !== undefined && event.pointerId !== pointerId) return;
+
+            if (dragging && pointerId !== null && relatedTrack.hasPointerCapture?.(pointerId)) {
+                relatedTrack.releasePointerCapture?.(pointerId);
+            }
+
+            pointerDown = false;
+            dragging = false;
+            pointerId = null;
+            relatedTrack.classList.remove('is-dragging');
+        };
+
         relatedTrack.addEventListener('pointerup', stopDrag);
         relatedTrack.addEventListener('pointercancel', stopDrag);
+        relatedTrack.addEventListener('lostpointercapture', stopDrag);
     }
 })();
