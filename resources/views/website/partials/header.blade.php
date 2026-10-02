@@ -26,7 +26,7 @@
                 <span><i class="fas fa-headset"></i> 24/7 Support</span>
             </div>
             <div class="topbar-links">
-                <a href="{{ auth('web')->check() ? route('website.account.orders') : route('website.login') }}">Track Order</a>
+                <a href="{{ route('website.track-order') }}">Track Order</a>
                 <span class="divider">|</span>
                 <a href="#contact">Help &amp; Support</a>
             </div>
@@ -58,15 +58,15 @@
                 <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}" class="header-action {{ request()->routeIs('website.account.*') || request()->routeIs('website.login') || request()->routeIs('website.register') ? 'active' : '' }}">
                     <span class="action-icon"><i class="fas fa-user"></i></span>
                     <span class="action-copy">
-                        <strong>{{ auth('web')->check() ? auth('web')->user()->name : 'Account' }}</strong>
+                        <strong data-profile-header-name>{{ auth('web')->check() ? auth('web')->user()->name : 'Account' }}</strong>
                         <small>{{ auth('web')->check() ? 'My Account' : 'Login / Register' }}</small>
                     </span>
                 </a>
 
-                <a href="#" class="header-action compact" data-coming-soon="Wishlist">
+                <a href="{{ auth('web')->check() ? route('website.account.wishlist') : route('website.login') }}" class="header-action compact {{ request()->routeIs('website.account.wishlist*') ? 'active' : '' }}">
                     <span class="action-icon badge-holder">
                         <i class="far fa-heart"></i>
-                        <span class="mini-badge">0</span>
+                        <span class="mini-badge" data-header-wishlist-count>{{ (int) ($headerWishlistCount ?? 0) }}</span>
                     </span>
                     <span class="action-copy"><strong>Wishlist</strong><small>Wishlist</small></span>
                 </a>
@@ -127,6 +127,8 @@
         <a href="{{ route('website.cart.index') }}">Cart (<span data-mobile-cart-count>{{ $cartCount }}</span>)</a>
         <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}">{{ auth('web')->check() ? 'My Account' : 'Login / Register' }}</a>
         @if(auth('web')->check())<a href="{{ route('website.account.orders') }}">My Orders</a>@endif
+        @if(auth('web')->check())<a href="{{ route('website.account.wishlist') }}">Wishlist (<span data-header-wishlist-count>{{ (int) ($headerWishlistCount ?? 0) }}</span>)</a>@endif
+        <a href="{{ route('website.track-order') }}">Track Order</a>
         <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}" data-shop-nav-context="best_sellers" class="{{ $isShopPage && $headerShopContext === 'best_sellers' ? 'active' : '' }}">Best Sellers</a>
         <a href="{{ route('website.shop', ['featured' => 1]) }}" data-shop-nav-context="offers" class="{{ $isShopPage && $headerShopContext === 'offers' ? 'active' : '' }}">Offers</a>
         <a href="#contact">Contact</a>

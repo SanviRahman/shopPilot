@@ -73,7 +73,7 @@
 
                                 <label class="checkout-field">
                                     <span>Phone Number <b>*</b></span>
-                                    <div class="input-shell"><i class="fas fa-phone-alt"></i><input type="tel" name="buyer_phone" value="{{ old('buyer_phone') }}" placeholder="017XXXXXXXX" maxlength="30" required autocomplete="tel"></div>
+                                    <div class="input-shell"><i class="fas fa-phone-alt"></i><input type="tel" name="buyer_phone" value="{{ old('buyer_phone', $buyerDefaults['phone'] ?? '') }}" placeholder="017XXXXXXXX" maxlength="30" required autocomplete="tel"></div>
                                     @error('buyer_phone')<small class="field-error">{{ $message }}</small>@enderror
                                 </label>
                             </div>
@@ -97,7 +97,7 @@
 
                             <label class="checkout-field">
                                 <span>Full Address <b>*</b></span>
-                                <div class="input-shell"><i class="fas fa-map-marker-alt"></i><input type="text" name="shipping_address" value="{{ old('shipping_address') }}" placeholder="House no, road no, area, landmark" required autocomplete="street-address"></div>
+                                <div class="input-shell"><i class="fas fa-map-marker-alt"></i><input type="text" name="shipping_address" value="{{ old('shipping_address', $buyerDefaults['address'] ?? '') }}" placeholder="House no, road no, area, landmark" required autocomplete="street-address"></div>
                                 @error('shipping_address')<small class="field-error">{{ $message }}</small>@enderror
                             </label>
 
@@ -107,7 +107,7 @@
                                     <div class="input-shell select-shell"><i class="fas fa-map"></i><select name="division" required>
                                         <option value="">Select division</option>
                                         @foreach(['Dhaka','Chattogram','Rajshahi','Khulna','Barishal','Sylhet','Rangpur','Mymensingh'] as $division)
-                                            <option value="{{ $division }}" {{ old('division') === $division ? 'selected' : '' }}>{{ $division }}</option>
+                                            <option value="{{ $division }}" {{ old('division', $buyerDefaults['division'] ?? '') === $division ? 'selected' : '' }}>{{ $division }}</option>
                                         @endforeach
                                     </select></div>
                                     @error('division')<small class="field-error">{{ $message }}</small>@enderror
@@ -115,13 +115,13 @@
 
                                 <label class="checkout-field">
                                     <span>District <b>*</b></span>
-                                    <div class="input-shell"><i class="fas fa-city"></i><input type="text" name="district" value="{{ old('district') }}" placeholder="Enter district" required></div>
+                                    <div class="input-shell"><i class="fas fa-city"></i><input type="text" name="district" value="{{ old('district', $buyerDefaults['district'] ?? '') }}" placeholder="Enter district" required></div>
                                     @error('district')<small class="field-error">{{ $message }}</small>@enderror
                                 </label>
 
                                 <label class="checkout-field">
                                     <span>Upazila / Thana <b>*</b></span>
-                                    <div class="input-shell"><i class="fas fa-map-pin"></i><input type="text" name="upazila" value="{{ old('upazila') }}" placeholder="Enter upazila / thana" required></div>
+                                    <div class="input-shell"><i class="fas fa-map-pin"></i><input type="text" name="upazila" value="{{ old('upazila', $buyerDefaults['upazila'] ?? '') }}" placeholder="Enter upazila / thana" required></div>
                                     @error('upazila')<small class="field-error">{{ $message }}</small>@enderror
                                 </label>
                             </div>

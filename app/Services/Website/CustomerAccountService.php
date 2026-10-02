@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\PaymentSubmission;
 use App\Models\User;
+use App\Models\Wishlist;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class CustomerAccountService
@@ -34,6 +35,7 @@ class CustomerAccountService
                 Order::PAYMENT_UNPAID,
                 Order::PAYMENT_REJECTED,
             ])->count(),
+            'wishlistCount' => Wishlist::query()->where('user_id', $user->id)->whereHas('product')->count(),
             'recentOrders' => $recentOrders,
             'latestOrder' => $latestOrder,
         ];

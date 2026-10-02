@@ -2411,3 +2411,35 @@ ShopPilot E-commerce MVP feature scope is organized around:
 > **Guest + Logged-in Shopping, RBAC, Product & Media, Stock, Storefront, Search, Session Cart, Coupon, Checkout, Buyer Snapshot, Manual bKash/Nagad/Rocket Payment Submission, Payment Verification, Order Management, Agent Assignment, Controlled Order Status, Dashboards, Reusable Laravel Components, Security, and Critical Tests.**
 
 The feature catalogue must remain aligned with the approved Project Overview and PRD. Any new major capability should first be approved in those higher-level documents before being implemented.
+
+---
+
+# Customer Account Extension — October 2026
+
+Implemented storefront customer features:
+
+```text
+Wishlist
+- Save/remove products with AJAX
+- Clear wishlist
+- Add all in-stock wishlist items to cart
+- Header wishlist count
+- Wishlist summary cards and responsive saved-product grid
+
+Track Order
+- Public order lookup by order number + checkout email/phone
+- Throttled, privacy-preserving lookup
+- Order timeline, items, delivery details and payment state
+- AJAX result rendering + print view
+
+Profile Settings
+- Name, email, Bangladesh phone, gender, date of birth
+- Division, district, upazila/thana and full address
+- Spatie Media Library avatar upload/removal
+- Saved profile details prefill checkout
+
+Change Password
+- Current-password verification
+- Strong password validation
+- AJAX validation and password-strength UI
+```

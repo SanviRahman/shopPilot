@@ -15,6 +15,7 @@
         ? $galleryImages
         : collect([asset('assets/website/images/product-placeholder.svg')]);
     $primaryImage = $images->first();
+    $isWishlisted = in_array((int) $product->id, array_map('intval', $wishlistProductIds ?? []), true);
 @endphp
 
 @section('title', $product->meta_title ?: ($product->name . ' | ShopPilot'))
@@ -149,9 +150,22 @@
                         Buy Now
                     </button>
                 </form>
-                <button type="button" class="product-wishlist-action" data-coming-soon="Wishlist">
-                    <i class="far fa-heart"></i> Add to Wishlist
-                </button>
+                @auth('web')
+                    <button
+                        type="button"
+                        class="product-wishlist-action {{ $isWishlisted ? 'active' : '' }}"
+                        data-wishlist-toggle
+                        data-product-id="{{ $product->id }}"
+                        data-wishlisted="{{ $isWishlisted ? '1' : '0' }}"
+                        data-wishlist-store-url="{{ route('website.account.wishlist.store') }}"
+                        data-wishlist-destroy-url="{{ route('website.account.wishlist.destroy', $product->id) }}"
+                    >
+                        <i class="{{ $isWishlisted ? 'fas' : 'far' }} fa-heart"></i>
+                        <span data-wishlist-label>{{ $isWishlisted ? 'Saved to Wishlist' : 'Add to Wishlist' }}</span>
+                    </button>
+                @else
+                    <a href="{{ route('website.login') }}" class="product-wishlist-action"><i class="far fa-heart"></i> Login to Save</a>
+                @endauth
 
                 <div class="order-assurance-list">
                     <div><span><i class="fas fa-truck"></i></span><p><strong>Free Delivery</strong><small>On orders over ৳1,000</small></p></div>

@@ -165,7 +165,7 @@
             const field = form.querySelector(`[name="${CSS.escape(name)}"]`);
             if (!field) return;
 
-            const shell = field.closest('.auth-input, .input-shell, .checkout-field, label') || field;
+            const shell = field.closest('.auth-input, .input-shell, .profile-phone-shell, .password-input-shell, .track-input-shell, .checkout-field, .profile-field, label') || field;
             shell.classList.add('has-error');
             field.classList.add('is-invalid');
 
@@ -173,7 +173,7 @@
             error.className = 'field-error ajax-field-error';
             error.textContent = Array.isArray(messages) ? messages[0] : String(messages);
 
-            const insertionTarget = field.closest('.auth-input, .input-shell') || field;
+            const insertionTarget = field.closest('.auth-input, .input-shell, .profile-phone-shell, .password-input-shell, .track-input-shell') || field;
             insertionTarget.insertAdjacentElement('afterend', error);
         });
     };
@@ -192,6 +192,66 @@
         document.querySelectorAll('[data-mobile-cart-count]').forEach((node) => {
             node.textContent = String(count);
         });
+    };
+
+    const updateWishlistHeader = (wishlist) => {
+        if (!wishlist) return;
+        const count = Number(wishlist.count || 0);
+        document.querySelectorAll('[data-header-wishlist-count]').forEach((node) => {
+            node.textContent = String(count);
+        });
+    };
+
+    const syncWishlistButtons = (productId, active) => {
+        document.querySelectorAll(`[data-wishlist-toggle][data-product-id="${CSS.escape(String(productId))}"]`).forEach((button) => {
+            button.dataset.wishlisted = active ? '1' : '0';
+            button.classList.toggle('active', active);
+            const icon = button.querySelector('.fa-heart');
+            icon?.classList.toggle('fas', active);
+            icon?.classList.toggle('far', !active);
+            const label = button.querySelector('[data-wishlist-label]');
+            if (label) label.textContent = active ? 'Saved to Wishlist' : 'Add to Wishlist';
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    };
+
+    const toggleWishlist = async (button) => {
+        const productId = Number(button.dataset.productId || 0);
+        if (!productId) return;
+
+        if (document.body?.dataset.authenticated !== '1') {
+            window.location.assign(document.body?.dataset.loginUrl || '/login');
+            return;
+        }
+
+        const active = button.dataset.wishlisted === '1';
+        const url = active ? button.dataset.wishlistDestroyUrl : button.dataset.wishlistStoreUrl;
+        if (!url) return;
+
+        button.disabled = true;
+        try {
+            const payload = await request(url, {
+                method: active ? 'DELETE' : 'POST',
+                data: active ? undefined : { product_id: productId },
+            });
+            const nowActive = Boolean(payload?.wishlist?.active);
+            syncWishlistButtons(productId, nowActive);
+            updateWishlistHeader(payload?.wishlist);
+            toast(payload?.message || (nowActive ? 'Saved to wishlist.' : 'Removed from wishlist.'));
+            document.dispatchEvent(new CustomEvent('shoppilot:wishlist-changed', {
+                detail: {
+                    ...payload,
+                    productId,
+                    active: nowActive,
+                    card_html: payload?.card_html || null,
+                    in_stock: Boolean(payload?.in_stock),
+                },
+            }));
+        } catch (error) {
+            toast(firstError(error.payload, error.message), 'error');
+        } finally {
+            button.disabled = false;
+        }
     };
 
     const trackMeta = (event) => {
@@ -223,6 +283,13 @@
         submitProductCartForm(form);
     });
 
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-wishlist-toggle]');
+        if (!button) return;
+        event.preventDefault();
+        toggleWishlist(button);
+    });
+
     window.ShopPilotAjax = {
         csrf,
         request,
@@ -233,6 +300,8 @@
         clearFormErrors,
         showFormErrors,
         updateCartHeader,
+        updateWishlistHeader,
+        syncWishlistButtons,
         trackMeta,
     };
 })();

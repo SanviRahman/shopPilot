@@ -57,7 +57,11 @@
         </div></section>
         @endif
 
-        <div class="account-bottom-actions"><a href="{{ route('website.account.orders') }}" class="secondary-account-button"><i class="fas fa-arrow-left"></i> Back to Orders</a>@if(in_array($order->payment_status, [\App\Models\Order::PAYMENT_UNPAID, \App\Models\Order::PAYMENT_REJECTED], true))<a href="{{ route('website.account.payments', ['order' => $order->id]) }}" class="primary-account-button">Submit Payment <i class="fas fa-arrow-right"></i></a>@endif</div>
+        <div class="account-bottom-actions">
+            <a href="{{ route('website.account.orders') }}" class="secondary-account-button"><i class="fas fa-arrow-left"></i> Back to Orders</a>
+            <a href="{{ route('website.track-order', ['order_number' => $order->order_number]) }}" class="secondary-account-button"><i class="fas fa-search-location"></i> Track Order</a>
+            @if(in_array($order->payment_status, [\App\Models\Order::PAYMENT_UNPAID, \App\Models\Order::PAYMENT_REJECTED], true))<a href="{{ route('website.account.payments', ['order' => $order->id]) }}" class="primary-account-button">Submit Payment <i class="fas fa-arrow-right"></i></a>@endif
+        </div>
     </div></div>
 </div></section>
 @endsection

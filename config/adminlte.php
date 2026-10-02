@@ -239,23 +239,6 @@ return [
             'can'    => 'payments.view',
         ],
 
-        // ACCOUNT
-        [
-            'header' => 'ACCOUNT',
-        ],
-        [
-            'text'   => 'Profile',
-            'route'  => 'admin.profile',
-            'icon'   => 'fas fa-fw fa-user-circle',
-            'active' => ['admin/profile*'],
-        ],
-        [
-            'text'   => 'Change Password',
-            'route'  => 'admin.password',
-            'icon'   => 'fas fa-fw fa-key',
-            'active' => ['admin/password*'],
-        ],
-
         // CUSTOMER MANAGEMENT
         [
             'header' => 'CUSTOMER MANAGEMENT',
@@ -280,6 +263,23 @@ return [
             'icon'   => 'fab fa-fw fa-facebook',
             'active' => ['admin/meta-pixels*'],
             'can'    => 'meta-pixels.view',
+        ],
+
+        // ACCOUNT
+        [
+            'header' => 'ACCOUNT',
+        ],
+        [
+            'text'   => 'Profile',
+            'route'  => 'admin.profile',
+            'icon'   => 'fas fa-fw fa-user-circle',
+            'active' => ['admin/profile*'],
+        ],
+        [
+            'text'   => 'Change Password',
+            'route'  => 'admin.password',
+            'icon'   => 'fas fa-fw fa-key',
+            'active' => ['admin/password*'],
         ],
 
         // ACCESS CONTROL

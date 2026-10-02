@@ -7,6 +7,7 @@
         ? (int) round((($regularPrice - $salePrice) / $regularPrice) * 100)
         : 0;
     $inStock = (int) $product->stock_quantity > 0;
+    $isWishlisted = in_array((int) $product->id, array_map('intval', $wishlistProductIds ?? []), true);
 @endphp
 
 <article class="product-card">
@@ -15,9 +16,22 @@
             <span class="discount-badge">-{{ $discountPercent }}%</span>
         @endif
 
-        <button type="button" class="wishlist-button" data-coming-soon="Wishlist" aria-label="Add {{ $product->name }} to wishlist">
-            <i class="far fa-heart"></i>
-        </button>
+        @auth('web')
+            <button
+                type="button"
+                class="wishlist-button {{ $isWishlisted ? 'active' : '' }}"
+                data-wishlist-toggle
+                data-product-id="{{ $product->id }}"
+                data-wishlisted="{{ $isWishlisted ? '1' : '0' }}"
+                data-wishlist-store-url="{{ route('website.account.wishlist.store') }}"
+                data-wishlist-destroy-url="{{ route('website.account.wishlist.destroy', $product->id) }}"
+                aria-label="{{ $isWishlisted ? 'Remove' : 'Add' }} {{ $product->name }} {{ $isWishlisted ? 'from' : 'to' }} wishlist"
+            >
+                <i class="{{ $isWishlisted ? 'fas' : 'far' }} fa-heart"></i>
+            </button>
+        @else
+            <a href="{{ route('website.login') }}" class="wishlist-button" aria-label="Login to save {{ $product->name }} to wishlist"><i class="far fa-heart"></i></a>
+        @endauth
 
         <a href="{{ route('website.products.show', $product->slug) }}" class="product-image-link" aria-label="View {{ $product->name }} details">
             @if($product->thumbnail_url)

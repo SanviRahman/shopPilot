@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -19,6 +20,13 @@ class User extends Authenticatable implements HasMedia
     protected $fillable = [
         'name',
         'email',
+        'phone_number',
+        'gender',
+        'date_of_birth',
+        'division',
+        'district',
+        'upazila',
+        'address',
         'password',
         'status',
     ];
@@ -33,6 +41,7 @@ class User extends Authenticatable implements HasMedia
     {
         return [
             'email_verified_at' => 'datetime',
+            'date_of_birth'      => 'date',
             'password'          => 'hashed',
         ];
     }
@@ -48,6 +57,21 @@ class User extends Authenticatable implements HasMedia
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function wishlistProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'wishlists')->withTimestamps();
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('avatar') ?: null;
     }
 
     public function orderHistories(): HasMany

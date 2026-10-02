@@ -18,6 +18,13 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('status', 20)->default('active')->index();
+            $table->string('phone_number', 30)->nullable();
+            $table->string('gender', 20)->nullable();
+            $table->date('date_of_birth')->nullable();
+            $table->string('division', 100)->nullable();
+            $table->string('district', 100)->nullable();
+            $table->string('upazila', 100)->nullable();
+            $table->text('address')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

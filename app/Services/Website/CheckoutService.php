@@ -40,6 +40,11 @@ class CheckoutService
             'buyerDefaults' => [
                 'name' => $user?->name ?? '',
                 'email' => $user?->email ?? '',
+                'phone' => $user?->phone_number ?? '',
+                'division' => $user?->division ?? '',
+                'district' => $user?->district ?? '',
+                'upazila' => $user?->upazila ?? '',
+                'address' => $user?->address ?? '',
             ],
         ];
     }

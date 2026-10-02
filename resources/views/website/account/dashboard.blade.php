@@ -13,7 +13,7 @@
                 <article class="account-stat-card" data-account-reveal><span class="stat-icon blue"><i class="fas fa-box"></i></span><small>Total Orders</small><strong>{{ $totalOrders }}</strong></article>
                 <article class="account-stat-card" data-account-reveal><span class="stat-icon orange"><i class="far fa-clock"></i></span><small>Active Orders</small><strong>{{ $pendingOrders }}</strong></article>
                 <article class="account-stat-card" data-account-reveal><span class="stat-icon green"><i class="fas fa-check"></i></span><small>Completed Orders</small><strong>{{ $completedOrders }}</strong></article>
-                <article class="account-stat-card" data-account-reveal><span class="stat-icon pink"><i class="fas fa-wallet"></i></span><small>Payment Action</small><strong>{{ $paymentNeedsAction }}</strong></article>
+                <article class="account-stat-card" data-account-reveal><span class="stat-icon pink"><i class="fas fa-heart"></i></span><small>Wishlist Items</small><strong>{{ $wishlistCount }}</strong></article>
             </div>
 
             <div class="dashboard-grid">
@@ -33,12 +33,12 @@
                 </section>
 
                 <section class="account-panel" data-account-reveal>
-                    <div class="panel-heading"><div><span>PROFILE</span><h2>Account Information</h2></div></div>
+                    <div class="panel-heading"><div><span>PROFILE</span><h2>Account Information</h2></div><a href="{{ route('website.account.profile.edit') }}">Edit <i class="fas fa-arrow-right"></i></a></div>
                     <div class="account-info-list">
                         <div><i class="far fa-user"></i><span>{{ $user->name }}</span></div>
                         <div><i class="far fa-envelope"></i><span>{{ $user->email }}</span></div>
-                        <div><i class="fas fa-phone-alt"></i><span>{{ $latestOrder?->buyer_phone ?: 'Saved with your next order' }}</span></div>
-                        <div><i class="fas fa-map-marker-alt"></i><span>{{ $latestOrder ? $latestOrder->shipping_address . ', ' . $latestOrder->city_or_area : 'Saved with your next checkout' }}</span></div>
+                        <div><i class="fas fa-phone-alt"></i><span>{{ $user->phone_number ?: ($latestOrder?->buyer_phone ?: 'Add your phone in Profile Settings') }}</span></div>
+                        <div><i class="fas fa-map-marker-alt"></i><span>{{ $user->address ? $user->address . ($user->district ? ', ' . $user->district : '') : ($latestOrder ? $latestOrder->shipping_address . ', ' . $latestOrder->city_or_area : 'Add your address in Profile Settings') }}</span></div>
                     </div>
                 </section>
             </div>

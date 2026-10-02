@@ -123,7 +123,21 @@
                                 </div>
 
                                 <div class="cart-item-actions">
-                                    <button type="button" class="cart-heart" data-coming-soon="Wishlist" aria-label="Move {{ $product->name }} to wishlist"><i class="far fa-heart"></i></button>
+                                    @php($isWishlisted = in_array((int) $product->id, array_map('intval', $wishlistProductIds ?? []), true))
+                                    @auth('web')
+                                        <button
+                                            type="button"
+                                            class="cart-heart {{ $isWishlisted ? 'active' : '' }}"
+                                            data-wishlist-toggle
+                                            data-product-id="{{ $product->id }}"
+                                            data-wishlisted="{{ $isWishlisted ? '1' : '0' }}"
+                                            data-wishlist-store-url="{{ route('website.account.wishlist.store') }}"
+                                            data-wishlist-destroy-url="{{ route('website.account.wishlist.destroy', $product->id) }}"
+                                            aria-label="{{ $isWishlisted ? 'Remove' : 'Save' }} {{ $product->name }} {{ $isWishlisted ? 'from' : 'to' }} wishlist"
+                                        ><i class="{{ $isWishlisted ? 'fas' : 'far' }} fa-heart"></i></button>
+                                    @else
+                                        <a href="{{ route('website.login') }}" class="cart-heart" aria-label="Login to save {{ $product->name }}"><i class="far fa-heart"></i></a>
+                                    @endauth
                                     <form
                                         action="{{ route('website.cart.items.destroy', $product->id) }}"
                                         method="POST"

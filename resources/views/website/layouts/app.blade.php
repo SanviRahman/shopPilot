@@ -15,7 +15,12 @@
     <script>document.documentElement.classList.add('js');</script>
     @include('website.partials.meta-pixel')
 </head>
-<body data-flash-message="{{ session('success') }}" data-flash-error="{{ $errors->first() }}">
+<body
+    data-flash-message="{{ session('success') }}"
+    data-flash-error="{{ $errors->first() }}"
+    data-authenticated="{{ auth('web')->check() ? '1' : '0' }}"
+    data-login-url="{{ route('website.login') }}"
+>
     <div class="site-loader" id="siteLoader" aria-hidden="true">
         <div class="site-loader-inner">
             <div class="loader-brand-mark"><i class="fas fa-shopping-bag"></i></div>

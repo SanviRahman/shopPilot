@@ -49,3 +49,6 @@
 @keyframes cartConfirmSpin{to{transform:rotate(360deg)}}
 @media(max-width:520px){.cart-confirm-modal{padding:15px}.cart-confirm-dialog{padding:26px 18px 20px;border-radius:18px}.cart-confirm-icon{width:62px;height:62px;border-radius:19px;font-size:23px}.cart-confirm-dialog h2{font-size:21px}.cart-confirm-actions{grid-template-columns:1fr}.cart-confirm-actions button{height:43px}.cart-confirm-submit{grid-row:1}.cart-confirm-cancel{grid-row:2}}
 @media(prefers-reduced-motion:reduce){.cart-confirm-modal,.cart-confirm-dialog,.cart-confirm-close,.cart-confirm-actions button,.cart-confirm-submit:before{transition:none!important}.cart-confirm-submit.loading:after{animation:none}}
+
+.cart-heart.active{background:#fff0f4!important;color:#eb315b!important;border-color:#ffcbd7!important}
+.cart-heart{width:34px;height:34px;border-radius:9px;border:1px solid #dfe8f1;background:#fff;display:grid;place-items:center;cursor:pointer;transition:.2s;text-decoration:none}.cart-heart:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(25,55,88,.08);border-color:#c8d8e8}

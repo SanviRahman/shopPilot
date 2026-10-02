@@ -50,7 +50,7 @@
         <div>
             <h4>Customer Care</h4>
             <ul>
-                <li><a href="#" data-coming-soon="Track Order">Track Order</a></li>
+                <li><a href="{{ route('website.track-order') }}">Track Order</a></li>
                 <li><a href="#" data-coming-soon="Shipping Policy">Shipping Policy</a></li>
                 <li><a href="#" data-coming-soon="Returns & Refunds">Return &amp; Refund</a></li>
                 <li><a href="#" data-coming-soon="Terms & Conditions">Terms &amp; Conditions</a></li>

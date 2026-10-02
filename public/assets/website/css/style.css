@@ -38,3 +38,7 @@ html.js body{overflow-x:hidden}.page-shell{position:relative;isolation:isolate}.
 .ajax-field-error{display:block;margin-top:5px;color:#d92f47;font-size:11px;line-height:1.35}
 @keyframes shopPilotAjaxSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.ajax-is-loading:after{animation-duration:1.5s!important}}
+
+/* Wishlist connected state */
+.wishlist-button.active{background:#fff0f4;color:#ee315e;border-color:#ffd4df}.wishlist-button.active:hover{background:#ee315e;color:#fff}.header-action.active .fa-heart{color:#ee315e}
+.wishlist-button{display:grid;place-items:center}

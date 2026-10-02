@@ -2296,3 +2296,44 @@ Customer                → User model  → users  → web guard
 ```
 
 `ShopPilot-08-DATABASE-SCHEMA.md` is the canonical physical database design; this file is retained as the v2 source/reference copy.
+
+---
+
+# 42. Customer Account Extension — October 2026
+
+The customer account layer adds profile fields to `users` and a first-class `wishlists` table.
+
+## users — additional nullable profile columns
+
+```text
+phone_number VARCHAR(30) NULL
+gender VARCHAR(20) NULL
+date_of_birth DATE NULL
+division VARCHAR(100) NULL
+district VARCHAR(100) NULL
+upazila VARCHAR(100) NULL
+address TEXT NULL
+```
+
+`phone_number` is normalized by the website request layer to Bangladesh `+880...` format when supplied.
+
+## wishlists
+
+```text
+id BIGINT UNSIGNED PK
+user_id BIGINT UNSIGNED FK → users.id ON DELETE CASCADE
+product_id BIGINT UNSIGNED FK → products.id ON DELETE CASCADE
+created_at TIMESTAMP NULL
+updated_at TIMESTAMP NULL
+deleted_at TIMESTAMP NULL
+UNIQUE(user_id, product_id)
+INDEX(user_id, created_at)
+```
+
+Application model:
+
+```text
+Wishlist → wishlists → SoftDeletes
+```
+
+The unique key is compatible with SoftDeletes because re-adding a previously removed item restores the existing soft-deleted row rather than inserting a duplicate row.
