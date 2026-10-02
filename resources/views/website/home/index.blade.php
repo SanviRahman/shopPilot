@@ -58,8 +58,8 @@
                         <p>{{ $heroProduct?->short_description ? \Illuminate\Support\Str::limit($heroProduct->short_description, 130) : $slide['description'] }}</p>
 
                         <div class="hero-actions">
-                            <a href="#featured" class="btn btn-primary">Shop Now <i class="fas fa-arrow-right"></i></a>
-                            <a href="#offers" class="btn btn-outline">View Offers</a>
+                            <a href="{{ route('website.shop') }}" class="btn btn-primary">Shop Now <i class="fas fa-arrow-right"></i></a>
+                            <a href="{{ route('website.shop', ['featured' => 1]) }}" class="btn btn-outline">View Offers</a>
                         </div>
 
                         <div class="hero-meta">
@@ -119,7 +119,7 @@
     <div class="container">
         <div class="section-heading">
             <div><h2>Shop by Category</h2><p>Explore our top categories and find exactly what you need.</p></div>
-            <a href="#featured" class="section-link">View All Categories <i class="fas fa-arrow-right"></i></a>
+            <a href="{{ route('website.shop') }}" class="section-link">View All Categories <i class="fas fa-arrow-right"></i></a>
         </div>
 
         @if($categories->isNotEmpty())
@@ -161,7 +161,7 @@
     <div class="container">
         <div class="section-heading">
             <div><h2>Featured Products</h2><p>Handpicked products just for you.</p></div>
-            <a href="#best-sellers" class="section-link">View All <i class="fas fa-arrow-right"></i></a>
+            <a href="{{ route('website.shop') }}" class="section-link">View All <i class="fas fa-arrow-right"></i></a>
         </div>
 
         @php($displayFeatured = $featuredProducts->isNotEmpty() ? $featuredProducts : $latestProducts->take(6))
@@ -184,7 +184,7 @@
                 <span>SPECIAL OFFER</span>
                 <h2>Up to 30% Off</h2>
                 <h3>On Selected Products</h3>
-                <a href="#featured" class="btn btn-primary">Shop Offers <i class="fas fa-arrow-right"></i></a>
+                <a href="{{ route('website.shop', ['featured' => 1]) }}" class="btn btn-primary">Shop Offers <i class="fas fa-arrow-right"></i></a>
             </div>
             <div class="promo-art">
                 @php($promoProduct = $latestProducts->skip(1)->first() ?? $latestProducts->first())
@@ -207,7 +207,7 @@
     <div class="container">
         <div class="section-heading">
             <div><h2>Best Sellers</h2><p>Popular products based on customer orders.</p></div>
-            <a href="#featured" class="section-link">View All <i class="fas fa-arrow-right"></i></a>
+            <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}" class="section-link">View All <i class="fas fa-arrow-right"></i></a>
         </div>
 
         @if($bestSellers->isNotEmpty())

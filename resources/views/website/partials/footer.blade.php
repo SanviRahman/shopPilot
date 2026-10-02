@@ -39,9 +39,9 @@
             <h4>Quick Links</h4>
             <ul>
                 <li><a href="{{ route('website.home') }}">Home</a></li>
-                <li><a href="#featured">Shop</a></li>
-                <li><a href="#categories">Categories</a></li>
-                <li><a href="#offers">Offers</a></li>
+                <li><a href="{{ route('website.shop') }}">Shop</a></li>
+                <li><a href="{{ route('website.shop') }}">Categories</a></li>
+                <li><a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a></li>
                 <li><a href="#" data-coming-soon="Frontend blog">Blogs</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>

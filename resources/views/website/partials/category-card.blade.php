@@ -1,4 +1,4 @@
-<a href="#featured" class="category-card">
+<a href="{{ route('website.shop', ['category' => [$category->slug]]) }}" class="category-card">
     <div class="category-image-wrap">
         @if($category->image_url)
             <img src="{{ $category->image_url }}" alt="{{ $category->name }}" loading="lazy">

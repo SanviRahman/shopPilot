@@ -32,7 +32,7 @@
                 </span>
             </a>
 
-            <form class="header-search" action="{{ route('website.home') }}" method="GET" role="search">
+            <form class="header-search" action="{{ route('website.shop') }}" method="GET" role="search">
                 <input
                     type="search"
                     name="q"
@@ -86,7 +86,7 @@
 
                 <div class="category-dropdown" data-category-menu>
                     @forelse(($navigationCategories ?? collect()) as $category)
-                        <a href="#categories">
+                        <a href="{{ route('website.shop', ['category' => [$category->slug]]) }}">
                             <span class="category-dot"><i class="fas fa-angle-right"></i></span>
                             {{ $category->name }}
                         </a>
@@ -97,11 +97,11 @@
             </div>
 
             <div class="desktop-nav-links">
-                <a href="{{ route('website.home') }}" class="active">Home</a>
-                <a href="#featured">Shop</a>
-                <a href="#featured">New Arrivals</a>
-                <a href="#best-sellers">Best Sellers</a>
-                <a href="#offers">Offers</a>
+                <a href="{{ route('website.home') }}" class="{{ request()->routeIs('website.home') ? 'active' : '' }}">Home</a>
+                <a href="{{ route('website.shop') }}" class="{{ request()->routeIs('website.shop') ? 'active' : '' }}">Shop</a>
+                <a href="{{ route('website.shop', ['sort' => 'newest']) }}">New Arrivals</a>
+                <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
+                <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>
                 <a href="#" data-coming-soon="Frontend blog">Blogs</a>
                 <a href="#contact">Contact</a>
             </div>
@@ -110,10 +110,10 @@
 
     <div class="mobile-menu" data-mobile-menu>
         <a href="{{ route('website.home') }}">Home</a>
-        <a href="#categories">Categories</a>
-        <a href="#featured">Shop</a>
-        <a href="#best-sellers">Best Sellers</a>
-        <a href="#offers">Offers</a>
+        <a href="{{ route('website.shop') }}">Categories</a>
+        <a href="{{ route('website.shop') }}">Shop</a>
+        <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}">Best Sellers</a>
+        <a href="{{ route('website.shop', ['featured' => 1]) }}">Offers</a>
         <a href="#contact">Contact</a>
     </div>
 </header>
