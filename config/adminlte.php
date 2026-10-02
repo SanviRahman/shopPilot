@@ -126,10 +126,10 @@ return [
             'topnav_right' => true,
         ],
         [
-            'text'  => 'Dashboard',
-            'route' => 'admin.redirect',
-            'icon'  => 'fas fa-fw fa-tachometer-alt',
-            'can'   => 'dashboard.view',
+            'text'   => 'Dashboard',
+            'route'  => 'admin.redirect',
+            'icon'   => 'fas fa-fw fa-tachometer-alt',
+            'can'    => 'dashboard.view',
             'active' => ['admin/dashboard*'],
         ],
 
@@ -162,7 +162,8 @@ return [
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',
-            'can'    => ['categories.view', 'products.view', 'coupons.view', 'payment-methods.view'],
+            'can'    => ['categories.view', 'products.view',
+                'coupons.view', 'payment-methods.view'],
         ],
         [
             'text'    => 'Ecommerce',
@@ -193,20 +194,6 @@ return [
                     'can'    => 'coupons.view',
                 ],
                 [
-                    'text'   => 'Payment Methods',
-                    'icon'   => 'fas fa-fw fa-credit-card',
-                    'route'  => 'admin.payment-methods.index',
-                    'active' => ['admin/payment-methods*'],
-                    'can'    => 'payment-methods.view',
-                ],
-                [
-                    'text'   => 'Payment Submissions',
-                    'icon'   => 'fas fa-fw fa-file-invoice-dollar',
-                    'route'  => 'admin.payments.index',
-                    'active' => ['admin/payments*'],
-                    'can'    => 'payments.view',
-                ],
-                [
                     'text'   => 'Orders',
                     'icon'   => 'fas fa-fw fa-shopping-cart',
                     'route'  => 'admin.orders.index',
@@ -230,6 +217,26 @@ return [
                     'can'    => 'orders.view',
                 ],
             ],
+        ],
+
+        // PAYMENT MANAGEMENT
+        [
+            'header' => 'PAYMENT MANAGEMENT',
+            'can'    => 'payment-methods.view',
+        ],
+        [
+            'text'   => 'Payment Methods',
+            'icon'   => 'fas fa-fw fa-credit-card',
+            'route'  => 'admin.payment-methods.index',
+            'active' => ['admin/payment-methods*'],
+            'can'    => 'payment-methods.view',
+        ],
+        [
+            'text'   => 'Payment Submissions',
+            'icon'   => 'fas fa-fw fa-file-invoice-dollar',
+            'route'  => 'admin.payments.index',
+            'active' => ['admin/payments*'],
+            'can'    => 'payments.view',
         ],
 
         // ACCOUNT
