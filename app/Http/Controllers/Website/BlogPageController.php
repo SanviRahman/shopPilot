@@ -18,7 +18,7 @@ class BlogPageController extends Controller
         $query = Blog::query()->with('author')->latest('id');
 
         if ($search !== '') {
-            $query->where(fn (Builder $builder) => $builder->where('title', 'like', "%{$search}%")->orWhere('content', 'like', "%{$search}%"));
+            $query->where(fn (Builder $builder) => $builder->where('title', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")->orWhere('content', 'like', "%{$search}%"));
         }
 
         $this->applyTopic($query, $topic);
@@ -45,7 +45,7 @@ class BlogPageController extends Controller
         $keywords = $definition['keywords'];
         $query->where(function (Builder $builder) use ($keywords) {
             foreach ($keywords as $keyword) {
-                $builder->orWhere('title', 'like', "%{$keyword}%")->orWhere('content', 'like', "%{$keyword}%");
+                $builder->orWhere('title', 'like', "%{$keyword}%")->orWhere('description', 'like', "%{$keyword}%")->orWhere('content', 'like', "%{$keyword}%");
             }
         });
     }
@@ -63,7 +63,7 @@ class BlogPageController extends Controller
 
     private function resolveTopic(Blog $blog): string
     {
-        $haystack = Str::lower($blog->title.' '.$blog->content);
+        $haystack = Str::lower($blog->title.' '.$blog->description.' '.$blog->content);
         foreach ($this->topics() as $definition) {
             foreach ($definition['keywords'] as $keyword) {
                 if (str_contains($haystack, Str::lower($keyword))) return $definition['label'];

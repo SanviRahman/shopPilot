@@ -77,6 +77,7 @@ class Admin extends Authenticatable implements HasMedia
     public function hasProfilePhoto(): bool
     {
         return $this->hasMedia('avatar')
+            || $this->hasMedia('avatars')
             || $this->hasMedia('user_avatar')
             || $this->hasMedia('profile_photo')
             || ! empty($this->avatar_url);
@@ -113,17 +114,15 @@ class Admin extends Authenticatable implements HasMedia
      */
     public function adminlte_image(): string
     {
-        $mediaUrl = $this->getFirstMediaUrl('avatar')
-            ?: $this->getFirstMediaUrl('avatars')
-            ?: $this->getFirstMediaUrl('user_avatar')
-            ?: $this->getFirstMediaUrl('profile_photo')
-            ?: $this->getFirstMediaUrl('image');
-
-        if (! empty($mediaUrl)) {
-            return $mediaUrl;
+        foreach (['avatar', 'avatars', 'user_avatar', 'profile_photo', 'image'] as $collection) {
+            $media = $this->getFirstMedia($collection);
+            if (! $media) continue;
+            $mediaUrl = $media->getUrl();
+            $path = parse_url($mediaUrl, PHP_URL_PATH);
+            return $path ? url($path) : $mediaUrl;
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'Admin') . '&background=007bff&color=ffffff&bold=true&rounded=true';
+        return asset('vendor/adminlte/dist/img/user2-160x160.jpg');
     }
 
     /**

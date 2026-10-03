@@ -27,7 +27,7 @@ class AdminAvatarService
                         $file->getClientOriginalExtension()
                     )
                 )
-                ->toMediaCollection('avatars', 'public');
+                ->toMediaCollection('avatar', 'public');
 
             return;
         }
@@ -62,7 +62,7 @@ class AdminAvatarService
                 ->usingFileName(
                     $this->safeFilename($extension)
                 )
-                ->toMediaCollection('avatars', 'public');
+                ->toMediaCollection('avatar', 'public');
         }
     }
 

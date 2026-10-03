@@ -4,6 +4,7 @@ use App\Http\Controllers\Backoffice\Admin\AdminController;
 use App\Http\Controllers\Backoffice\Admin\BlogController;
 use App\Http\Controllers\Backoffice\Admin\CategoryController;
 use App\Http\Controllers\Backoffice\Admin\ContactController;
+use App\Http\Controllers\Backoffice\Admin\ContactMessageController;
 use App\Http\Controllers\Backoffice\Admin\CustomerController;
 use App\Http\Controllers\Backoffice\Admin\MetaPixelController;
 use App\Http\Controllers\Backoffice\Admin\CouponController;
@@ -85,6 +86,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{contact}/force-delete', [ContactController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('contacts', ContactController::class);
+
+        // Contact Messages
+        Route::prefix('contact-messages')->name('contact-messages.')->group(function () {
+            Route::get('trash', [ContactMessageController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [ContactMessageController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{contactMessage}/restore', [ContactMessageController::class, 'restore'])->name('restore');
+            Route::delete('{contactMessage}/force-delete', [ContactMessageController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
 
         //Admins
         Route::prefix('admins')->name('admins.')->group(function () {

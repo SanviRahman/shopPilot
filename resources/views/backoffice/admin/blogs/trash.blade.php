@@ -60,5 +60,5 @@
 @endsection
 
 @push('js')
-    @include('backoffice.admin.blogs.partials.script', ['fetchUrl' => route('admin.blogs.trash')])
+    @include('backoffice.admin.blogs.partials.script', ['fetchUrl' => route('admin.blogs.trash'), 'isTrashPage' => true])
 @endpush

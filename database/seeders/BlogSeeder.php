@@ -23,6 +23,7 @@ class BlogSeeder extends Seeder
                     'author_type' => Admin::class,
                     'author_id' => $admin->id,
                     'title' => 'Welcome to ShopPilot',
+                    'description' => 'Welcome to ShopPilot — shopping guides, product ideas and platform updates from our team.',
                     'content' => 'ShopPilot is ready to deliver a smooth, reliable and modern ecommerce experience.',
                 ],
             );
@@ -38,6 +39,7 @@ class BlogSeeder extends Seeder
                     'author_type' => User::class,
                     'author_id' => $customer->id,
                     'title' => 'Customer Shopping Notes',
+                    'description' => 'A small seeded customer-authored blog entry for development and relationship testing.',
                     'content' => 'A small seeded customer-authored blog entry for development and relationship testing.',
                 ],
             );

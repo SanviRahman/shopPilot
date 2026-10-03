@@ -12,7 +12,7 @@
             <div class="card profile-card border-0 shadow-sm h-100">
                 <div class="card-body text-center p-4">
                     <div class="profile-photo-wrapper mx-auto mb-3">
-                        <img src="{{ $admin->getFirstMediaUrl('avatar') ?: ($admin->getFirstMediaUrl('avatars') ?: ($admin->getFirstMediaUrl('profile_photo') ?: asset('vendor/adminlte/dist/img/user2-160x160.jpg'))) }}"
+                        <img src="{{ $admin->adminlte_image() }}"
                             id="profile-photo-preview" class="profile-photo" alt="{{ $admin->name }}">
                     </div>
 
@@ -157,7 +157,7 @@
                             <x-backoffice.media-picker name="photo" input-id="photo" label="Profile Photo"
                                 choose-label="Select profile photo..." media-id-name="photo_media_id"
                                 picker-url="{{ route('admin.media.picker') }}"
-                                preview-url="{{ $admin->getFirstMediaUrl('avatars') ?: '' }}" />
+                                preview-url="{{ $admin->hasProfilePhoto() ? $admin->adminlte_image() : '' }}" />
 
                             @error('photo')
                             <span class="text-danger small d-block mt-1">

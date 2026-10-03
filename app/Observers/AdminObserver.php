@@ -17,6 +17,7 @@ class AdminObserver
                 'author_type' => Admin::class,
                 'author_id' => $admin->id,
                 'title' => $admin->name . "'s Staff Blog",
+                'description' => 'Staff profile journal for ShopPilot administration and internal platform updates.',
                 'content' => 'Staff profile initialized. This is an automatically generated administrative blog post.',
             ],
         );

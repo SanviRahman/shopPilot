@@ -23,8 +23,7 @@ class BlogService
             ->when(! empty($filters['search']), function ($q) use ($filters) {
                 $term = '%' . trim($filters['search']) . '%';
                 $q->where(function ($sub) use ($term) {
-                    $sub->where('title', 'like', $term)
-                        ->orWhere('slug', 'like', $term);
+                    $sub->where('title', 'like', $term)->orWhere('slug', 'like', $term)->orWhere('description', 'like', $term)->orWhere('content', 'like', $term);
                 });
             })
             ->latest('id')
@@ -48,6 +47,7 @@ class BlogService
             'author_id' => $author?->getKey(),
             'title' => $data['title'],
             'slug' => $slug,
+            'description' => $data['description'] ?? null,
             'content' => $data['content'] ?? null,
         ]);
     }
@@ -63,6 +63,7 @@ class BlogService
         return $blog->update([
             'title' => $data['title'],
             'slug' => $slug,
+            'description' => $data['description'] ?? null,
             'content' => $data['content'] ?? null,
         ]);
     }

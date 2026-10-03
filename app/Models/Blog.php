@@ -19,6 +19,7 @@ class Blog extends Model
         'author_id',
         'title',
         'slug',
+        'description',
         'content',
     ];
 

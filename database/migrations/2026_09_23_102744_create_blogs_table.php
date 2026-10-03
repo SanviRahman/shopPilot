@@ -20,7 +20,8 @@ return new class extends Migration
 
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('content')->nullable();
+            $table->text('description')->nullable();
+            $table->longText('content')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

@@ -54,7 +54,7 @@ return [
     'usermenu_header_class'                   => 'bg-primary',
     'usermenu_image'                          => true,
     'usermenu_desc'                           => false,
-    'usermenu_profile_url'                    => false,
+    'usermenu_profile_url'                    => true,
 
     'layout_topnav'                           => null,
     'layout_boxed'                            => null,
@@ -162,7 +162,6 @@ return [
         // CONTACT MANAGEMENT
         [
             'header' => 'CONTACT MANAGEMENT',
-            'can'    => 'contacts.view',
         ],
         [
             'text'   => 'Contacts',
@@ -170,6 +169,13 @@ return [
             'icon'   => 'fas fa-fw fa-address-card',
             'active' => ['admin/contacts*'],
             'can'    => 'contacts.view',
+        ],
+        [
+            'text'   => 'Contact Messages',
+            'route'  => 'admin.contact-messages.index',
+            'icon'   => 'fas fa-fw fa-inbox',
+            'active' => ['admin/contact-messages*'],
+            'can'    => 'contact-messages.view',
         ],
 
         // E-COMMERCE MANAGEMENT

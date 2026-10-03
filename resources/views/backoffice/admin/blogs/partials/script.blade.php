@@ -1,193 +1,112 @@
 <script>
-(function ($) {
-    'use strict';
-
-    const fetchUrl = '{{ $fetchUrl ?? request()->url() }}';
-
-    // Top-Right Floating Toast Notification (Like Product Module)
-    function showAlert(message, type = 'success') {
-        if (window.Swal && typeof window.Swal.fire === 'function') {
-            const Toast = window.Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', window.Swal.stopTimer);
-                    toast.addEventListener('mouseleave', window.Swal.resumeTimer);
-                }
-            });
-
-            Toast.fire({
-                icon: type,
-                title: message
-            });
-            return;
-        }
-        alert(message);
-    }
-
-    function confirmAction(options, callback) {
-        if (window.Swal && typeof window.Swal.fire === 'function') {
-            window.Swal.fire({
-                title: options.title || 'Are you sure?',
-                text: options.text || '',
-                icon: options.icon || 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                confirmButtonText: options.confirmText || 'Yes, continue',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
-            }).then(function (result) {
-                if (result.isConfirmed || result.value) {
-                    callback();
-                }
-            });
-            return;
-        }
-
-        if (window.confirm(options.text || 'Are you sure?')) {
-            callback();
-        }
-    }
+$(function () {
+    const fetchUrl = @json($fetchUrl ?? request()->url());
+    const isTrashPage = @json((bool) ($isTrashPage ?? false));
+    const storeUrl = @json(route('admin.blogs.store'));
+    const csrfToken = @json(csrf_token());
+    let searchTimeout = null;
 
     function reloadBlogTable(url = fetchUrl) {
         $('#blogTableOverlay').removeClass('d-none');
-        const formData = $('#blogFilterForm').serialize();
-
-        $.ajax({
-            url: url,
-            method: 'GET',
-            data: formData,
-            dataType: 'json',
-            success: function (res) {
-                $('#blogTableContainer').html(res.html);
-                if (res.pagination) {
-                    $('#paginationContainer').html(res.pagination).show();
-                } else {
-                    $('#paginationContainer').html('').hide();
-                }
-            },
-            error: function () {
-                showAlert('Failed to refresh blogs list.', 'error');
-            },
-            complete: function () {
-                $('#blogTableOverlay').addClass('d-none');
-                $('#blogSelectAll').prop('checked', false);
-            }
-        });
+        $.ajax({url: url, method: 'GET', data: $('#blogFilterForm').serialize(), dataType: 'json', success: function (res) { $('#blogTableContainer').html(res.html || ''); $('#paginationContainer').html(res.pagination || ''); }, error: function (xhr) { showAlert(xhr.responseJSON?.message || 'Failed to refresh blogs list.', 'error'); }, complete: function () { $('#blogTableOverlay').addClass('d-none'); $('#blogSelectAll').prop('checked', false); }});
     }
 
-    $(document).off('submit', '#blogFilterForm').on('submit', '#blogFilterForm', function (e) {
-        e.preventDefault();
-        reloadBlogTable(fetchUrl);
+    function clearBlogErrors() {
+        $('#blogAjaxForm .is-invalid').removeClass('is-invalid');
+        $('#blogAjaxForm .ajax-validation-error').remove();
+    }
+
+    function showBlogErrors(errors) {
+        clearBlogErrors();
+        Object.entries(errors || {}).forEach(([key, messages]) => { const field = document.getElementsByName(key)[0]; if (!field) return; $(field).addClass('is-invalid'); $('<div>', {class: 'invalid-feedback d-block ajax-validation-error', text: Array.isArray(messages) ? messages[0] : String(messages)}).insertAfter(field); });
+    }
+
+    function updateDescriptionCount() {
+        $('#blogDescriptionCount').text(($('#blog-description').val() || '').length);
+    }
+
+    function resetBlogForm() {
+        const form = $('#blogAjaxForm')[0];
+        if (!form) return;
+        form.reset();
+        clearBlogErrors();
+        $('#blogFormMethod').val('POST');
+        $('#blogAjaxForm').attr('action', storeUrl);
+        $('#blogFormModalTitle span').text('Create Blog');
+        updateDescriptionCount();
+    }
+
+    function populateBlogForm(blog, updateUrl) {
+        resetBlogForm();
+        $('#blogFormMethod').val('PUT');
+        $('#blogAjaxForm').attr('action', updateUrl);
+        $('#blogFormModalTitle span').text(`Update Blog: ${blog.title || ''}`);
+        $('#blog-title').val(blog.title || '');
+        $('#blog-slug').val(blog.slug || '');
+        $('#blog-description').val(blog.description || '');
+        $('#blog-content').val(blog.content || '');
+        updateDescriptionCount();
+    }
+
+    $('#blogFilterForm input[name="search"]').on('input', function () { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => reloadBlogTable(), 350); });
+    $('#btnResetFilter').on('click', function () { $('#blogFilterForm')[0]?.reset(); reloadBlogTable(); });
+    $(document).on('click', '#paginationContainer a.page-link', function (event) { event.preventDefault(); const url = $(this).attr('href'); if (url) reloadBlogTable(url); });
+    $(document).on('change', '#blogSelectAll', function () { $('[data-blog-checkbox]').prop('checked', this.checked); });
+    $(document).on('input', '#blog-description', updateDescriptionCount);
+
+    $(document).on('click', '#btnCreateBlog', function () { resetBlogForm(); $('#blogFormModal').modal('show'); });
+
+    $(document).on('click', '.btn-edit-blog', function (event) {
+        event.preventDefault();
+        const button = $(this);
+        $.ajax({url: button.data('url'), method: 'GET', dataType: 'json', success: function (res) { if (!res.success) return; populateBlogForm(res.blog, button.data('update-url')); $('#blogFormModal').modal('show'); }, error: function (xhr) { showAlert(xhr.responseJSON?.message || 'Could not load blog for editing.', 'error'); }});
     });
 
-    let searchTimeout = null;
-    $(document).off('input', '#blogFilterForm input[name="search"]').on('input', '#blogFilterForm input[name="search"]', function () {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            reloadBlogTable(fetchUrl);
-        }, 400);
+    $(document).off('submit.blogAjax', '#blogAjaxForm').on('submit.blogAjax', '#blogAjaxForm', function (event) {
+        event.preventDefault();
+        clearBlogErrors();
+        const form = $(this);
+        const button = $('#btnSubmitBlogForm');
+        const original = button.html();
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+        $.ajax({url: form.attr('action'), method: 'POST', data: new FormData(this), processData: false, contentType: false, dataType: 'json', success: function (res) { if (!res.success) return; $('#blogFormModal').modal('hide'); showAlert(res.message || 'Blog saved successfully.', 'success'); reloadBlogTable(); }, error: function (xhr) { if (xhr.status === 422) { showBlogErrors(xhr.responseJSON?.errors || {}); showAlert('Please fix the highlighted fields.', 'error'); return; } showAlert(xhr.responseJSON?.message || 'Could not save blog.', 'error'); }, complete: function () { button.prop('disabled', false).html(original); }});
     });
 
-    $(document).off('click', '#btnResetFilter').on('click', '#btnResetFilter', function (e) {
-        e.preventDefault();
-        $('#blogFilterForm')[0].reset();
-        $('#blogFilterForm input[name="search"]').val('');
-        reloadBlogTable(fetchUrl);
+    $(document).on('click', '.btn-show-blog', function (event) {
+        event.preventDefault();
+        $.ajax({url: $(this).data('url'), method: 'GET', dataType: 'json', success: function (res) { if (!res.success) return; const blog = res.blog; $('#modal-blog-title').text(blog.title || '—'); $('#modal-blog-slug').text(blog.slug || '—'); $('#modal-blog-author').text(blog.author_label || blog.author || 'System'); $('#modal-blog-created').text(blog.created_at || '—'); $('#modal-blog-updated').text(blog.updated_at || '—'); $('#modal-blog-description').text(blog.description || 'No description provided.'); $('#modal-blog-content').text(blog.content || 'No content provided.'); $('#showBlogModal').modal('show'); }, error: function (xhr) { showAlert(xhr.responseJSON?.message || 'Could not load blog details.', 'error'); }});
     });
 
-    // Select all checkbox
-    $(document).off('change', '#blogSelectAll').on('change', '#blogSelectAll', function () {
-        $('[data-blog-checkbox]').prop('checked', this.checked);
+    function executeBlogAction(button) {
+        $.ajax({url: button.data('url'), method: button.data('method') || 'POST', data: {_token: csrfToken}, dataType: 'json', success: function (res) { showAlert(res.message || 'Operation completed successfully.', 'success'); reloadBlogTable(); }, error: function (xhr) { showAlert(xhr.responseJSON?.message || 'Operation failed.', 'error'); }});
+    }
+
+    $(document).on('click', '.btn-blog-action', function (event) {
+        event.preventDefault();
+        const button = $(this);
+        const execute = () => executeBlogAction(button);
+        if (!window.Swal || typeof window.Swal.fire !== 'function') { if (window.confirm(button.data('confirm-text') || 'Continue?')) execute(); return; }
+        window.Swal.fire({title: button.data('confirm-title') || 'Are you sure?', text: button.data('confirm-text') || 'Please confirm this action.', type: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Yes, continue', cancelButtonText: 'Cancel'}).then(function (result) { if (result.value || result.isConfirmed) execute(); });
     });
 
-    // Static Modal Show Blog Details Handler
-    $(document).off('click', '.btn-show-blog').on('click', '.btn-show-blog', function (e) {
-        e.preventDefault();
-        const $btn = $(this);
-
-        $('#modal-blog-title').text($btn.data('title'));
-        $('#modal-blog-slug').text($btn.data('slug'));
-        $('#modal-blog-author').text($btn.data('author'));
-        $('#modal-blog-created').text($btn.data('created'));
-        $('#modal-blog-updated').text($btn.data('updated'));
-        $('#modal-blog-content').text($btn.data('content') || 'No content provided.');
-
-        $('#showBlogModal').modal('show');
-    });
-
-    // Individual Action (Delete / Restore / Force-Delete)
-    $(document).off('submit', '.blog-action-form').on('submit', '.blog-action-form', function (e) {
-        e.preventDefault();
-        const $form = $(this);
-
-        confirmAction({
-            title: $form.data('confirm-title') || 'Are you sure?',
-            text: $form.data('confirm-text') || 'Proceed with action?',
-            icon: 'warning'
-        }, function () {
-            $.ajax({
-                url: $form.attr('action'),
-                method: $form.find('input[name="_method"]').val() || 'POST',
-                data: $form.serialize(),
-                dataType: 'json',
-                success: function (res) {
-                    showAlert(res.message, 'success');
-                    reloadBlogTable(fetchUrl);
-                },
-                error: function (xhr) {
-                    showAlert(xhr.responseJSON?.message || 'Operation failed.', 'error');
-                }
-            });
-        });
-    });
-
-    // Bulk Action
-    $(document).off('submit', '#blogBulkForm').on('submit', '#blogBulkForm', function (e) {
-        e.preventDefault();
-        const $form = $(this);
-        const action = $form.find('[name="action"]').val();
+    $(document).off('submit.blogBulk', '#blogBulkForm').on('submit.blogBulk', '#blogBulkForm', function (event) {
+        event.preventDefault();
+        const form = $(this);
+        const action = form.find('[name="action"]').val();
         const ids = $('[data-blog-checkbox]:checked').map(function () { return this.value; }).get();
-
-        if (!action || !ids.length) {
-            showAlert('Please select blog items and an action.', 'error');
-            return;
-        }
-
-        const isForce = action === 'force-delete';
-
-        confirmAction({
-            title: isForce ? 'Permanently delete selected?' : 'Confirm bulk action',
-            text: ids.length + ' blog(s) will be processed.',
-            icon: isForce ? 'warning' : 'question'
-        }, function () {
-            const formData = $form.serialize() + '&' + $.param({ blog_ids: ids });
-            $.ajax({
-                url: $form.attr('action'),
-                method: 'POST',
-                data: formData,
-                dataType: 'json',
-                success: function (res) {
-                    showAlert(res.message, 'success');
-                    reloadBlogTable(fetchUrl);
-                },
-                error: function (xhr) {
-                    showAlert(xhr.responseJSON?.message || 'Bulk operation failed.', 'error');
-                }
-            });
-        });
+        if (!action || !ids.length) { showAlert('Please select blog items and an action.', 'error'); return; }
+        const run = function () { $.ajax({url: form.attr('action'), method: 'POST', data: form.serialize() + '&' + $.param({blog_ids: ids}), dataType: 'json', success: function (res) { showAlert(res.message || 'Blogs processed.', 'success'); reloadBlogTable(); }, error: function (xhr) { showAlert(xhr.responseJSON?.message || 'Bulk operation failed.', 'error'); }}); };
+        if (!window.Swal || typeof window.Swal.fire !== 'function') { if (window.confirm('Process selected blog posts?')) run(); return; }
+        window.Swal.fire({title: 'Confirm bulk action', text: `${ids.length} blog(s) will be processed.`, type: action === 'force-delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonText: 'Yes, continue'}).then(function (result) { if (result.value || result.isConfirmed) run(); });
     });
 
-    // Pagination link intercept
-    $(document).on('click', '#paginationContainer a.page-link', function (e) {
-        e.preventDefault();
-        const pageUrl = $(this).attr('href');
-        if (pageUrl) {
-            reloadBlogTable(pageUrl);
-        }
-    });
-})(jQuery);
+    if (!isTrashPage) {
+        const query = new URLSearchParams(window.location.search);
+        if (query.get('create') === '1') $('#btnCreateBlog').trigger('click');
+        const editId = Number(query.get('edit') || 0);
+        const showId = Number(query.get('show') || 0);
+        if (editId > 0) $(`.btn-edit-blog[data-update-url$="/${editId}"]`).first().trigger('click');
+        else if (showId > 0) $(`.btn-show-blog[data-url$="/${showId}"]`).first().trigger('click');
+    }
+});
 </script>
