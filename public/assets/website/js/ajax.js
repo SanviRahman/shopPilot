@@ -254,9 +254,9 @@
         }
     };
 
-    const trackMeta = (event) => {
-        if (!event?.name || !window.ShopPilotMeta?.track) return;
-        window.ShopPilotMeta.track(event.name, event.payload || {});
+    const trackMeta = (eventOrEvents) => {
+        const events = Array.isArray(eventOrEvents) ? eventOrEvents : [eventOrEvents];
+        events.filter((event) => event?.name).forEach((event) => { if (event.custom && window.ShopPilotMeta?.custom) { window.ShopPilotMeta.custom(event.name, event.payload || {}); return; } if (window.ShopPilotMeta?.track) window.ShopPilotMeta.track(event.name, event.payload || {}); });
     };
 
     const submitProductCartForm = async (form, submitter = null) => {

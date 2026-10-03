@@ -58,36 +58,12 @@ class CheckoutController extends Controller
     {
         $order = $this->checkoutService->placeOrder($request->validated());
 
-        $metaEvent = [
-            'name' => 'Purchase',
-            'payload' => [
-                'value' => (float) $order->grand_total,
-                'currency' => 'BDT',
-                'content_type' => 'product',
-                'content_ids' => $order->items->pluck('product_id')->map(fn ($id) => (string) $id)->values()->all(),
-                'num_items' => (int) $order->items->sum('quantity'),
-                'order_id' => $order->order_number,
-            ],
-        ];
-
+        $purchasePayload = ['value' => (float) $order->grand_total, 'currency' => 'BDT', 'content_type' => 'product', 'content_ids' => $order->items->pluck('product_id')->map(fn ($id) => (string) $id)->values()->all(), 'num_items' => (int) $order->items->sum('quantity'), 'order_id' => $order->order_number];
+        $metaEvents = [['name' => 'Purchase', 'payload' => $purchasePayload], ['name' => 'PurchaseSuccess', 'payload' => [...$purchasePayload, 'status' => 'success'], 'custom' => true]];
         $redirectUrl = route('website.checkout.thank-you', $order->order_number);
         $message = 'Order placed successfully. Your payment information has been submitted for verification.';
-
-        if ($request->ajax() || $request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'redirect_url' => $redirectUrl,
-                'meta_event' => $metaEvent,
-                // Normal checkout clears the cart. Buy Now leaves the persistent cart untouched.
-                'cart' => $this->cartPayload(),
-            ]);
-        }
-
-        return redirect()
-            ->to($redirectUrl)
-            ->with('success', $message)
-            ->with('meta_event', $metaEvent);
+        if ($request->ajax() || $request->expectsJson()) return response()->json(['success' => true, 'message' => $message, 'redirect_url' => $redirectUrl, 'meta_events' => $metaEvents, 'cart' => $this->cartPayload()]);
+        return redirect()->to($redirectUrl)->with('success', $message)->with('meta_events', $metaEvents);
     }
 
     public function thankYou(string $orderNumber): View

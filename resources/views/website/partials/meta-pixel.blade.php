@@ -4,7 +4,9 @@
     $pageViewIds = $metaPixels->where('track_page_view', true)->pluck('pixel_ids')->flatten()->filter()->unique()->values();
     $ecommerceIds = $metaPixels->where('track_ecommerce', true)->pluck('pixel_ids')->flatten()->filter()->unique()->values();
     $allPixelIds = $pageViewIds->merge($ecommerceIds)->filter()->unique()->values();
-    $serverMetaEvent = session()->pull('meta_event');
+    $serverMetaEvents = collect(session()->pull('meta_events', []));
+    $legacyServerMetaEvent = session()->pull('meta_event');
+    if (is_array($legacyServerMetaEvent) && ! empty($legacyServerMetaEvent['name'])) $serverMetaEvents->push($legacyServerMetaEvent);
     $dataLayerEnabled = (bool) config('meta-pixel.data_layer.enabled', true);
     $dataLayerName = (string) config('meta-pixel.data_layer.name', 'dataLayer');
     $dataLayerEventMap = (array) config('meta-pixel.event_map', []);
@@ -331,10 +333,8 @@
             window.ShopPilotMeta.track(routeEvent.name, routeEvent.payload || {});
         }
 
-        const serverEvent = @json($serverMetaEvent);
-        if (serverEvent && serverEvent.name) {
-            window.ShopPilotMeta.track(serverEvent.name, serverEvent.payload || {});
-        }
+        const serverEvents = @json($serverMetaEvents->values());
+        serverEvents.forEach(event => { if (!event?.name) return; if (event.custom) { window.ShopPilotMeta.custom(event.name, event.payload || {}); return; } window.ShopPilotMeta.track(event.name, event.payload || {}); });
 
         document.addEventListener('click', function (event) {
             const node = event.target.closest('[data-meta-event]');

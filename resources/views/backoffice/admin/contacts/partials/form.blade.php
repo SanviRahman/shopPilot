@@ -42,7 +42,7 @@
                     <div class="form-group mb-0">
                         <label for="contact-map-url">Map URL *</label>
                         <input type="url" id="contact-map-url" name="map_url" class="form-control" maxlength="2048" placeholder="https://www.google.com/maps/..." required>
-                        <small class="form-text text-muted">Any valid http/https map URL can be stored. For an embedded map later, use a URL that the map provider allows inside an iframe.</small>
+                        <small class="form-text text-muted">Paste a Google Maps share link, Google Maps URL, OpenStreetMap URL or another valid http/https map link. ShopPilot will create an embeddable preview when the provider allows it.</small>
                     </div>
                 </div>
 

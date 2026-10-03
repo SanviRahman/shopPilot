@@ -63,16 +63,9 @@ class CustomerAuthController extends Controller
 
         $request->session()->regenerate();
         $redirect = redirect()->intended(route('website.account.dashboard'));
-
-        if ($this->wantsJson($request)) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Welcome back to ShopPilot.',
-                'redirect_url' => $redirect->getTargetUrl(),
-            ]);
-        }
-
-        return $redirect->with('success', 'Welcome back to ShopPilot.');
+        $metaEvents = [['name' => 'LoginSuccess', 'payload' => ['method' => 'password', 'status' => 'success'], 'custom' => true]];
+        if ($this->wantsJson($request)) return response()->json(['success' => true, 'message' => 'Welcome back to ShopPilot.', 'redirect_url' => $redirect->getTargetUrl(), 'meta_events' => $metaEvents]);
+        return $redirect->with('success', 'Welcome back to ShopPilot.')->with('meta_events', $metaEvents);
     }
 
     public function register(): View
@@ -96,22 +89,10 @@ class CustomerAuthController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        $metaEvent = ['name' => 'CompleteRegistration', 'payload' => ['status' => 'registered']];
+        $metaEvents = [['name' => 'CompleteRegistration', 'payload' => ['status' => 'registered']], ['name' => 'RegistrationSuccess', 'payload' => ['status' => 'success'], 'custom' => true]];
         $redirectUrl = route('website.account.dashboard');
-
-        if ($this->wantsJson($request)) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Your ShopPilot account is ready.',
-                'redirect_url' => $redirectUrl,
-                'meta_event' => $metaEvent,
-            ], 201);
-        }
-
-        return redirect()
-            ->to($redirectUrl)
-            ->with('success', 'Your ShopPilot account is ready.')
-            ->with('meta_event', $metaEvent);
+        if ($this->wantsJson($request)) return response()->json(['success' => true, 'message' => 'Your ShopPilot account is ready.', 'redirect_url' => $redirectUrl, 'meta_events' => $metaEvents], 201);
+        return redirect()->to($redirectUrl)->with('success', 'Your ShopPilot account is ready.')->with('meta_events', $metaEvents);
     }
 
     public function logout(Request $request): JsonResponse|RedirectResponse

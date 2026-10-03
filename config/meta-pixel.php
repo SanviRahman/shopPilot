@@ -79,6 +79,9 @@ return [
         'AddToCart' => 'add_to_cart',
         'InitiateCheckout' => 'begin_checkout',
         'CompleteRegistration' => 'sign_up',
+        'RegistrationSuccess' => 'registration_success',
+        'LoginSuccess' => 'login',
         'Purchase' => 'purchase',
+        'PurchaseSuccess' => 'purchase_success',
     ],
 ];

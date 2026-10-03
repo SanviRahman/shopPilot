@@ -7,6 +7,7 @@ use App\Http\Controllers\Backoffice\Admin\ContactController;
 use App\Http\Controllers\Backoffice\Admin\ContactMessageController;
 use App\Http\Controllers\Backoffice\Admin\CustomerController;
 use App\Http\Controllers\Backoffice\Admin\MetaPixelController;
+use App\Http\Controllers\Backoffice\Admin\NewsletterSubscriberController;
 use App\Http\Controllers\Backoffice\Admin\CouponController;
 use App\Http\Controllers\Backoffice\Admin\DashboardController;
 use App\Http\Controllers\Backoffice\Admin\MediaController;
@@ -95,6 +96,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{contactMessage}/force-delete', [ContactMessageController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
+
+
+        // Newsletter Subscribers
+        Route::prefix('newsletter-subscribers')->name('newsletter-subscribers.')->group(function () {
+            Route::get('trash', [NewsletterSubscriberController::class, 'trash'])->name('trash');
+            Route::post('bulk-action', [NewsletterSubscriberController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('{newsletterSubscriber}/restore', [NewsletterSubscriberController::class, 'restore'])->name('restore');
+            Route::delete('{newsletterSubscriber}/force-delete', [NewsletterSubscriberController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('newsletter-subscribers', NewsletterSubscriberController::class)->only(['index', 'store', 'show', 'edit', 'update', 'destroy']);
 
         //Admins
         Route::prefix('admins')->name('admins.')->group(function () {

@@ -251,7 +251,7 @@
         try {
             const payload = await ajax.request(form.action, { method: 'POST', form });
             ajax.updateCartHeader(payload.cart);
-            ajax.trackMeta(payload.meta_event);
+            ajax.trackMeta(payload.meta_events || payload.meta_event);
             ajax.toast(payload.message || 'Order placed successfully.');
 
             if (payload.redirect_url) {

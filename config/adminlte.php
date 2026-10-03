@@ -178,6 +178,19 @@ return [
             'can'    => 'contact-messages.view',
         ],
 
+        // MARKETING MANAGEMENT
+        [
+            'header' => 'MARKETING MANAGEMENT',
+            'can'    => 'newsletter-subscribers.view',
+        ],
+        [
+            'text'   => 'Newsletter Subscribers',
+            'route'  => 'admin.newsletter-subscribers.index',
+            'icon'   => 'fas fa-fw fa-envelope-open-text',
+            'active' => ['admin/newsletter-subscribers*'],
+            'can'    => 'newsletter-subscribers.view',
+        ],
+
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',

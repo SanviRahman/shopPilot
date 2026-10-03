@@ -29,7 +29,7 @@
 
             try {
                 const payload = await ajax().request(form.action, { method: 'POST', form });
-                ajax().trackMeta(payload.meta_event);
+                ajax().trackMeta(payload.meta_events || payload.meta_event);
                 ajax().toast(payload.message || 'Request completed successfully.');
 
                 if (payload.redirect_url) {

@@ -8,6 +8,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
+
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -47,6 +48,10 @@ class RolePermissionSeeder extends Seeder
             'Contact Messages' => [
                 'contact-messages.view', 'contact-messages.update', 'contact-messages.delete',
                 'contact-messages.restore', 'contact-messages.force-delete',
+            ],
+            'Newsletter Subscribers' => [
+                'newsletter-subscribers.view', 'newsletter-subscribers.create', 'newsletter-subscribers.update',
+                'newsletter-subscribers.delete', 'newsletter-subscribers.restore', 'newsletter-subscribers.force-delete',
             ],
             'Stock'           => ['stock.view', 'stock.update'],
             'Coupons'         => [
@@ -105,6 +110,7 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
             'blogs.view', 'blogs.create', 'blogs.update',
             'contact-messages.view', 'contact-messages.update',
+            'newsletter-subscribers.view', 'newsletter-subscribers.update',
         ]);
         $agentRole->syncPermissions([
             'dashboard.view', 'orders.view', 'orders.update', 'orders.cancel',

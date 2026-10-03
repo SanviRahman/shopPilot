@@ -201,14 +201,30 @@
 
     const newsletter = document.querySelector('[data-newsletter-form]');
     if (newsletter) {
-        newsletter.addEventListener('submit', (event) => {
+        newsletter.addEventListener('submit', async (event) => {
             event.preventDefault();
             const input = newsletter.querySelector('input[type="email"]');
+            const button = newsletter.querySelector('button[type="submit"]');
             if (!input?.value) return;
-            showToast('Newsletter UI is ready. Subscription storage will be connected later.');
-            newsletter.reset();
+            if (!window.ShopPilotAjax) { newsletter.submit(); return; }
+            window.ShopPilotAjax.clearFormErrors(newsletter);
+            window.ShopPilotAjax.setButtonLoading(button, true, 'Subscribing…');
+            try { const payload = await window.ShopPilotAjax.request(newsletter.action, { method: 'POST', form: newsletter }); window.ShopPilotAjax.toast(payload.message || 'Subscribed successfully.'); newsletter.reset(); } catch (error) { if (error.status === 422) window.ShopPilotAjax.showFormErrors(newsletter, error.payload?.errors || {}); window.ShopPilotAjax.toast(window.ShopPilotAjax.firstError(error.payload, error.message), 'error'); } finally { window.ShopPilotAjax.setButtonLoading(button, false); }
         });
     }
+
+    const footerSectionToggles = Array.from(document.querySelectorAll('.footer-section-toggle'));
+    footerSectionToggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            if (window.matchMedia('(min-width: 781px)').matches) return;
+            const section = toggle.closest('.footer-collapsible');
+            if (!section) return;
+            const opening = !section.classList.contains('is-open');
+            document.querySelectorAll('.footer-collapsible.is-open').forEach((item) => { if (item !== section) { item.classList.remove('is-open'); item.querySelector('.footer-section-toggle')?.setAttribute('aria-expanded', 'false'); } });
+            section.classList.toggle('is-open', opening);
+            toggle.setAttribute('aria-expanded', String(opening));
+        });
+    });
 
     const header = document.getElementById('siteHeader');
     if (header) {
