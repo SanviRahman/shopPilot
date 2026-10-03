@@ -31,6 +31,6 @@ class ShopController extends Controller
             ]);
         }
 
-        return view('website.shop.index', $data);
+        return view($data['searchTerm'] !== '' ? 'website.search.index' : 'website.shop.index', $data);
     }
 }

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Website\BlogPageController;
+use App\Http\Controllers\Website\ContactPageController;
+use App\Http\Controllers\Website\ContentPageController;
 use App\Http\Controllers\Website\CartController;
 use App\Http\Controllers\Website\CheckoutController;
 use App\Http\Controllers\Website\CustomerAccountController;
@@ -20,6 +23,13 @@ Route::name('website.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/shop', [ShopController::class, 'index'])->name('shop');
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('/about', [ContentPageController::class, 'about'])->name('about');
+    Route::get('/faq', [ContentPageController::class, 'faq'])->name('faq');
+    Route::get('/policies/{slug}', [ContentPageController::class, 'policy'])->whereIn('slug', ['shipping-policy', 'return-refund-policy', 'privacy-policy', 'terms-conditions'])->name('policy');
+    Route::get('/contact', [ContactPageController::class, 'index'])->name('contact');
+    Route::post('/contact', [ContactPageController::class, 'store'])->middleware('throttle:6,1')->name('contact.store');
+    Route::get('/blogs', [BlogPageController::class, 'index'])->name('blogs.index');
+    Route::get('/blogs/{slug}', [BlogPageController::class, 'show'])->name('blogs.show');
     Route::get('/track-order', [TrackOrderController::class, 'index'])->name('track-order');
     Route::post('/track-order', [TrackOrderController::class, 'lookup'])->middleware('throttle:20,1')->name('track-order.lookup');
 

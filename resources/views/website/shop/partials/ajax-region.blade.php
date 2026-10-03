@@ -173,11 +173,11 @@
                         </label>
                     </div>
                 @else
-                    <div class="shop-empty" data-shop-reveal>
-                        <span><i class="fas fa-search"></i></span>
-                        <h3>No products matched your filters</h3>
-                        <p>Try another category, price range or search keyword.</p>
-                        <a href="{{ route('website.shop') }}" class="btn btn-primary">Reset Shop Filters</a>
+                    <div class="shop-empty premium-shop-empty" data-shop-reveal>
+                        <div class="shop-empty-illustration"><span class="search-document"><i class="fas fa-list"></i></span><span class="search-lens"><i class="fas fa-search"></i></span></div>
+                        <h3>No results found</h3>
+                        <p>We couldn't find products matching your current search and filters. Try different keywords or browse all categories.</p>
+                        <a href="{{ route('website.shop') }}" class="btn btn-primary"><i class="fas fa-th-large"></i> View All Products</a>
                     </div>
                 @endif
             </div>

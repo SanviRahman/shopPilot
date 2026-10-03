@@ -18,12 +18,12 @@
         @endif
 
         @if($items->isEmpty())
-            <section class="cart-empty-state" data-cart-reveal>
-                <div class="cart-empty-icon"><i class="fas fa-shopping-bag"></i></div>
-                <span>Your cart is waiting</span>
-                <h2>Start adding products you love</h2>
-                <p>Browse our catalog and add products to your cart. Your cart is stored in your current session.</p>
-                <a href="{{ route('website.shop') }}" class="cart-primary-link"><i class="fas fa-arrow-left"></i> Start Shopping</a>
+            <section class="cart-empty-state premium-cart-empty" data-cart-reveal>
+                <div class="cart-empty-illustration"><span class="cart-wheel one"></span><span class="cart-wheel two"></span><i class="fas fa-shopping-cart"></i><span class="cart-spark spark-one"></span><span class="cart-spark spark-two"></span></div>
+                <span>Your cart is empty</span>
+                <h2>Ready for something great?</h2>
+                <p>Explore ShopPilot products and add the items you love. Your cart will keep the products you choose during this session.</p>
+                <a href="{{ route('website.shop') }}" class="cart-primary-link"><i class="fas fa-shopping-bag"></i> Start Shopping</a>
             </section>
         @else
             <div class="cart-layout">

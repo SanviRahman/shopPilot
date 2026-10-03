@@ -37,8 +37,8 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="wishlist-empty" data-wishlist-empty>
-                        <span><i class="far fa-heart"></i></span><h2>Your wishlist is empty</h2><p>Save products you love and they'll appear here for easy access later.</p><a href="{{ route('website.shop') }}" class="primary-account-button"><i class="fas fa-shopping-bag"></i> Explore Products</a>
+                    <div class="wishlist-empty premium-wishlist-empty" data-wishlist-empty>
+                        <div class="wishlist-empty-illustration"><span class="wishlist-note"><i class="fas fa-heart"></i></span><i class="fas fa-heart heart-one"></i><i class="fas fa-heart heart-two"></i></div><h2>Your wishlist is empty</h2><p>Save your favorite products and keep them within easy reach for your next shopping session.</p><a href="{{ route('website.shop') }}" class="primary-account-button"><i class="fas fa-heart"></i> Browse Products</a>
                     </div>
                 @endif
             </section>

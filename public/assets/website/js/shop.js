@@ -151,7 +151,15 @@
                 pushState,
                 signal: activeController.signal,
             });
+
+            if (document.querySelector('[data-search-page]') && result.payload && typeof result.payload.search_query === 'string' && result.payload.search_query.trim() === '') {
+                window.location.assign(result.url);
+                return;
+            }
+
             syncOutsideState(result.document, result.payload);
+            const searchTitle = document.querySelector('[data-search-title]');
+            if (searchTitle && result.payload && typeof result.payload.search_query === 'string') searchTitle.textContent = `“${result.payload.search_query}”`;
             setupRegion();
 
             const current = new URL(result.url, window.location.origin);

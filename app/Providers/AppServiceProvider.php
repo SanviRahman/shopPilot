@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Admin;
 use App\Models\Category;
+use App\Models\Contact;
 use App\Models\Order;
 use App\Policies\OrderPolicy;
 use App\Observers\AdminObserver;
@@ -42,6 +43,10 @@ class AppServiceProvider extends ServiceProvider
                 'headerCartSummary' => app(CartService::class)->summary(),
                 'headerWishlistCount' => $wishlistCount,
             ]);
+        });
+
+        View::composer('website.partials.footer', function ($view) {
+            $view->with('footerContact', Contact::query()->active()->latest('id')->first());
         });
 
         View::composer([

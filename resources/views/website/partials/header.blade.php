@@ -28,7 +28,7 @@
             <div class="topbar-links">
                 <a href="{{ route('website.track-order') }}">Track Order</a>
                 <span class="divider">|</span>
-                <a href="#contact">Help &amp; Support</a>
+                <a href="{{ route('website.contact') }}">Help &amp; Support</a>
             </div>
         </div>
     </div>
@@ -113,8 +113,9 @@
                 <a href="{{ route('website.shop', ['sort' => 'newest']) }}" data-shop-nav-context="new_arrivals" class="{{ $isShopPage && $headerShopContext === 'new_arrivals' ? 'active' : '' }}">New Arrivals</a>
                 <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}" data-shop-nav-context="best_sellers" class="{{ $isShopPage && $headerShopContext === 'best_sellers' ? 'active' : '' }}">Best Sellers</a>
                 <a href="{{ route('website.shop', ['featured' => 1]) }}" data-shop-nav-context="offers" class="{{ $isShopPage && $headerShopContext === 'offers' ? 'active' : '' }}">Offers</a>
-                <a href="#" data-coming-soon="Frontend blog">Blogs</a>
-                <a href="#contact">Contact</a>
+                <a href="{{ route('website.blogs.index') }}" class="{{ request()->routeIs('website.blogs.*') ? 'active' : '' }}">Blogs</a>
+                <a href="{{ route('website.about') }}" class="{{ request()->routeIs('website.about') ? 'active' : '' }}">About</a>
+                <a href="{{ route('website.contact') }}" class="{{ request()->routeIs('website.contact*') ? 'active' : '' }}">Contact</a>
             </div>
         </div>
     </nav>
@@ -131,6 +132,8 @@
         <a href="{{ route('website.track-order') }}">Track Order</a>
         <a href="{{ route('website.shop', ['sort' => 'best_selling']) }}" data-shop-nav-context="best_sellers" class="{{ $isShopPage && $headerShopContext === 'best_sellers' ? 'active' : '' }}">Best Sellers</a>
         <a href="{{ route('website.shop', ['featured' => 1]) }}" data-shop-nav-context="offers" class="{{ $isShopPage && $headerShopContext === 'offers' ? 'active' : '' }}">Offers</a>
-        <a href="#contact">Contact</a>
+        <a href="{{ route('website.blogs.index') }}">Blogs</a>
+        <a href="{{ route('website.about') }}">About</a>
+        <a href="{{ route('website.contact') }}">Contact</a>
     </div>
 </header>
