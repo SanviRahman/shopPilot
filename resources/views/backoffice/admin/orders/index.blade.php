@@ -5,9 +5,11 @@
 @section('page_content')
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-12 col-md-auto mb-2 mb-md-0 d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-primary shadow-sm" id="btnCreateOrder">
-                <i class="fas fa-plus-circle mr-1"></i> Add New Order
-            </button>
+            @can('orders.create')
+                <button type="button" class="btn btn-primary shadow-sm" id="btnCreateOrder">
+                    <i class="fas fa-plus-circle mr-1"></i> Add New Order
+                </button>
+            @endcan
             <a href="{{ route('admin.orders.trash') }}" class="btn btn-outline-danger shadow-sm ml-2">
                 <i class="fas fa-trash-alt mr-1"></i> Trash Bin
             </a>
@@ -19,7 +21,7 @@
                 <div class="input-group">
                     <select name="action" class="custom-select custom-select-sm" required>
                         <option value="">Bulk Actions</option>
-                        @can('orders.update')<option value="delete">Move to Trash</option>@endcan
+                        @can('orders.delete')<option value="delete">Move to Trash</option>@endcan
                         @can('orders.restore')<option value="restore">Restore</option>@endcan
                         @can('orders.force-delete')<option value="force-delete">Permanent Delete</option>@endcan
                     </select>

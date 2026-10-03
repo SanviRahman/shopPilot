@@ -24,10 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
             : route('website.login'));
 
         $middleware->redirectUsersTo(function (Request $request) {
-            $user = $request->user('admin') ?: $request->user();
-
-            if ($user?->hasAnyRole(['super_admin', 'admin'])) {
-                return route('admin.dashboard');
+            if ($request->user('admin')) {
+                return route('admin.redirect');
             }
 
             if ($request->user('web')) {

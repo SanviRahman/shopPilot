@@ -4,13 +4,19 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Order;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class UpdateOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) auth('admin')->user()?->can('orders.update');
+        $admin = auth('admin')->user();
+        $order = $this->route('order');
+
+        return $admin !== null
+            && $order instanceof Order
+            && Gate::forUser($admin)->allows('update', $order);
     }
 
     public function rules(): array

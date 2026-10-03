@@ -19,10 +19,12 @@ class DashboardController extends Controller
             throw new AuthorizationException('You are not authorized to view the dashboard.');
         }
 
+        $admin = auth('admin')->user();
+
         return view('backoffice.admin.dashboard', [
-            'title' => 'Admin Dashboard',
+            'title' => $admin?->isRestrictedAgent() ? 'Agent Dashboard' : 'Admin Dashboard',
             'breadcrumb' => [['text' => 'Dashboard', 'url' => null]],
-            ...$this->dashboardService->data(),
+            ...$this->dashboardService->data($admin),
         ]);
     }
 }

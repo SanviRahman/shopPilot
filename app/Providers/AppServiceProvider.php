@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Admin;
 use App\Models\Category;
+use App\Models\Order;
+use App\Policies\OrderPolicy;
 use App\Observers\AdminObserver;
 use App\Services\CartService;
 use App\Services\Website\WishlistService;
@@ -22,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
     {
 
         Admin::observe(AdminObserver::class);
+        Gate::policy(Order::class, OrderPolicy::class);
 
         View::composer('website.partials.header', function ($view) {
             $wishlistCount = 0;

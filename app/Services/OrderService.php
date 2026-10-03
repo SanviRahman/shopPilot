@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\PaymentSubmission;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -165,13 +166,25 @@ class OrderService
                 }
 
                 try {
+                    $ability = match ($action) {
+                        'delete' => 'delete',
+                        'restore' => 'restore',
+                        'force-delete' => 'forceDelete',
+                        default => throw ValidationException::withMessages([
+                            'action' => 'Invalid bulk action.',
+                        ]),
+                    };
+
+                    $admin = auth('admin')->user();
+                    if (! $admin || Gate::forUser($admin)->denies($ability, $order)) {
+                        $skipped++;
+                        continue;
+                    }
+
                     match ($action) {
                         'delete' => $this->delete($order),
                         'restore' => $this->restoreTrashed($order),
                         'force-delete' => $this->forceDeleteTrashed($order),
-                        default => throw ValidationException::withMessages([
-                            'action' => 'Invalid bulk action.',
-                        ]),
                     };
                     $processed++;
                 } catch (\Throwable) {

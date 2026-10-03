@@ -68,11 +68,16 @@ class LoginController extends Controller
             return redirect()->route('admin.login');
         }
 
-        return match (true) {
-            $admin->hasAnyRole(['super_admin', 'admin']) => redirect()->route('admin.dashboard'),
-            $admin->hasRole('manager') => redirect()->route('manager.dashboard'),
-            $admin->hasRole('agent') => redirect()->route('agent.dashboard'),
-            default => redirect()->route('admin.login'),
-        };
+        if ($admin->hasAnyRole(['super_admin', 'admin', 'manager', 'agent'])) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('admin.login')->withErrors([
+            'email' => 'This staff account does not have an authorized role.',
+        ]);
     }
 }

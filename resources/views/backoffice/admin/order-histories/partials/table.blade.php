@@ -46,7 +46,7 @@
                     </td>
                     <td class="text-right align-middle text-nowrap">
                         @if($isTrash)
-                            @can('orders.restore')
+                            @can('restore', $history->order)
                                 <button type="button" class="btn btn-outline-success btn-sm btn-action"
                                     data-url="{{ route('admin.order-histories.restore', $history->id) }}"
                                     data-method="PATCH"
@@ -58,12 +58,12 @@
                             @endcan
                         @else
                             <div class="btn-group btn-group-sm">
-                                @can('orders.view')
+                                @can('view', $history->order)
                                     <button type="button" class="btn btn-default btn-view-history" data-id="{{ $history->id }}" title="View Full Details">
                                         <i class="fas fa-eye text-info"></i>
                                     </button>
                                 @endcan
-                                @can('orders.update')
+                                @can('delete', $history->order)
                                     <button type="button" class="btn btn-default btn-action"
                                         data-url="{{ route('admin.order-histories.destroy', $history) }}"
                                         data-method="DELETE"

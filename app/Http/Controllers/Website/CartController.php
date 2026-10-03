@@ -49,16 +49,19 @@ class CartController extends Controller
             ],
         ];
 
+        $redirectTo = $data['redirect_to'] ?? 'back';
+
         if ($this->wantsJson($request)) {
             return response()->json([
                 'success' => true,
                 'message' => 'Product added to your cart.',
                 'cart' => $this->cartPayload(),
                 'meta_event' => $metaEvent,
+                'redirect_url' => $redirectTo === 'cart' ? route('website.cart.index') : null,
             ]);
         }
 
-        if (($data['redirect_to'] ?? 'back') === 'cart') {
+        if ($redirectTo === 'cart') {
             return redirect()->route('website.cart.index')
                 ->with('success', 'Product added to your cart.')
                 ->with('meta_event', $metaEvent);

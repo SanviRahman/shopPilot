@@ -202,7 +202,19 @@
 
 @if($metaPixels->isNotEmpty())
     @foreach($metaPixels as $metaPixel)
-        @if(filled($metaPixel->full_script))
+        @php
+            $entryScripts = collect($metaPixel->pixel_entries ?? [])
+                ->pluck('script')
+                ->filter(fn ($script) => filled($script))
+                ->values();
+        @endphp
+
+        @if($entryScripts->isNotEmpty())
+            @foreach($entryScripts as $entryScript)
+                {!! $entryScript !!}
+            @endforeach
+        @elseif(filled($metaPixel->full_script))
+            {{-- Legacy fallback for records created before repeatable Pixel entries existed. --}}
             {!! $metaPixel->full_script !!}
         @endif
     @endforeach

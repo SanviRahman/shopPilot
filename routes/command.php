@@ -28,37 +28,52 @@ Route::prefix('command')
     ->name('command.')
     ->middleware(['auth:admin', 'role:admin|super_admin,admin'])
     ->group(function () use ($redirectWithToast) {
-        Route::get('/clear-cache', function () use ($redirectWithToast) {
+        Route::get('/', function () {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
+
+            return view('backoffice.admin.commands.index', [
+                'title' => 'System Commands',
+                'isLocal' => app()->environment('local'),
+            ]);
+        })->name('index');
+
+        Route::post('/clear-cache', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             Artisan::call('cache:clear');
 
             return $redirectWithToast('success', 'Cache cleared successfully.');
         })->name('clear-cache');
 
-        Route::get('/clear-config', function () use ($redirectWithToast) {
+        Route::post('/clear-config', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             Artisan::call('config:clear');
 
             return $redirectWithToast('success', 'Config cleared successfully.');
         })->name('clear-config');
 
-        Route::get('/clear-route', function () use ($redirectWithToast) {
+        Route::post('/clear-route', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             Artisan::call('route:clear');
 
             return $redirectWithToast('success', 'Route cache cleared successfully.');
         })->name('clear-route');
 
-        Route::get('/clear-view', function () use ($redirectWithToast) {
+        Route::post('/clear-view', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             Artisan::call('view:clear');
 
             return $redirectWithToast('success', 'View cache cleared successfully.');
         })->name('clear-view');
 
-        Route::get('/optimize-clear', function () use ($redirectWithToast) {
+        Route::post('/optimize-clear', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             Artisan::call('optimize:clear');
 
             return $redirectWithToast('success', 'Optimize cache cleared successfully.');
         })->name('optimize-clear');
 
-        Route::get('/migrate', function () use ($redirectWithToast) {
+        Route::post('/migrate', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             if (! app()->environment('local')) {
                 return $redirectWithToast('error', 'Migrate is allowed only in local environment.');
             }
@@ -68,7 +83,8 @@ Route::prefix('command')
             return $redirectWithToast('success', 'Database migrated successfully.');
         })->name('migrate');
 
-        Route::get('/seed', function () use ($redirectWithToast) {
+        Route::post('/seed', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             if (! app()->environment('local')) {
                 return $redirectWithToast('error', 'Seed is allowed only in local environment.');
             }
@@ -78,7 +94,8 @@ Route::prefix('command')
             return $redirectWithToast('success', 'Database seeded successfully.');
         })->name('seed');
 
-        Route::get('/migrate-fresh', function () use ($redirectWithToast) {
+        Route::post('/migrate-fresh', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             if (! app()->environment('local')) {
                 return $redirectWithToast('error', 'Fresh migrate is allowed only in local environment.');
             }
@@ -88,7 +105,8 @@ Route::prefix('command')
             return $redirectWithToast('success', 'Database fresh migrated successfully.');
         })->name('migrate-fresh');
 
-        Route::get('/migrate-fresh-seed', function () use ($redirectWithToast) {
+        Route::post('/migrate-fresh-seed', function () use ($redirectWithToast) {
+            abort_unless(auth('admin')->user()?->can('settings.update'), 403);
             if (! app()->environment('local')) {
                 return $redirectWithToast('error', 'Fresh migrate seed is allowed only in local environment.');
             }

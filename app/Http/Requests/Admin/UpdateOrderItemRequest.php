@@ -5,13 +5,31 @@ namespace App\Http\Requests\Admin;
 use App\Models\OrderItem;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class UpdateOrderItemRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) auth('admin')->user()?->can('orders.update');
+        $admin = auth('admin')->user();
+        $routeOrderItem = $this->route('orderItem') ?? $this->route('order_item');
+        $orderItem = $routeOrderItem instanceof OrderItem
+            ? $routeOrderItem
+            : OrderItem::query()->find($routeOrderItem);
+
+        if (! $admin?->can('orders.update')) {
+            return false;
+        }
+
+        if (! $orderItem) {
+            return true;
+        }
+
+        $orderItem->loadMissing('order');
+
+        return $orderItem->order !== null
+            && Gate::forUser($admin)->allows('update', $orderItem->order);
     }
 
     public function rules(): array

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->boolean('track_ecommerce')->default(true);
             $table->timestamp('starts_at')->nullable()->index();
             $table->timestamp('ends_at')->nullable()->index();
+             $table->json('pixel_entries')->nullable();
             $table->json('settings')->nullable();
             $table->timestamps();
             $table->softDeletes();

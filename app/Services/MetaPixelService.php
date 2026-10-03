@@ -14,7 +14,7 @@ class MetaPixelService
 {
     public function create(array $data): MetaPixel
     {
-        $pixel = MetaPixel::create($data);
+        $pixel = MetaPixel::create($this->normalizeForPersistence($data));
         $this->flushFrontendCache();
 
         return $pixel;
@@ -22,7 +22,7 @@ class MetaPixelService
 
     public function update(MetaPixel $pixel, array $data): MetaPixel
     {
-        $pixel->update($data);
+        $pixel->update($this->normalizeForPersistence($data));
         $this->flushFrontendCache();
 
         return $pixel->refresh();
@@ -49,9 +49,8 @@ class MetaPixelService
     /**
      * Return live frontend pixel configurations as a Support Collection.
      *
-     * Important: Laravel 13 can reject cached PHP objects when
-     * cache.serializable_classes=false. Cache only plain arrays here so a
-     * database/file/redis cache never hydrates an __PHP_Incomplete_Class.
+     * Cache plain arrays only so strict Laravel cache serialization settings
+     * never hydrate an incomplete Eloquent object.
      */
     public function activeForFrontend(): Collection
     {
@@ -64,7 +63,6 @@ class MetaPixelService
 
         $cached = Cache::get($cacheKey);
 
-        // Recover automatically from an old object-based/corrupted cache entry.
         if ($cached !== null && ! is_array($cached)) {
             Cache::forget($cacheKey);
             $cached = null;
@@ -81,6 +79,7 @@ class MetaPixelService
                         'id',
                         'name',
                         'pixel_ids',
+                        'pixel_entries',
                         'full_script',
                         'lifecycle_status',
                         'track_page_view',
@@ -95,6 +94,7 @@ class MetaPixelService
                             (array) $pixel->pixel_ids,
                             static fn ($id): bool => filled($id)
                         )),
+                        'pixel_entries' => $pixel->pixelEntries(),
                         'full_script' => $pixel->full_script,
                         'lifecycle_status' => $pixel->lifecycle_status,
                         'track_page_view' => (bool) $pixel->track_page_view,
@@ -149,12 +149,34 @@ class MetaPixelService
 
     public function flushFrontendCache(): void
     {
-        // Forget both the current safe key and the previous object-cache key.
         foreach (array_unique([
             (string) config('meta-pixel.cache.key', 'meta_pixels.live.v2'),
             'meta_pixels.live',
         ]) as $cacheKey) {
             Cache::forget($cacheKey);
         }
+    }
+
+    /** @return array<string, mixed> */
+    private function normalizeForPersistence(array $data): array
+    {
+        $entries = collect($data['pixel_entries'] ?? [])
+            ->filter(fn ($entry) => is_array($entry))
+            ->map(fn (array $entry) => [
+                'pixel_id' => trim((string) ($entry['pixel_id'] ?? '')),
+                'script' => trim((string) ($entry['script'] ?? '')),
+            ])
+            ->filter(fn (array $entry) => $entry['pixel_id'] !== '')
+            ->unique('pixel_id')
+            ->values()
+            ->all();
+
+        $data['pixel_entries'] = $entries;
+        $data['pixel_ids'] = collect($entries)->pluck('pixel_id')->values()->all();
+        $data['full_script'] = collect($entries)
+            ->pluck('script')
+            ->first(fn ($script) => filled($script)) ?: null;
+
+        return $data;
     }
 }

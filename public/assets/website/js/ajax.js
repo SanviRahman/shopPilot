@@ -259,16 +259,30 @@
         window.ShopPilotMeta.track(event.name, event.payload || {});
     };
 
-    const submitProductCartForm = async (form) => {
-        const button = form.querySelector('button[type="submit"]');
+    const submitProductCartForm = async (form, submitter = null) => {
+        const button = submitter || form.querySelector('button[type="submit"]');
         setButtonLoading(button, true, 'Adding…');
 
         try {
-            const payload = await request(form.action, { method: 'POST', form });
+            const formData = new FormData(form);
+
+            // FormData(form) does not include the clicked submit button in all browsers.
+            // Preserve redirect_to so Add to Cart stays on the page while Buy Now can navigate.
+            if (submitter?.name) {
+                formData.set(submitter.name, submitter.value || '');
+            }
+
+            const payload = await request(form.action, { method: 'POST', data: formData });
             updateCartHeader(payload.cart);
             trackMeta(payload.meta_event);
-            toast(payload.message || 'Product added to your cart.');
             document.dispatchEvent(new CustomEvent('shoppilot:cart-changed', { detail: payload }));
+
+            if (payload?.redirect_url) {
+                window.location.assign(payload.redirect_url);
+                return;
+            }
+
+            toast(payload.message || 'Product added to your cart.');
         } catch (error) {
             toast(firstError(error.payload, error.message), 'error');
         } finally {
@@ -280,7 +294,7 @@
         const form = event.target.closest('.product-card-cart-form, .product-order-form');
         if (!form) return;
         event.preventDefault();
-        submitProductCartForm(form);
+        submitProductCartForm(form, event.submitter || null);
     });
 
     document.addEventListener('click', (event) => {

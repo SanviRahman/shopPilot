@@ -99,6 +99,16 @@ class Admin extends Authenticatable implements HasMedia
     }
 
     /**
+     * Agents are resource-scoped: by default they may only work with Orders
+     * explicitly assigned to their own admin account.
+     */
+    public function isRestrictedAgent(): bool
+    {
+        return $this->hasRole('agent')
+            && ! $this->hasAnyRole(['super_admin', 'admin', 'manager']);
+    }
+
+    /**
      * AdminLTE navbar user menu avatar render method
      */
     public function adminlte_image(): string

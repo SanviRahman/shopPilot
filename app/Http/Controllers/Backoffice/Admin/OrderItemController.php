@@ -13,6 +13,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
@@ -24,9 +25,11 @@ class OrderItemController extends Controller
 
     public function index(Request $request): View|JsonResponse
     {
+        $admin = $request->user('admin');
         $this->authorizeAction('orders.view');
 
         $orderItems = OrderItem::query()
+            ->whereHas('order', fn ($query) => $query->accessibleToAdmin($admin))
             ->with(['order', 'product'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
@@ -52,6 +55,7 @@ class OrderItemController extends Controller
         }
 
         $orders = Order::query()
+            ->accessibleToAdmin($admin)
             ->latest()
             ->limit(100)
             ->get(['id', 'order_number']);
@@ -71,9 +75,11 @@ class OrderItemController extends Controller
 
     public function trash(Request $request): View|JsonResponse
     {
+        $admin = $request->user('admin');
         $this->authorizeAction('orders.view');
 
         $orderItems = OrderItem::onlyTrashed()
+            ->whereHas('order', fn ($query) => $query->accessibleToAdmin($admin))
             ->with(['order', 'product'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
@@ -119,8 +125,9 @@ class OrderItemController extends Controller
 
     public function show(Request $request, OrderItem $orderItem): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.view');
         $orderItem->load(['order', 'product']);
+        abort_unless($orderItem->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('view', $orderItem->order);
 
         if ($request->ajax()) {
             return response()->json([
@@ -144,7 +151,9 @@ class OrderItemController extends Controller
 
     public function edit(Request $request, OrderItem $orderItem): JsonResponse
     {
-        $this->authorizeAction('orders.update');
+        $orderItem->loadMissing('order');
+        abort_unless($orderItem->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('update', $orderItem->order);
 
         return response()->json([
             'success' => true,
@@ -177,7 +186,9 @@ class OrderItemController extends Controller
 
     public function destroy(Request $request, OrderItem $orderItem): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.update');
+        $orderItem->loadMissing('order');
+        abort_unless($orderItem->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('delete', $orderItem->order);
         $this->orderItemService->delete($orderItem);
 
         if ($request->ajax()) {
@@ -192,8 +203,9 @@ class OrderItemController extends Controller
 
     public function restore(Request $request, int $orderItem): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.restore');
-        $trashed = OrderItem::onlyTrashed()->findOrFail($orderItem);
+        $trashed = OrderItem::onlyTrashed()->with('order')->findOrFail($orderItem);
+        abort_unless($trashed->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('restore', $trashed->order);
         $this->orderItemService->restore($trashed);
 
         if ($request->ajax()) {
@@ -208,8 +220,9 @@ class OrderItemController extends Controller
 
     public function forceDelete(Request $request, int $orderItem): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.force-delete');
-        $trashed = OrderItem::onlyTrashed()->findOrFail($orderItem);
+        $trashed = OrderItem::onlyTrashed()->with('order')->findOrFail($orderItem);
+        abort_unless($trashed->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('forceDelete', $trashed->order);
         $this->orderItemService->forceDelete($trashed);
 
         if ($request->ajax()) {
@@ -226,7 +239,7 @@ class OrderItemController extends Controller
     {
         $action = $request->string('action')->toString();
         $permission = match ($action) {
-            'delete' => 'orders.update',
+            'delete' => 'orders.delete',
             'restore' => 'orders.restore',
             'force-delete' => 'orders.force-delete',
             default => null,

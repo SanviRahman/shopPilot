@@ -11,6 +11,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
@@ -22,9 +23,11 @@ class OrderHistoryController extends Controller
 
     public function index(Request $request): View|JsonResponse
     {
+        $admin = $request->user('admin');
         $this->authorizeAction('orders.view');
 
         $histories = OrderHistory::query()
+            ->whereHas('order', fn ($query) => $query->accessibleToAdmin($admin))
             ->with(['order', 'admin', 'user'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
@@ -57,7 +60,11 @@ class OrderHistoryController extends Controller
             ]);
         }
 
-        $orders = Order::query()->latest()->limit(100)->get(['id', 'order_number']);
+        $orders = Order::query()
+            ->accessibleToAdmin($admin)
+            ->latest()
+            ->limit(100)
+            ->get(['id', 'order_number']);
 
         return view('backoffice.admin.order-histories.index', [
             'title' => 'Order Audit History',
@@ -68,9 +75,11 @@ class OrderHistoryController extends Controller
 
     public function trash(Request $request): View|JsonResponse
     {
+        $admin = $request->user('admin');
         $this->authorizeAction('orders.view');
 
         $histories = OrderHistory::onlyTrashed()
+            ->whereHas('order', fn ($query) => $query->accessibleToAdmin($admin))
             ->with(['order', 'admin', 'user'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
@@ -116,8 +125,9 @@ class OrderHistoryController extends Controller
 
     public function show(Request $request, OrderHistory $orderHistory): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.view');
         $orderHistory->load(['order', 'admin', 'user']);
+        abort_unless($orderHistory->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('view', $orderHistory->order);
 
         if ($request->ajax()) {
             return response()->json([
@@ -141,7 +151,9 @@ class OrderHistoryController extends Controller
 
     public function destroy(Request $request, OrderHistory $orderHistory): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.update');
+        $orderHistory->loadMissing('order');
+        abort_unless($orderHistory->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('delete', $orderHistory->order);
         $this->orderHistoryService->delete($orderHistory);
 
         if ($request->ajax()) {
@@ -156,8 +168,9 @@ class OrderHistoryController extends Controller
 
     public function restore(Request $request, int $orderHistory): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.restore');
-        $trashed = OrderHistory::onlyTrashed()->findOrFail($orderHistory);
+        $trashed = OrderHistory::onlyTrashed()->with('order')->findOrFail($orderHistory);
+        abort_unless($trashed->order, 404);
+        Gate::forUser($request->user('admin'))->authorize('restore', $trashed->order);
         $this->orderHistoryService->restore($trashed);
 
         if ($request->ajax()) {
@@ -174,7 +187,7 @@ class OrderHistoryController extends Controller
     {
         $action = $request->string('action')->toString();
         $permission = match ($action) {
-            'delete' => 'orders.update',
+            'delete' => 'orders.delete',
             'restore' => 'orders.restore',
             default => null,
         };

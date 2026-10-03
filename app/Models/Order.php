@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -118,6 +119,18 @@ class Order extends Model
     public function isGuest(): bool
     {
         return $this->user_id === null;
+    }
+
+    /**
+     * Scope staff Order queries so operational Agents only see assigned Orders.
+     */
+    public function scopeAccessibleToAdmin(Builder $query, Admin $admin): Builder
+    {
+        if ($admin->isRestrictedAgent()) {
+            $query->where('assigned_agent_id', $admin->getKey());
+        }
+
+        return $query;
     }
 
     public function canTransitionTo(string $status): bool

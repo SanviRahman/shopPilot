@@ -12,6 +12,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
@@ -23,9 +24,11 @@ class OrderController extends Controller
 
     public function index(Request $request): View|JsonResponse
     {
-        $this->authorizeAction('orders.view');
+        $admin = $request->user('admin');
+        Gate::forUser($admin)->authorize('viewAny', Order::class);
 
         $orders = Order::query()
+            ->accessibleToAdmin($admin)
             ->with(['user', 'assignedAgent', 'coupon', 'paymentSubmission'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
@@ -53,9 +56,15 @@ class OrderController extends Controller
             ]);
         }
 
-        $agents = Admin::query()
+        $agentsQuery = Admin::query()
             ->where('status', 'active')
-            ->whereHas('roles', fn ($q) => $q->where('name', 'agent')->where('guard_name', 'admin'))
+            ->whereHas('roles', fn ($q) => $q->where('name', 'agent')->where('guard_name', 'admin'));
+
+        if ($admin->isRestrictedAgent()) {
+            $agentsQuery->whereKey($admin->getKey());
+        }
+
+        $agents = $agentsQuery
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -68,9 +77,11 @@ class OrderController extends Controller
 
     public function trash(Request $request): View|JsonResponse
     {
-        $this->authorizeAction('orders.view');
+        $admin = $request->user('admin');
+        Gate::forUser($admin)->authorize('viewAny', Order::class);
 
         $orders = Order::onlyTrashed()
+            ->accessibleToAdmin($admin)
             ->with(['user', 'assignedAgent', 'coupon', 'paymentSubmission'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
@@ -118,7 +129,7 @@ class OrderController extends Controller
 
     public function show(Request $request, Order $order): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.view');
+        Gate::forUser($request->user('admin'))->authorize('view', $order);
 
         $order->load(['user', 'assignedAgent', 'coupon', 'paymentSubmission']);
 
@@ -157,7 +168,7 @@ class OrderController extends Controller
 
     public function edit(Request $request, Order $order): JsonResponse
     {
-        $this->authorizeAction('orders.update');
+        Gate::forUser($request->user('admin'))->authorize('update', $order);
 
         return response()->json([
             'success' => true,
@@ -199,7 +210,7 @@ class OrderController extends Controller
 
     public function destroy(Request $request, Order $order): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.update');
+        Gate::forUser($request->user('admin'))->authorize('delete', $order);
         $this->orderService->delete($order);
 
         if ($request->ajax()) {
@@ -214,8 +225,8 @@ class OrderController extends Controller
 
     public function restore(Request $request, int $order): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.restore');
         $trashedOrder = Order::onlyTrashed()->findOrFail($order);
+        Gate::forUser($request->user('admin'))->authorize('restore', $trashedOrder);
         $this->orderService->restore($trashedOrder);
 
         if ($request->ajax()) {
@@ -230,8 +241,8 @@ class OrderController extends Controller
 
     public function forceDelete(Request $request, int $order): JsonResponse|RedirectResponse
     {
-        $this->authorizeAction('orders.force-delete');
         $trashedOrder = Order::onlyTrashed()->findOrFail($order);
+        Gate::forUser($request->user('admin'))->authorize('forceDelete', $trashedOrder);
         $this->orderService->forceDelete($trashedOrder);
 
         if ($request->ajax()) {
@@ -248,7 +259,7 @@ class OrderController extends Controller
     {
         $action = $request->string('action')->toString();
         $permission = match ($action) {
-            'delete'       => 'orders.update',
+            'delete'       => 'orders.delete',
             'restore'      => 'orders.restore',
             'force-delete' => 'orders.force-delete',
             default        => null,

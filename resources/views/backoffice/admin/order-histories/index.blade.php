@@ -21,7 +21,7 @@
                 <div class="input-group">
                     <select name="action" class="custom-select custom-select-sm" required>
                         <option value="">Bulk Actions</option>
-                        @can('orders.update')<option value="delete">Move to Trash</option>@endcan
+                        @can('orders.delete')<option value="delete">Move to Trash</option>@endcan
                     </select>
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-secondary btn-sm px-3">Apply</button>

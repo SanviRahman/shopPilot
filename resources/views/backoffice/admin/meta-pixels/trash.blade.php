@@ -1,6 +1,48 @@
 @extends('layouts.admin')
-@section('meta_title','Meta Pixel Trash')
+
+@section('meta_title', 'Meta Pixel Trash')
+
 @section('page_content')
-<a href="{{ route('admin.meta-pixels.index') }}" class="btn btn-light border mb-3"><i class="fas fa-arrow-left mr-1"></i> Back</a>
-<div class="card card-outline card-danger"><div class="card-body p-0"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Name</th><th>Pixel IDs</th><th>Deleted</th><th class="text-right">Actions</th></tr></thead><tbody>@forelse($pixels as $pixel)<tr><td>{{ $pixel->name }}</td><td>{{ implode(', ', $pixel->pixel_ids ?? []) }}</td><td>{{ $pixel->deleted_at?->format('d M Y H:i') }}</td><td class="text-right">@can('meta-pixels.restore')<form class="d-inline" action="{{ route('admin.meta-pixels.restore',$pixel->id) }}" method="POST">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-success"><i class="fas fa-trash-restore"></i></button></form>@endcan @can('meta-pixels.force-delete')<form class="d-inline" action="{{ route('admin.meta-pixels.force-delete',$pixel->id) }}" method="POST" onsubmit="return confirm('Permanently delete?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger"><i class="fas fa-times"></i></button></form>@endcan</td></tr>@empty<tr><td colspan="4" class="text-center text-muted py-5">Trash is empty.</td></tr>@endforelse</tbody></table></div></div><div class="card-footer">{{ $pixels->links() }}</div></div>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <a href="{{ route('admin.meta-pixels.index') }}" class="btn btn-light border shadow-sm mb-2 mb-md-0">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Meta Pixels
+        </a>
+
+        <form id="metaPixelFilterForm" method="GET" action="{{ route('admin.meta-pixels.trash') }}" class="form-inline">
+            <input
+                type="search"
+                name="search"
+                id="meta-pixel-search"
+                value="{{ request('search') }}"
+                class="form-control form-control-sm mr-2"
+                placeholder="Search trash..."
+            >
+            <button type="button" id="btnResetMetaPixelFilter" class="btn btn-light btn-sm border">
+                <i class="fas fa-redo-alt mr-1"></i> Reset
+            </button>
+        </form>
+    </div>
+
+    <div class="card card-outline card-danger shadow-sm">
+        <div class="card-body p-0 position-relative">
+            <div id="metaPixelTableOverlay" class="overlay d-none">
+                <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+            </div>
+            <div id="metaPixelTableContainer">
+                @include('backoffice.admin.meta-pixels.partials.table', ['isTrash' => true])
+            </div>
+        </div>
+        <div class="card-footer bg-white border-top py-2" id="metaPixelPaginationContainer">
+            @if($pixels->hasPages())
+                {{ $pixels->links() }}
+            @endif
+        </div>
+    </div>
 @endsection
+
+@push('js')
+    @include('backoffice.admin.meta-pixels.partials.script', [
+        'fetchUrl' => route('admin.meta-pixels.trash'),
+        'isTrashPage' => true,
+    ])
+@endpush

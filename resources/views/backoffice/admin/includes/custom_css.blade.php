@@ -1,4 +1,59 @@
 <style>
+
+    /* Meta Pixel create/update modal: the form wraps header/body/footer, so
+       Bootstrap's default modal-dialog-scrollable flex rules do not constrain
+       the body by themselves. Keep header/footer visible and scroll only body. */
+    #metaPixelFormModal .modal-dialog {
+        width: calc(100% - 2rem);
+        max-width: 1140px;
+        height: calc(100vh - 2rem) !important;
+        max-height: calc(100vh - 2rem);
+        margin: 1rem auto;
+    }
+
+    #metaPixelFormModal .modal-content {
+        height: 100% !important;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #metaPixelFormModal .modal-content > form,
+    #metaPixelFormModal #metaPixelAjaxForm {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+    }
+
+    #metaPixelFormModal .modal-header,
+    #metaPixelFormModal .modal-footer {
+        flex: 0 0 auto;
+    }
+
+    #metaPixelFormModal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 0;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #metaPixelFormModal .modal-footer {
+        position: relative;
+        z-index: 5;
+        background: #f8f9fa !important;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, .06);
+    }
+
+    #metaPixelFormModal .meta-pixel-entry-row:last-child {
+        margin-bottom: 0 !important;
+    }
+
     /* Category create/update modal: keep the footer visible while the body scrolls. */
     #categoryFormModal .modal-dialog {
         width: calc(100% - 2rem);
@@ -73,6 +128,21 @@
     }
 
     @media (max-width: 767.98px) {
+
+        #metaPixelFormModal .modal-dialog {
+            width: calc(100% - 1rem);
+            height: calc(100vh - 1rem) !important;
+            max-height: calc(100vh - 1rem);
+            margin: .5rem auto;
+        }
+
+        #metaPixelFormModal .modal-header,
+        #metaPixelFormModal .modal-body,
+        #metaPixelFormModal .modal-footer {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
         #categoryFormModal .modal-dialog {
             width: calc(100% - 1rem);
             height: calc(100vh - 1rem) !important;

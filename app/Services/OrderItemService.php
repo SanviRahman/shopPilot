@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class OrderItemService
@@ -110,6 +111,22 @@ class OrderItemService
                     continue;
                 }
 
+                $orderItem->loadMissing('order');
+                $ability = match ($action) {
+                    'delete' => 'delete',
+                    'restore' => 'restore',
+                    'force-delete' => 'forceDelete',
+                    default => throw ValidationException::withMessages([
+                        'action' => 'Invalid bulk action.',
+                    ]),
+                };
+
+                $admin = auth('admin')->user();
+                if (! $admin || ! $orderItem->order || Gate::forUser($admin)->denies($ability, $orderItem->order)) {
+                    $skipped++;
+                    continue;
+                }
+
                 $affectedOrderIds[] = $orderItem->order_id;
 
                 try {
@@ -117,9 +134,6 @@ class OrderItemService
                         'delete' => $orderItem->trashed() ? null : $orderItem->delete(),
                         'restore' => $orderItem->trashed() ? $orderItem->restore() : null,
                         'force-delete' => $orderItem->trashed() ? $orderItem->forceDelete() : null,
-                        default => throw ValidationException::withMessages([
-                            'action' => 'Invalid bulk action.',
-                        ]),
                     };
                     $processed++;
                 } catch (\Throwable) {

@@ -21,7 +21,7 @@
                 <div class="input-group">
                     <select name="action" class="custom-select custom-select-sm" required>
                         <option value="">Bulk Actions</option>
-                        @can('orders.update')<option value="delete">Move to Trash</option>@endcan
+                        @can('orders.delete')<option value="delete">Move to Trash</option>@endcan
                         @can('orders.restore')<option value="restore">Restore</option>@endcan
                         @can('orders.force-delete')<option value="force-delete">Permanent Delete</option>@endcan
                     </select>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderHistory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class OrderHistoryService
@@ -142,13 +143,25 @@ class OrderHistoryService
                     continue;
                 }
 
+                $history->loadMissing('order');
+                $ability = match ($action) {
+                    'delete' => 'delete',
+                    'restore' => 'restore',
+                    default => throw ValidationException::withMessages([
+                        'action' => 'Invalid bulk action.',
+                    ]),
+                };
+
+                $admin = auth('admin')->user();
+                if (! $admin || ! $history->order || Gate::forUser($admin)->denies($ability, $history->order)) {
+                    $skipped++;
+                    continue;
+                }
+
                 try {
                     match ($action) {
                         'delete' => $history->trashed() ? null : $this->delete($history),
                         'restore' => $history->trashed() ? $this->restore($history) : null,
-                        default => throw ValidationException::withMessages([
-                            'action' => 'Invalid bulk action.',
-                        ]),
                     };
                     $processed++;
                 } catch (\Throwable) {

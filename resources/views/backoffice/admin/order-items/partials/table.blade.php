@@ -60,7 +60,7 @@
                     </td>
                     <td class="text-right align-middle text-nowrap">
                         @if($isTrash)
-                            @can('orders.restore')
+                            @can('restore', $item->order)
                                 <button type="button" class="btn btn-outline-success btn-sm btn-action"
                                     data-url="{{ route('admin.order-items.restore', $item->id) }}"
                                     data-method="PATCH"
@@ -70,7 +70,7 @@
                                     <i class="fas fa-trash-restore"></i>
                                 </button>
                             @endcan
-                            @can('orders.force-delete')
+                            @can('forceDelete', $item->order)
                                 <button type="button" class="btn btn-outline-danger btn-sm btn-action"
                                     data-url="{{ route('admin.order-items.force-delete', $item->id) }}"
                                     data-method="DELETE"
@@ -82,15 +82,17 @@
                             @endcan
                         @else
                             <div class="btn-group btn-group-sm">
-                                @can('orders.view')
+                                @can('view', $item->order)
                                     <button type="button" class="btn btn-default btn-view-item" data-id="{{ $item->id }}" title="View Item Details">
                                         <i class="fas fa-eye text-info"></i>
                                     </button>
                                 @endcan
-                                @can('orders.update')
+                                @can('update', $item->order)
                                     <button type="button" class="btn btn-default btn-edit-item" data-id="{{ $item->id }}" title="Edit Item">
                                         <i class="fas fa-pen text-primary"></i>
                                     </button>
+                                @endcan
+                                @can('delete', $item->order)
                                     <button type="button" class="btn btn-default btn-action"
                                         data-url="{{ route('admin.order-items.destroy', $item) }}"
                                         data-method="DELETE"
