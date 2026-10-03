@@ -56,27 +56,26 @@
 
         <hr>
 
-        <h5 class="font-weight-bold mb-3"><i class="fas fa-folder-open mr-1 text-warning"></i> Storage & cPanel Deployment</h5>
+        <h5 class="font-weight-bold mb-3"><i class="fas fa-folder-open mr-1 text-warning"></i> Media Storage & cPanel</h5>
 
         <div class="alert alert-light border">
-            <i class="fas fa-info-circle text-info mr-1"></i> Laravel uploads are stored in <code>storage/app/public</code> and normally exposed through <code>public/storage</code>. After cPanel deployment use <strong>Create Storage Link</strong>. If the link is broken, use <strong>Rebuild Storage Link</strong>.
+            <i class="fas fa-info-circle text-info mr-1"></i> cPanel can use a direct public media directory instead of a symlink. ShopPilot now respects <code>PUBLIC_DISK_ROOT</code> and <code>PUBLIC_DISK_URL</code>. Use Repair once after deployment to sync any media that was previously written to Laravel <code>storage/app/public</code>.
         </div>
 
         <div class="row">
-            <div class="col-lg-6 col-md-6 mb-3">
-                <form method="POST" action="{{ route('admin.command.storage-link', ['return_to' => request()->getRequestUri()]) }}">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-success btn-block py-3"><i class="fas fa-link mr-1"></i> Create Storage Link</button>
-                </form>
-                <small class="text-muted d-block mt-2">Runs <code>php artisan storage:link</code></small>
+            <div class="col-lg-4 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.storage-link', ['return_to' => request()->getRequestUri()]) }}">@csrf<button type="submit" class="btn btn-outline-success btn-block py-3"><i class="fas fa-tools mr-1"></i> Repair / Sync Media Storage</button></form>
+                <small class="text-muted d-block mt-2">Syncs old media into the configured public disk. If the public disk already points to the cPanel web root, no symlink is created.</small>
             </div>
 
-            <div class="col-lg-6 col-md-6 mb-3">
-                <form method="POST" action="{{ route('admin.command.storage-link-rebuild', ['return_to' => request()->getRequestUri()]) }}" onsubmit="return confirm('Rebuild the Laravel public storage link?');">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-warning btn-block py-3"><i class="fas fa-sync-alt mr-1"></i> Rebuild Storage Link</button>
-                </form>
-                <small class="text-muted d-block mt-2">Removes the old Laravel storage link and creates it again.</small>
+            <div class="col-lg-4 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.storage-link-rebuild', ['return_to' => request()->getRequestUri()]) }}" onsubmit="return confirm('Force repair media storage? A conflicting real web-root storage folder will be renamed to a timestamped backup before a symlink is created.');">@csrf<button type="submit" class="btn btn-outline-warning btn-block py-3"><i class="fas fa-sync-alt mr-1"></i> Force Repair Media Storage</button></form>
+                <small class="text-muted d-block mt-2">Only needed when the public disk is not directly mapped to the web root and an old folder/link blocks the correct storage target.</small>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.storage-link-status', ['return_to' => request()->getRequestUri()]) }}">@csrf<button type="submit" class="btn btn-outline-info btn-block py-3"><i class="fas fa-search mr-1"></i> Check Media Storage</button></form>
+                <small class="text-muted d-block mt-2">Shows the configured public root, public URL and detected cPanel web storage status without changing files.</small>
             </div>
         </div>
 

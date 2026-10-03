@@ -2,6 +2,7 @@
 
 use App\Models\MetaPixelEvent;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
 $redirectWithToast = function (string $type, string $message) {
@@ -19,7 +20,102 @@ $redirectWithToast = function (string $type, string $message) {
     return redirect()->to($targetUrl.$separator.http_build_query(['toast_type' => $type, 'toast_message' => $message]));
 };
 
-Route::prefix('command')->name('command.')->middleware(['auth:admin', 'role:admin|super_admin,admin'])->group(function () use ($redirectWithToast) {
+$normalizeStoragePath = static fn (string $path): string => strtolower(str_replace('\\', '/', rtrim($path, '/\\')));
+
+$mediaStorageStatus = function () use ($normalizeStoragePath): array {
+    $configuredRoot = (string) config('filesystems.disks.public.root');
+    $configuredUrl = (string) config('filesystems.disks.public.url');
+    $legacyRoot = storage_path('app/public');
+    $documentRoot = trim((string) request()->server('DOCUMENT_ROOT', ''));
+    $documentRoot = $documentRoot !== '' ? (realpath($documentRoot) ?: $documentRoot) : '';
+    $webStorage = $documentRoot !== '' ? rtrim($documentRoot, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'storage' : '';
+    $directPublicDisk = $webStorage !== '' && $normalizeStoragePath($configuredRoot) === $normalizeStoragePath($webStorage);
+    $status = 'missing';
+    $target = null;
+
+    if ($webStorage !== '' && is_link($webStorage)) {
+        $status = 'symlink';
+        $target = readlink($webStorage) ?: null;
+    } elseif ($webStorage !== '' && is_dir($webStorage)) {
+        $status = $directPublicDisk ? 'direct-public-directory' : 'real-directory';
+    } elseif ($webStorage !== '' && file_exists($webStorage)) {
+        $status = 'real-file';
+    }
+
+    return ['configured_root' => $configuredRoot, 'configured_url' => $configuredUrl, 'legacy_root' => $legacyRoot, 'document_root' => $documentRoot, 'web_storage' => $webStorage, 'direct_public_disk' => $directPublicDisk, 'status' => $status, 'target' => $target];
+};
+
+$repairMediaStorage = function (bool $force = false) use ($mediaStorageStatus, $normalizeStoragePath): array {
+    $status = $mediaStorageStatus();
+    $destination = $status['configured_root'];
+
+    if ($destination === '') {
+        throw new \RuntimeException('The public disk root is empty. Configure PUBLIC_DISK_ROOT or use the Laravel default public disk.');
+    }
+
+    File::ensureDirectoryExists($destination, 0755, true);
+    $messages = [];
+    $sources = [storage_path('app/public'), public_path('storage')];
+
+    foreach ($sources as $source) {
+        if (! is_dir($source) || $normalizeStoragePath($source) === $normalizeStoragePath($destination)) {
+            continue;
+        }
+
+        if (! File::copyDirectory($source, $destination)) {
+            throw new \RuntimeException('Could not copy existing media from '.$source.' to '.$destination);
+        }
+
+        $messages[] = 'Synced existing media from '.$source.' to '.$destination;
+    }
+
+    if ($status['direct_public_disk']) {
+        $messages[] = 'Direct cPanel public storage is active. No symlink is required.';
+        return ['status' => $mediaStorageStatus(), 'messages' => $messages];
+    }
+
+    $webStorage = $status['web_storage'];
+
+    if ($webStorage === '') {
+        throw new \RuntimeException('The web server DOCUMENT_ROOT could not be detected.');
+    }
+
+    if (is_link($webStorage)) {
+        $currentTarget = readlink($webStorage) ?: '';
+
+        if (! $force && $currentTarget !== '' && $normalizeStoragePath(realpath($webStorage) ?: $currentTarget) === $normalizeStoragePath(realpath($destination) ?: $destination)) {
+            $messages[] = 'Storage symlink is already correct.';
+            return ['status' => $mediaStorageStatus(), 'messages' => $messages];
+        }
+
+        if (! @unlink($webStorage)) {
+            throw new \RuntimeException('Could not remove the existing storage symlink: '.$webStorage);
+        }
+    } elseif (file_exists($webStorage)) {
+        if (! $force) {
+            throw new \RuntimeException('The web root already contains a real storage file/folder. Use Force Repair Media Storage to back it up safely.');
+        }
+
+        $backup = $webStorage.'_backup_'.date('Ymd_His');
+
+        if (! @rename($webStorage, $backup)) {
+            throw new \RuntimeException('Could not back up the existing web storage path: '.$webStorage);
+        }
+
+        $messages[] = 'Existing web storage backed up as '.basename($backup);
+    }
+
+    if (! @symlink(realpath($destination) ?: $destination, $webStorage)) {
+        $error = error_get_last();
+        throw new \RuntimeException('Could not create the web storage symlink. '.($error['message'] ?? 'The host may have disabled PHP symlink().'));
+    }
+
+    $messages[] = 'Linked '.$webStorage.' → '.$destination;
+
+    return ['status' => $mediaStorageStatus(), 'messages' => $messages];
+};
+
+Route::prefix('command')->name('command.')->middleware(['auth:admin', 'role:admin|super_admin,admin'])->group(function () use ($redirectWithToast, $repairMediaStorage, $mediaStorageStatus) {
     Route::get('/', function () {
         abort_unless(auth('admin')->user()?->can('settings.update'), 403);
         return view('backoffice.admin.commands.index', ['title' => 'System Commands', 'isLocal' => app()->environment('local')]);
@@ -104,47 +200,42 @@ Route::prefix('command')->name('command.')->middleware(['auth:admin', 'role:admi
         }
     })->name('clear-meta-pixel-events');
 
-    Route::post('/storage-link', function () use ($redirectWithToast) {
+    Route::post('/storage-link', function () use ($redirectWithToast, $repairMediaStorage) {
         abort_unless(auth('admin')->user()?->can('settings.update'), 403);
 
         try {
-            $exitCode = Artisan::call('storage:link');
-            $output = trim(Artisan::output());
-
-            if ($exitCode !== 0) {
-                return $redirectWithToast('error', $output !== '' ? 'Storage link failed: '.$output : 'Storage link could not be created.');
-            }
-
-            return $redirectWithToast('success', $output !== '' ? $output : 'Public storage link created successfully.');
+            $result = $repairMediaStorage(false);
+            return $redirectWithToast('success', implode(' | ', $result['messages']));
         } catch (\Throwable $exception) {
             report($exception);
-            return $redirectWithToast('error', 'Storage link failed: '.$exception->getMessage());
+            return $redirectWithToast('error', 'Media storage repair failed: '.$exception->getMessage());
         }
     })->name('storage-link');
 
-    Route::post('/storage-link-rebuild', function () use ($redirectWithToast) {
+    Route::post('/storage-link-rebuild', function () use ($redirectWithToast, $repairMediaStorage) {
         abort_unless(auth('admin')->user()?->can('settings.update'), 403);
 
         try {
-            try {
-                Artisan::call('storage:unlink');
-            } catch (\Throwable $exception) {
-                report($exception);
-            }
-
-            $exitCode = Artisan::call('storage:link');
-            $output = trim(Artisan::output());
-
-            if ($exitCode !== 0) {
-                return $redirectWithToast('error', $output !== '' ? 'Storage link rebuild failed: '.$output : 'Storage link could not be rebuilt.');
-            }
-
-            return $redirectWithToast('success', 'Public storage link rebuilt successfully.');
+            $result = $repairMediaStorage(true);
+            return $redirectWithToast('success', implode(' | ', $result['messages']));
         } catch (\Throwable $exception) {
             report($exception);
-            return $redirectWithToast('error', 'Storage link rebuild failed: '.$exception->getMessage());
+            return $redirectWithToast('error', 'Forced media storage repair failed: '.$exception->getMessage());
         }
     })->name('storage-link-rebuild');
+
+    Route::post('/storage-link-status', function () use ($redirectWithToast, $mediaStorageStatus) {
+        abort_unless(auth('admin')->user()?->can('settings.update'), 403);
+
+        try {
+            $status = $mediaStorageStatus();
+            $message = 'Status: '.$status['status'].' | Public disk root: '.$status['configured_root'].' | Public URL: '.$status['configured_url'].' | Web storage: '.($status['web_storage'] ?: 'not detected').($status['target'] ? ' | Target: '.$status['target'] : '');
+            return $redirectWithToast(in_array($status['status'], ['symlink', 'direct-public-directory'], true) ? 'success' : 'warning', $message);
+        } catch (\Throwable $exception) {
+            report($exception);
+            return $redirectWithToast('error', 'Media storage status check failed: '.$exception->getMessage());
+        }
+    })->name('storage-link-status');
 
 
     Route::post('/deploy/migrate', function () use ($redirectWithToast) {
