@@ -38,6 +38,24 @@
 
         <hr>
 
+        <h5 class="font-weight-bold mb-3"><i class="fab fa-facebook mr-1 text-primary"></i> Tracking Maintenance</h5>
+
+        <div class="alert alert-light border">
+            <i class="fas fa-info-circle text-info mr-1"></i> Clear stored Meta Pixel event logs from the ShopPilot database. This does not delete your Meta Pixel configuration and cannot remove events already sent to Facebook/Meta.
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.clear-meta-pixel-events', ['return_to' => request()->getRequestUri()]) }}" onsubmit="return confirm('Clear ALL stored Meta Pixel event logs? This action cannot be undone.');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger btn-block py-3"><i class="fas fa-chart-line mr-1"></i> Clear Meta Pixel Events</button>
+                </form>
+                <small class="text-muted d-block mt-2">Deletes stored records from <code>meta_pixel_events</code>. Pixel settings remain unchanged.</small>
+            </div>
+        </div>
+
+        <hr>
+
         <h5 class="font-weight-bold mb-3"><i class="fas fa-folder-open mr-1 text-warning"></i> Storage & cPanel Deployment</h5>
 
         <div class="alert alert-light border">

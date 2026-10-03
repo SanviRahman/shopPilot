@@ -148,8 +148,8 @@ return [
 
         // BLOG MANAGEMENT
         [
-            'header' => 'BLOG MANAGEMENT',
-            'can'    => 'blogs.view',
+            'header' => 'BLOG & CUSTOMER MANAGEMENT',
+            'can'    => 'blogs.view','customers.view',
         ],
         [
             'text'   => 'Blogs',
@@ -158,10 +158,18 @@ return [
             'active' => ['admin/blogs*'],
             'can'    => 'blogs.view',
         ],
+         [
+            'text'   => 'Customers',
+            'route'  => 'admin.customers.index',
+            'icon'   => 'fas fa-fw fa-users',
+            'active' => ['admin/customers*'],
+            'can'    => 'customers.view',
+        ],
 
         // CONTACT MANAGEMENT
         [
             'header' => 'CONTACT MANAGEMENT',
+            'can'    => ['contacts.view', 'contact-messages.view', 'newsletter-subscribers.view']
         ],
         [
             'text'   => 'Contacts',
@@ -177,13 +185,7 @@ return [
             'active' => ['admin/contact-messages*'],
             'can'    => 'contact-messages.view',
         ],
-
-        // MARKETING MANAGEMENT
-        [
-            'header' => 'MARKETING MANAGEMENT',
-            'can'    => 'newsletter-subscribers.view',
-        ],
-        [
+         [
             'text'   => 'Newsletter Subscribers',
             'route'  => 'admin.newsletter-subscribers.index',
             'icon'   => 'fas fa-fw fa-envelope-open-text',
@@ -191,6 +193,7 @@ return [
             'can'    => 'newsletter-subscribers.view',
         ],
 
+       
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',
@@ -271,19 +274,7 @@ return [
             'can'    => 'payments.view',
         ],
 
-        // CUSTOMER MANAGEMENT
-        [
-            'header' => 'CUSTOMER MANAGEMENT',
-            'can'    => 'customers.view',
-        ],
-        [
-            'text'   => 'Customers',
-            'route'  => 'admin.customers.index',
-            'icon'   => 'fas fa-fw fa-users',
-            'active' => ['admin/customers*'],
-            'can'    => 'customers.view',
-        ],
-
+       
         // TRACKING & ANALYTICS
         [
             'header' => 'TRACKING & ANALYTICS',

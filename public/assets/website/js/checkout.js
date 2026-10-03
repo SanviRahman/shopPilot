@@ -251,12 +251,14 @@
         try {
             const payload = await ajax.request(form.action, { method: 'POST', form });
             ajax.updateCartHeader(payload.cart);
-            ajax.trackMeta(payload.meta_events || payload.meta_event);
             ajax.toast(payload.message || 'Order placed successfully.');
 
             if (payload.redirect_url) {
                 window.setTimeout(() => window.location.assign(payload.redirect_url), 100);
+                return;
             }
+
+            ajax.trackMeta(payload.meta_events || payload.meta_event);
         } catch (error) {
             if (error.status === 422) {
                 const errors = error.payload?.errors || {};

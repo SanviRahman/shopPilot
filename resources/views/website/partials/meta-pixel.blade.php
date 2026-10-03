@@ -205,10 +205,7 @@
 @if($metaPixels->isNotEmpty())
     @foreach($metaPixels as $metaPixel)
         @php
-            $entryScripts = collect($metaPixel->pixel_entries ?? [])
-                ->pluck('script')
-                ->filter(fn ($script) => filled($script))
-                ->values();
+            $entryScripts = collect($metaPixel->pixel_entries ?? [])->pluck('script')->filter(fn ($script) => filled($script))->values();
         @endphp
 
         @if($entryScripts->isNotEmpty())
@@ -216,139 +213,78 @@
                 {!! $entryScript !!}
             @endforeach
         @elseif(filled($metaPixel->full_script))
-            {{-- Legacy fallback for records created before repeatable Pixel entries existed. --}}
             {!! $metaPixel->full_script !!}
         @endif
     @endforeach
-
-    <script>
-    (function () {
-        if (typeof window.fbq !== 'function') {
-            !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-            n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-            (window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        }
-
-        const pageViewIds = @json($pageViewIds);
-        const ecommerceIds = @json($ecommerceIds);
-        const allIds = [...new Set([...pageViewIds, ...ecommerceIds].map(String))];
-        const dataLayerEnabled = @json($dataLayerEnabled);
-        const dataLayerName = @json($dataLayerName);
-        const dataLayerEventMap = @json($dataLayerEventMap);
-
-        allIds.forEach(id => window.fbq('init', id));
-
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const endpoint = @json(route('website.meta-pixel.events'));
-
-        function eventId() {
-            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-                return window.crypto.randomUUID();
-            }
-
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-
-        function pushDataLayer(name, payload, id, pixelIds) {
-            if (!dataLayerEnabled) return;
-
-            window[dataLayerName] = window[dataLayerName] || [];
-
-            const eventName = dataLayerEventMap[name]
-                || ('meta_' + String(name).replace(/([a-z])([A-Z])/g, '$1_$2').replace(/[^A-Za-z0-9_]/g, '_').toLowerCase());
-
-            window[dataLayerName].push({
-                event: eventName,
-                meta_event_name: name,
-                meta_event_id: id,
-                meta_pixel_ids: pixelIds.map(String),
-                meta_payload: payload || {},
-                ecommerce: payload || {}
-            });
-        }
-
-        function persist(name, payload, id, status) {
-            fetch(endpoint, {
-                method: 'POST',
-                credentials: 'same-origin',
-                keepalive: true,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrf
-                },
-                body: JSON.stringify({
-                    event_name: name,
-                    event_id: id,
-                    page_url: location.href,
-                    referrer: document.referrer || null,
-                    payload: payload || {},
-                    delivery_status: status || 'dispatched'
-                })
-            }).catch(() => {});
-        }
-
-        window.ShopPilotMeta = {
-            track(name, payload = {}, options = {}) {
-                const ids = (options.pageView ? pageViewIds : ecommerceIds).map(String);
-                if (!ids.length) return;
-
-                const id = eventId();
-
-                ids.forEach(pixelId => {
-                    window.fbq('trackSingle', pixelId, name, payload, {eventID: id});
-                });
-
-                pushDataLayer(name, payload, id, ids);
-                persist(name, payload, id, 'dispatched');
-            },
-
-            custom(name, payload = {}) {
-                const ids = ecommerceIds.map(String);
-                if (!ids.length) return;
-
-                const id = eventId();
-
-                ids.forEach(pixelId => {
-                    window.fbq('trackSingleCustom', pixelId, name, payload, {eventID: id});
-                });
-
-                pushDataLayer(name, payload, id, ids);
-                persist(name, payload, id, 'dispatched');
-            }
-        };
-
-        if (pageViewIds.length) {
-            window.ShopPilotMeta.track('PageView', {}, {pageView: true});
-        }
-
-        const routeEvent = @json($routeEvent);
-        if (routeEvent) {
-            window.ShopPilotMeta.track(routeEvent.name, routeEvent.payload || {});
-        }
-
-        const serverEvents = @json($serverMetaEvents->values());
-        serverEvents.forEach(event => { if (!event?.name) return; if (event.custom) { window.ShopPilotMeta.custom(event.name, event.payload || {}); return; } window.ShopPilotMeta.track(event.name, event.payload || {}); });
-
-        document.addEventListener('click', function (event) {
-            const node = event.target.closest('[data-meta-event]');
-            if (!node) return;
-
-            const name = node.dataset.metaEvent;
-            let payload = {};
-
-            try {
-                payload = JSON.parse(node.dataset.metaPayload || '{}');
-            } catch (_) {}
-
-            window.ShopPilotMeta.custom(name, payload);
-        }, {passive: true});
-    })();
-    </script>
 @endif
+
+<script>
+(function () {
+    const pageViewIds = @json($pageViewIds);
+    const ecommerceIds = @json($ecommerceIds);
+    const allIds = [...new Set([...pageViewIds, ...ecommerceIds].map(String))];
+    const dataLayerEnabled = @json($dataLayerEnabled);
+    const dataLayerName = @json($dataLayerName);
+    const dataLayerEventMap = @json($dataLayerEventMap);
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const endpoint = @json(route('website.meta-pixel.events'));
+
+    function ensureFbq() {
+        if (!allIds.length) return false;
+        if (typeof window.fbq === 'function') return true;
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        return typeof window.fbq === 'function';
+    }
+
+    if (ensureFbq()) allIds.forEach(id => window.fbq('init', id));
+
+    function eventId() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { const r = Math.random() * 16 | 0; const v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
+    }
+
+    function pushDataLayer(name, payload, id, pixelIds, status) {
+        if (!dataLayerEnabled) return;
+        window[dataLayerName] = window[dataLayerName] || [];
+        const eventName = dataLayerEventMap[name] || ('meta_' + String(name).replace(/([a-z])([A-Z])/g, '$1_$2').replace(/[^A-Za-z0-9_]/g, '_').toLowerCase());
+        window[dataLayerName].push({ event: eventName, meta_event_name: name, meta_event_id: id, meta_pixel_ids: pixelIds.map(String), meta_payload: payload || {}, meta_delivery_status: status, meta_tracking_active: pixelIds.length > 0, ecommerce: payload || {} });
+    }
+
+    function persist(name, payload, id, status) {
+        if (!allIds.length) return;
+        fetch(endpoint, { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ event_name: name, event_id: id, page_url: location.href, referrer: document.referrer || null, payload: payload || {}, delivery_status: status || 'dispatched' }) }).catch(() => {});
+    }
+
+    window.ShopPilotMeta = {
+        track(name, payload = {}, options = {}) {
+            const ids = (options.pageView ? pageViewIds : ecommerceIds).map(String);
+            const id = eventId();
+            const canDispatch = ids.length > 0 && ensureFbq();
+            pushDataLayer(name, payload, id, ids, canDispatch ? 'dispatched' : 'datalayer_only');
+            if (!canDispatch) return;
+            ids.forEach(pixelId => window.fbq('trackSingle', pixelId, name, payload, {eventID: id}));
+            persist(name, payload, id, 'dispatched');
+        },
+        custom(name, payload = {}) {
+            const ids = ecommerceIds.map(String);
+            const id = eventId();
+            const canDispatch = ids.length > 0 && ensureFbq();
+            pushDataLayer(name, payload, id, ids, canDispatch ? 'dispatched' : 'datalayer_only');
+            if (!canDispatch) return;
+            ids.forEach(pixelId => window.fbq('trackSingleCustom', pixelId, name, payload, {eventID: id}));
+            persist(name, payload, id, 'dispatched');
+        },
+        state() { return { dataLayerEnabled, dataLayerName, pageViewIds: pageViewIds.map(String), ecommerceIds: ecommerceIds.map(String), activePixelIds: allIds }; }
+    };
+
+    if (dataLayerEnabled || pageViewIds.length) window.ShopPilotMeta.track('PageView', {}, {pageView: true});
+
+    const routeEvent = @json($routeEvent);
+    if (routeEvent && (dataLayerEnabled || ecommerceIds.length)) window.ShopPilotMeta.track(routeEvent.name, routeEvent.payload || {});
+
+    const serverEvents = @json($serverMetaEvents->values());
+    serverEvents.forEach(event => { if (!event?.name) return; if (event.custom) { window.ShopPilotMeta.custom(event.name, event.payload || {}); return; } window.ShopPilotMeta.track(event.name, event.payload || {}); });
+
+    document.addEventListener('click', function (event) { const node = event.target.closest('[data-meta-event]'); if (!node) return; const name = node.dataset.metaEvent; let payload = {}; try { payload = JSON.parse(node.dataset.metaPayload || '{}'); } catch (_) {} window.ShopPilotMeta.custom(name, payload); }, {passive: true});
+})();
+</script>

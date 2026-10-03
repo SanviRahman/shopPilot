@@ -64,7 +64,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $redirect = redirect()->intended(route('website.account.dashboard'));
         $metaEvents = [['name' => 'LoginSuccess', 'payload' => ['method' => 'password', 'status' => 'success'], 'custom' => true]];
-        if ($this->wantsJson($request)) return response()->json(['success' => true, 'message' => 'Welcome back to ShopPilot.', 'redirect_url' => $redirect->getTargetUrl(), 'meta_events' => $metaEvents]);
+        if ($this->wantsJson($request)) { $request->session()->flash('meta_events', $metaEvents); return response()->json(['success' => true, 'message' => 'Welcome back to ShopPilot.', 'redirect_url' => $redirect->getTargetUrl(), 'meta_events' => $metaEvents]); }
         return $redirect->with('success', 'Welcome back to ShopPilot.')->with('meta_events', $metaEvents);
     }
 
@@ -91,7 +91,7 @@ class CustomerAuthController extends Controller
 
         $metaEvents = [['name' => 'CompleteRegistration', 'payload' => ['status' => 'registered']], ['name' => 'RegistrationSuccess', 'payload' => ['status' => 'success'], 'custom' => true]];
         $redirectUrl = route('website.account.dashboard');
-        if ($this->wantsJson($request)) return response()->json(['success' => true, 'message' => 'Your ShopPilot account is ready.', 'redirect_url' => $redirectUrl, 'meta_events' => $metaEvents], 201);
+        if ($this->wantsJson($request)) { $request->session()->flash('meta_events', $metaEvents); return response()->json(['success' => true, 'message' => 'Your ShopPilot account is ready.', 'redirect_url' => $redirectUrl, 'meta_events' => $metaEvents], 201); }
         return redirect()->to($redirectUrl)->with('success', 'Your ShopPilot account is ready.')->with('meta_events', $metaEvents);
     }
 

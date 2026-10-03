@@ -62,7 +62,7 @@ class CheckoutController extends Controller
         $metaEvents = [['name' => 'Purchase', 'payload' => $purchasePayload], ['name' => 'PurchaseSuccess', 'payload' => [...$purchasePayload, 'status' => 'success'], 'custom' => true]];
         $redirectUrl = route('website.checkout.thank-you', $order->order_number);
         $message = 'Order placed successfully. Your payment information has been submitted for verification.';
-        if ($request->ajax() || $request->expectsJson()) return response()->json(['success' => true, 'message' => $message, 'redirect_url' => $redirectUrl, 'meta_events' => $metaEvents, 'cart' => $this->cartPayload()]);
+        if ($request->ajax() || $request->expectsJson()) { $request->session()->flash('meta_events', $metaEvents); return response()->json(['success' => true, 'message' => $message, 'redirect_url' => $redirectUrl, 'meta_events' => $metaEvents, 'cart' => $this->cartPayload()]); }
         return redirect()->to($redirectUrl)->with('success', $message)->with('meta_events', $metaEvents);
     }
 

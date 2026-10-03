@@ -54,19 +54,13 @@
     const mobileMenu = document.querySelector('[data-mobile-menu]');
 
     if (mobileToggle && mobileMenu) {
-        mobileToggle.addEventListener('click', () => {
-            const open = mobileMenu.classList.toggle('open');
-            mobileToggle.setAttribute('aria-expanded', String(open));
-            mobileToggle.innerHTML = open ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
-        });
-
-        mobileMenu.querySelectorAll('a').forEach((link) => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.remove('open');
-                mobileToggle.setAttribute('aria-expanded', 'false');
-                mobileToggle.innerHTML = '<i class="fas fa-bars"></i>';
-            });
-        });
+        const closeMobileMenu = () => { mobileMenu.classList.remove('open'); mobileToggle.setAttribute('aria-expanded', 'false'); mobileToggle.innerHTML = '<i class="fas fa-bars"></i>'; };
+        mobileToggle.addEventListener('click', (event) => { event.stopPropagation(); const open = mobileMenu.classList.toggle('open'); mobileToggle.setAttribute('aria-expanded', String(open)); mobileToggle.innerHTML = open ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>'; });
+        mobileMenu.addEventListener('click', (event) => event.stopPropagation());
+        mobileMenu.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMobileMenu));
+        document.addEventListener('click', closeMobileMenu);
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMobileMenu(); });
+        window.addEventListener('resize', () => { if (window.innerWidth > 780) closeMobileMenu(); });
     }
 
     const categoryToggle = document.querySelector('[data-category-toggle]');

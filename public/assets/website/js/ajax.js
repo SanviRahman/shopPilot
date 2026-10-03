@@ -274,7 +274,6 @@
 
             const payload = await request(form.action, { method: 'POST', data: formData });
             updateCartHeader(payload.cart);
-            trackMeta(payload.meta_event);
             document.dispatchEvent(new CustomEvent('shoppilot:cart-changed', { detail: payload }));
 
             if (payload?.redirect_url) {
@@ -282,6 +281,7 @@
                 return;
             }
 
+            trackMeta(payload.meta_event);
             toast(payload.message || 'Product added to your cart.');
         } catch (error) {
             toast(firstError(error.payload, error.message), 'error');

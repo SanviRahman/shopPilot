@@ -79,6 +79,11 @@
                     <span class="action-copy"><strong>Cart</strong><small data-header-cart-total>৳{{ number_format($cartTotal, 2) }}</small></span>
                 </a>
 
+                <div class="mobile-header-shortcuts" aria-label="Mobile account shortcuts">
+                    <a href="{{ auth('web')->check() ? route('website.account.dashboard') : route('website.login') }}" class="mobile-header-shortcut" aria-label="{{ auth('web')->check() ? 'My Account' : 'Login or Register' }}"><i class="fas fa-user"></i></a>
+                    <a href="{{ route('website.cart.index') }}" class="mobile-header-shortcut mobile-cart-shortcut" aria-label="Shopping Cart"><i class="fas fa-shopping-cart"></i><span class="mobile-shortcut-badge" data-mobile-cart-count>{{ $cartCount }}</span></a>
+                </div>
+
                 <button class="mobile-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-mobile-menu-toggle>
                     <i class="fas fa-bars"></i>
                 </button>
