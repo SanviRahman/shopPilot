@@ -15,11 +15,17 @@ class StoreContactRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $mapUrl = trim(html_entity_decode((string) $this->input('map_url'), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        if (preg_match('~<iframe\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1~is', $mapUrl, $match)) {
+            $mapUrl = trim(html_entity_decode((string) $match[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        }
+
         $this->merge([
             'name' => trim((string) $this->input('name')),
             'email' => strtolower(trim((string) $this->input('email'))),
             'phone' => trim((string) $this->input('phone')),
-            'map_url' => trim((string) $this->input('map_url')),
+            'map_url' => $mapUrl,
             'status' => $this->input('status', 'active'),
         ]);
     }

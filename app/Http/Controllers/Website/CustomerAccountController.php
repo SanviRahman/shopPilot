@@ -16,7 +16,9 @@ class CustomerAccountController extends Controller
 
     public function dashboard(Request $request): View
     {
-        return view('website.account.dashboard', [
+        $dashboardView = view()->exists('website.account.dashboard') ? 'website.account.dashboard' : 'website.account.Dashboard';
+
+        return view($dashboardView, [
             ...$this->accountService->dashboardData($request->user('web')),
             'user' => $request->user('web'),
         ]);

@@ -41,8 +41,8 @@
 
                     <div class="form-group mb-0">
                         <label for="contact-map-url">Map URL *</label>
-                        <input type="url" id="contact-map-url" name="map_url" class="form-control" maxlength="2048" placeholder="https://www.google.com/maps/..." required>
-                        <small class="form-text text-muted">Paste a Google Maps share link, Google Maps URL, OpenStreetMap URL or another valid http/https map link. ShopPilot will create an embeddable preview when the provider allows it.</small>
+                        <input type="text" id="contact-map-url" name="map_url" class="form-control" maxlength="5000" placeholder="Google Maps share URL, embed URL, or copied iframe HTML" required>
+                        <small class="form-text text-muted">Paste a Google Maps share URL or, for the most reliable live preview on restricted cPanel hosting, Google Maps → Share → Embed a map → Copy HTML. ShopPilot safely extracts only the iframe src URL; raw iframe/script HTML is never stored.</small>
                     </div>
                 </div>
 
