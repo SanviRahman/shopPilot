@@ -172,7 +172,9 @@
         root.querySelector('[data-coupon-saving]') && (root.querySelector('[data-coupon-saving]').textContent = Math.round(discount).toLocaleString('en-US'));
         couponApplied?.classList.toggle('hidden', !summary.coupon_code);
         couponForm?.classList.toggle('hidden', Boolean(summary.coupon_code));
-        window.ShopPilotAjax?.updateCartHeader?.({ count: summary.count, grand_total: summary.grand_total });
+        if (window.ShopPilotCheckout?.checkoutMode !== 'buy_now') {
+            window.ShopPilotAjax?.updateCartHeader?.({ count: summary.count, grand_total: summary.grand_total });
+        }
         renderTotals();
     };
 
@@ -186,7 +188,10 @@
             const response = await fetch(button.dataset.url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf },
-                body: JSON.stringify({ coupon_code: code }),
+                body: JSON.stringify({
+                    coupon_code: code,
+                    checkout_mode: window.ShopPilotCheckout?.checkoutMode || 'cart',
+                }),
             });
             const payload = await response.json();
             if (!response.ok) throw new Error(payload?.message || Object.values(payload?.errors || {})?.flat?.()?.[0] || 'Unable to apply coupon.');
@@ -203,7 +208,15 @@
         try {
             const response = await fetch(window.ShopPilotCheckout.removeCouponUrl, {
                 method: 'DELETE',
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': window.ShopPilotCheckout.csrf,
+                },
+                body: JSON.stringify({
+                    checkout_mode: window.ShopPilotCheckout?.checkoutMode || 'cart',
+                }),
             });
             const payload = await response.json();
             if (!response.ok) throw new Error(payload?.message || 'Unable to remove coupon.');

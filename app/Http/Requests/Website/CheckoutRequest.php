@@ -34,6 +34,7 @@ class CheckoutRequest extends FormRequest
         $paymentCodes = (array) config('shop.checkout.manual_payment_codes', []);
 
         return [
+            'checkout_mode' => ['nullable', Rule::in(['cart', 'buy_now'])],
             'buyer_name' => ['required', 'string', 'max:150'],
             'buyer_phone' => ['required', 'string', 'max:30', 'regex:/^(?:\+?88)?01[3-9]\d{8}$/'],
             'buyer_email' => ['required', 'email:rfc', 'max:191'],

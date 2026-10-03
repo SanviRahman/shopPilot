@@ -17,7 +17,9 @@ class AddToCartRequest extends FormRequest
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:999'],
-            'redirect_to' => ['nullable', Rule::in(['back', 'cart'])],
+            'purchase_mode' => ['nullable', Rule::in(['cart', 'buy_now'])],
+            // Kept for backward compatibility with any older form payload.
+            'redirect_to' => ['nullable', Rule::in(['back', 'cart', 'checkout'])],
         ];
     }
 
@@ -25,6 +27,7 @@ class AddToCartRequest extends FormRequest
     {
         $this->merge([
             'quantity' => $this->input('quantity', 1),
+            'purchase_mode' => $this->input('purchase_mode', 'cart'),
             'redirect_to' => $this->input('redirect_to', 'back'),
         ]);
     }

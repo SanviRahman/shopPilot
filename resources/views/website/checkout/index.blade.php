@@ -51,6 +51,7 @@
 
         <form action="{{ route('website.checkout.store') }}" method="POST" class="checkout-form" data-checkout-form novalidate>
             @csrf
+            <input type="hidden" name="checkout_mode" value="{{ $checkoutMode }}">
 
             <div class="checkout-layout">
                 <div class="checkout-main-column">
@@ -160,7 +161,11 @@
                         </div>
 
                         <div class="checkout-step-actions">
-                            <a href="{{ route('website.cart.index') }}" class="checkout-back-link"><i class="fas fa-arrow-left"></i> Back to Cart</a>
+                            @if($checkoutMode === 'buy_now')
+                                <a href="{{ route('website.products.show', $items->first()['product']->slug) }}" class="checkout-back-link"><i class="fas fa-arrow-left"></i> Back to Product</a>
+                            @else
+                                <a href="{{ route('website.cart.index') }}" class="checkout-back-link"><i class="fas fa-arrow-left"></i> Back to Cart</a>
+                            @endif
                             <button type="button" class="checkout-primary-button" data-go-step="2">Continue to Payment <i class="fas fa-arrow-right"></i></button>
                         </div>
                     </section>
@@ -302,6 +307,7 @@
 <script>
 window.ShopPilotCheckout = {
     removeCouponUrl: @json(route('website.checkout.coupon.remove')),
+    checkoutMode: @json($checkoutMode),
     csrf: @json(csrf_token()),
 };
 </script>

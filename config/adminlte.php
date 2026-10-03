@@ -159,6 +159,19 @@ return [
             'can'    => 'blogs.view',
         ],
 
+        // CONTACT MANAGEMENT
+        [
+            'header' => 'CONTACT MANAGEMENT',
+            'can'    => 'contacts.view',
+        ],
+        [
+            'text'   => 'Contacts',
+            'route'  => 'admin.contacts.index',
+            'icon'   => 'fas fa-fw fa-address-card',
+            'active' => ['admin/contacts*'],
+            'can'    => 'contacts.view',
+        ],
+
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',

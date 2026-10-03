@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Website;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ApplyCartCouponRequest extends FormRequest
 {
@@ -15,6 +16,7 @@ class ApplyCartCouponRequest extends FormRequest
     {
         return [
             'coupon_code' => ['required', 'string', 'max:80'],
+            'checkout_mode' => ['nullable', Rule::in(['cart', 'buy_now'])],
         ];
     }
 

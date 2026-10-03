@@ -3,6 +3,7 @@
 use App\Http\Controllers\Backoffice\Admin\AdminController;
 use App\Http\Controllers\Backoffice\Admin\BlogController;
 use App\Http\Controllers\Backoffice\Admin\CategoryController;
+use App\Http\Controllers\Backoffice\Admin\ContactController;
 use App\Http\Controllers\Backoffice\Admin\CustomerController;
 use App\Http\Controllers\Backoffice\Admin\MetaPixelController;
 use App\Http\Controllers\Backoffice\Admin\CouponController;
@@ -76,6 +77,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{metaPixel}/force-delete', [MetaPixelController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('meta-pixels', MetaPixelController::class);
+
+        // Contacts
+        Route::prefix('contacts')->name('contacts.')->group(function () {
+            Route::get('trash', [ContactController::class, 'trash'])->name('trash');
+            Route::patch('{contact}/restore', [ContactController::class, 'restore'])->name('restore');
+            Route::delete('{contact}/force-delete', [ContactController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('contacts', ContactController::class);
 
         //Admins
         Route::prefix('admins')->name('admins.')->group(function () {

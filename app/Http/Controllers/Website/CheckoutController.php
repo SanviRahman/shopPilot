@@ -21,26 +21,34 @@ class CheckoutController extends Controller
     ) {
     }
 
-    public function index(): View|RedirectResponse
+    public function index(Request $request): View|RedirectResponse
     {
-        $data = $this->checkoutService->pageData();
+        $checkoutMode = $this->normalizeCheckoutMode((string) $request->query('mode', 'cart'));
+        $data = $this->checkoutService->pageData($checkoutMode);
 
         if ($data['items']->isEmpty()) {
-            return redirect()->route('website.cart.index')->withErrors([
-                'cart' => 'Your cart is empty. Add products before checkout.',
-            ]);
+            $message = $checkoutMode === 'buy_now'
+                ? 'Your Buy Now session has expired. Please choose the product again.'
+                : 'Your cart is empty. Add products before checkout.';
+
+            return redirect()->route($checkoutMode === 'buy_now' ? 'website.shop' : 'website.cart.index')
+                ->withErrors(['cart' => $message]);
         }
 
         if (! $data['canCheckout']) {
-            return redirect()->route('website.cart.index')->withErrors([
-                'cart' => 'Remove unavailable products before checkout.',
-            ]);
+            return redirect()->route($checkoutMode === 'buy_now' ? 'website.shop' : 'website.cart.index')
+                ->withErrors([
+                    'cart' => $checkoutMode === 'buy_now'
+                        ? 'The selected Buy Now product is no longer available in the requested quantity.'
+                        : 'Remove unavailable products before checkout.',
+                ]);
         }
 
         if ($data['paymentMethods']->isEmpty()) {
-            return redirect()->route('website.cart.index')->withErrors([
-                'payment' => 'No active manual payment method is currently available.',
-            ]);
+            return redirect()->route($checkoutMode === 'buy_now' ? 'website.shop' : 'website.cart.index')
+                ->withErrors([
+                    'payment' => 'No active manual payment method is currently available.',
+                ]);
         }
 
         return view('website.checkout.index', $data);
@@ -71,14 +79,8 @@ class CheckoutController extends Controller
                 'message' => $message,
                 'redirect_url' => $redirectUrl,
                 'meta_event' => $metaEvent,
-                'cart' => [
-                    'count' => 0,
-                    'subtotal' => 0,
-                    'discount' => 0,
-                    'grand_total' => 0,
-                    'coupon_code' => null,
-                    'can_checkout' => false,
-                ],
+                // Normal checkout clears the cart. Buy Now leaves the persistent cart untouched.
+                'cart' => $this->cartPayload(),
             ]);
         }
 
@@ -102,29 +104,31 @@ class CheckoutController extends Controller
 
     public function applyCoupon(ApplyCartCouponRequest $request): JsonResponse
     {
-        $this->cartService->applyCoupon($request->validated('coupon_code'));
+        $checkoutMode = $this->normalizeCheckoutMode((string) $request->input('checkout_mode', 'cart'));
+        $this->checkoutService->applyCoupon($checkoutMode, $request->validated('coupon_code'));
 
         return response()->json([
             'success' => true,
             'message' => 'Coupon applied successfully.',
-            'summary' => $this->summaryPayload(),
+            'summary' => $this->summaryPayload($checkoutMode),
         ]);
     }
 
-    public function removeCoupon(): JsonResponse
+    public function removeCoupon(Request $request): JsonResponse
     {
-        $this->cartService->removeCoupon();
+        $checkoutMode = $this->normalizeCheckoutMode((string) $request->input('checkout_mode', 'cart'));
+        $this->checkoutService->removeCoupon($checkoutMode);
 
         return response()->json([
             'success' => true,
             'message' => 'Coupon removed.',
-            'summary' => $this->summaryPayload(),
+            'summary' => $this->summaryPayload($checkoutMode),
         ]);
     }
 
-    private function summaryPayload(): array
+    private function summaryPayload(string $checkoutMode): array
     {
-        $summary = $this->cartService->summary();
+        $summary = $this->checkoutService->summaryForMode($checkoutMode);
 
         return [
             'subtotal' => $summary['subtotal'],
@@ -133,5 +137,30 @@ class CheckoutController extends Controller
             'coupon_code' => $summary['coupon']?->code,
             'count' => $summary['count'],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function cartPayload(): array
+    {
+        $summary = $this->cartService->summary();
+
+        return [
+            'count' => (int) $summary['count'],
+            'subtotal' => (float) $summary['subtotal'],
+            'discount' => (float) $summary['discount'],
+            'shipping' => $summary['shipping'],
+            'grand_total' => (float) $summary['grandTotal'],
+            'coupon_code' => $summary['coupon']?->code,
+            'can_checkout' => (bool) $summary['canCheckout'],
+        ];
+    }
+
+    private function normalizeCheckoutMode(string $checkoutMode): string
+    {
+        return in_array($checkoutMode, ['buy_now', 'buy-now'], true)
+            ? 'buy_now'
+            : 'cart';
     }
 }

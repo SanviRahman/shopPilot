@@ -40,6 +40,10 @@ class RolePermissionSeeder extends Seeder
                 'blogs.view', 'blogs.create', 'blogs.update',
                 'blogs.delete', 'blogs.restore', 'blogs.force-delete',
             ],
+            'Contacts'        => [
+                'contacts.view', 'contacts.create', 'contacts.update',
+                'contacts.delete', 'contacts.restore', 'contacts.force-delete',
+            ],
             'Stock'           => ['stock.view', 'stock.update'],
             'Coupons'         => [
                 'coupons.view', 'coupons.create', 'coupons.update',

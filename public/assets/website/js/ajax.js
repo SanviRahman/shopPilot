@@ -267,7 +267,7 @@
             const formData = new FormData(form);
 
             // FormData(form) does not include the clicked submit button in all browsers.
-            // Preserve redirect_to so Add to Cart stays on the page while Buy Now can navigate.
+            // Preserve the clicked action so Add to Cart and Buy Now remain separate flows.
             if (submitter?.name) {
                 formData.set(submitter.name, submitter.value || '');
             }

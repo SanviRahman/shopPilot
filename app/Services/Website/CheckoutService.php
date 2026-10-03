@@ -18,19 +18,22 @@ class CheckoutService
 {
     public function __construct(
         private readonly CartService $cartService,
+        private readonly BuyNowService $buyNowService,
         private readonly CouponService $couponService,
         private readonly OrderHistoryService $orderHistoryService,
     ) {
     }
 
-    public function pageData(): array
+    public function pageData(string $checkoutMode = 'cart'): array
     {
-        $cart = $this->cartService->summary();
+        $checkoutMode = $this->normalizeCheckoutMode($checkoutMode);
+        $summary = $this->summaryForMode($checkoutMode);
         $paymentCodes = (array) config('shop.checkout.manual_payment_codes', []);
         $user = auth('web')->user();
 
         return [
-            ...$cart,
+            ...$summary,
+            'checkoutMode' => $checkoutMode,
             'paymentMethods' => PaymentMethod::query()
                 ->where('status', 'active')
                 ->whereIn('code', $paymentCodes)
@@ -51,15 +54,20 @@ class CheckoutService
 
     public function placeOrder(array $data): Order
     {
-        $sessionItems = $this->cartService->checkoutItems();
+        $checkoutMode = $this->normalizeCheckoutMode((string) ($data['checkout_mode'] ?? 'cart'));
+        $sessionItems = $checkoutMode === 'buy_now'
+            ? $this->buyNowService->checkoutItems()
+            : $this->cartService->checkoutItems();
 
         if ($sessionItems === []) {
             throw ValidationException::withMessages([
-                'cart' => 'Your cart is empty. Add at least one product before checkout.',
+                'cart' => $checkoutMode === 'buy_now'
+                    ? 'Your Buy Now session has expired. Please choose the product again.'
+                    : 'Your cart is empty. Add at least one product before checkout.',
             ]);
         }
 
-        $order = DB::transaction(function () use ($data, $sessionItems): Order {
+        $order = DB::transaction(function () use ($data, $sessionItems, $checkoutMode): Order {
             $productIds = collect($sessionItems)
                 ->pluck('product_id')
                 ->map(fn ($id) => (int) $id)
@@ -117,7 +125,9 @@ class CheckoutService
             $subtotal = round($subtotal, 2);
             $coupon = null;
             $discount = 0.0;
-            $couponCode = $this->cartService->appliedCouponCode();
+            $couponCode = $checkoutMode === 'buy_now'
+                ? $this->buyNowService->appliedCouponCode()
+                : $this->cartService->appliedCouponCode();
 
             if ($couponCode !== null) {
                 $coupon = $this->couponService->resolveApplicableCoupon($couponCode, $subtotal);
@@ -214,7 +224,12 @@ class CheckoutService
 
         session()->put('checkout.last_order_id', $order->id);
         session()->put('checkout.last_order_number', $order->order_number);
-        $this->cartService->clear();
+
+        if ($checkoutMode === 'buy_now') {
+            $this->buyNowService->clear();
+        } else {
+            $this->cartService->clear();
+        }
 
         return $order;
     }
@@ -226,6 +241,45 @@ class CheckoutService
         }
 
         return auth('web')->check() && (int) $order->user_id === (int) auth('web')->id();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function summaryForMode(string $checkoutMode): array
+    {
+        return $this->normalizeCheckoutMode($checkoutMode) === 'buy_now'
+            ? $this->buyNowService->summary()
+            : $this->cartService->summary();
+    }
+
+    public function applyCoupon(string $checkoutMode, string $code): void
+    {
+        if ($this->normalizeCheckoutMode($checkoutMode) === 'buy_now') {
+            $this->buyNowService->applyCoupon($code);
+
+            return;
+        }
+
+        $this->cartService->applyCoupon($code);
+    }
+
+    public function removeCoupon(string $checkoutMode): void
+    {
+        if ($this->normalizeCheckoutMode($checkoutMode) === 'buy_now') {
+            $this->buyNowService->removeCoupon();
+
+            return;
+        }
+
+        $this->cartService->removeCoupon();
+    }
+
+    private function normalizeCheckoutMode(string $checkoutMode): string
+    {
+        return in_array($checkoutMode, ['buy_now', 'buy-now'], true)
+            ? 'buy_now'
+            : 'cart';
     }
 
     private function shippingMethod(string $key): array

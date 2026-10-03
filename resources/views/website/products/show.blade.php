@@ -143,10 +143,10 @@
                         <button type="button" data-qty-plus aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
                     </div>
 
-                    <button type="submit" name="redirect_to" value="back" class="product-primary-action" {{ $inStock ? '' : 'disabled' }}>
+                    <button type="submit" name="purchase_mode" value="cart" class="product-primary-action" {{ $inStock ? '' : 'disabled' }}>
                         <i class="fas fa-cart-plus"></i> {{ $inStock ? 'Add to Cart' : 'Out of Stock' }}
                     </button>
-                    <button type="submit" name="redirect_to" value="cart" class="product-secondary-action" {{ $inStock ? '' : 'disabled' }}>
+                    <button type="submit" name="purchase_mode" value="buy_now" class="product-secondary-action" {{ $inStock ? '' : 'disabled' }}>
                         Buy Now
                     </button>
                 </form>

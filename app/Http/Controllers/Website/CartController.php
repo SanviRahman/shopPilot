@@ -8,6 +8,7 @@ use App\Http\Requests\Website\ApplyCartCouponRequest;
 use App\Http\Requests\Website\RemoveCartItemsRequest;
 use App\Http\Requests\Website\UpdateCartItemRequest;
 use App\Services\CartService;
+use App\Services\Website\BuyNowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,8 +16,10 @@ use Illuminate\View\View;
 
 class CartController extends Controller
 {
-    public function __construct(private readonly CartService $cartService)
-    {
+    public function __construct(
+        private readonly CartService $cartService,
+        private readonly BuyNowService $buyNowService,
+    ) {
     }
 
     public function index(Request $request): View|JsonResponse
@@ -38,14 +41,53 @@ class CartController extends Controller
     public function store(AddToCartRequest $request): JsonResponse|RedirectResponse
     {
         $data = $request->validated();
-        $this->cartService->add((int) $data['product_id'], (int) ($data['quantity'] ?? 1));
+        $productId = (int) $data['product_id'];
+        $quantity = (int) ($data['quantity'] ?? 1);
+
+        $purchaseMode = ($data['purchase_mode'] ?? 'cart') === 'buy_now'
+            || ($data['redirect_to'] ?? 'back') === 'checkout'
+            ? 'buy_now'
+            : 'cart';
+
+        if ($purchaseMode === 'buy_now') {
+            $this->buyNowService->start($productId, $quantity);
+
+            $metaEvent = [
+                'name' => 'InitiateCheckout',
+                'payload' => [
+                    'content_ids' => [(string) $productId],
+                    'content_type' => 'product',
+                    'contents' => [['id' => (string) $productId, 'quantity' => $quantity]],
+                    'num_items' => $quantity,
+                ],
+            ];
+
+            $redirectUrl = route('website.checkout.index', ['mode' => 'buy-now']);
+
+            if ($this->wantsJson($request)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Opening checkout.',
+                    // Buy Now never mutates the persistent cart.
+                    'cart' => $this->cartPayload(),
+                    'meta_event' => $metaEvent,
+                    'redirect_url' => $redirectUrl,
+                ]);
+            }
+
+            return redirect()
+                ->to($redirectUrl)
+                ->with('meta_event', $metaEvent);
+        }
+
+        $this->cartService->add($productId, $quantity);
 
         $metaEvent = [
             'name' => 'AddToCart',
             'payload' => [
-                'content_ids' => [(string) $data['product_id']],
+                'content_ids' => [(string) $productId],
                 'content_type' => 'product',
-                'contents' => [['id' => (string) $data['product_id'], 'quantity' => (int) ($data['quantity'] ?? 1)]],
+                'contents' => [['id' => (string) $productId, 'quantity' => $quantity]],
             ],
         ];
 
