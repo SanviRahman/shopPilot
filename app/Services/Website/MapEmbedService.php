@@ -62,17 +62,40 @@ class MapEmbedService
 
     private function resolveShortUrl(string $url): ?string
     {
+        if (! $this->httpTransportAvailable()) {
+            return null;
+        }
+
         $cacheKey = 'shoppilot.map.resolved.'.sha1($url);
+
         return Cache::remember($cacheKey, now()->addDay(), function () use ($url): ?string {
             try {
-                $response = Http::connectTimeout(3)->timeout(7)->withHeaders(['User-Agent' => 'Mozilla/5.0 ShopPilot/1.0'])->withOptions(['allow_redirects' => ['max' => 6, 'strict' => false, 'referer' => true, 'track_redirects' => true]])->get($url);
+                $response = Http::connectTimeout(3)
+                    ->timeout(7)
+                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 ShopPilot/1.0'])
+                    ->withOptions(['allow_redirects' => ['max' => 6, 'strict' => false, 'referer' => true, 'track_redirects' => true]])
+                    ->get($url);
+
                 $finalUrl = trim((string) ($response->handlerStats()['url'] ?? ''));
-                return $finalUrl !== '' && filter_var($finalUrl, FILTER_VALIDATE_URL) ? $finalUrl : null;
-            } catch (Throwable $exception) {
-                report($exception);
+
+                return $finalUrl !== '' && filter_var($finalUrl, FILTER_VALIDATE_URL)
+                    ? $finalUrl
+                    : null;
+            } catch (Throwable) {
                 return null;
             }
         });
+    }
+
+    private function httpTransportAvailable(): bool
+    {
+        if (extension_loaded('curl') && function_exists('curl_init')) {
+            return true;
+        }
+
+        $allowUrlFopen = strtolower(trim((string) ini_get('allow_url_fopen')));
+
+        return in_array($allowUrlFopen, ['1', 'on', 'true', 'yes'], true);
     }
 
     private function isGoogleShortUrl(string $url): bool

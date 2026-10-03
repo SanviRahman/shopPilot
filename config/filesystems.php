@@ -1,7 +1,18 @@
 <?php
 
-return [
+$publicDiskUrl = trim((string) env('PUBLIC_DISK_URL', '/storage'));
 
+if ($publicDiskUrl === '') {
+    $publicDiskUrl = '/storage';
+}
+
+if (preg_match('~^https?://~i', $publicDiskUrl)) {
+    $publicDiskUrl = (string) (parse_url($publicDiskUrl, PHP_URL_PATH) ?: '/storage');
+}
+
+$publicDiskUrl = '/'.ltrim($publicDiskUrl, '/');
+
+return [
     /*
     |--------------------------------------------------------------------------
     | Default Filesystem Disk
@@ -41,7 +52,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => env('PUBLIC_DISK_ROOT') ?: storage_path('app/public'),
-            'url' => rtrim((string) (env('PUBLIC_DISK_URL') ?: '/storage'), '/'),
+            'url' => rtrim($publicDiskUrl, '/'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
