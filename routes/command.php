@@ -146,6 +146,57 @@ Route::prefix('command')->name('command.')->middleware(['auth:admin', 'role:admi
         }
     })->name('storage-link-rebuild');
 
+
+    Route::post('/deploy/migrate', function () use ($redirectWithToast) {
+        abort_unless(auth('admin')->user()?->can('settings.update'), 403);
+
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            $output = trim(Artisan::output());
+            return $redirectWithToast('success', $output !== '' ? 'Production migrations completed. '.$output : 'Production migrations completed successfully.');
+        } catch (\Throwable $exception) {
+            report($exception);
+            return $redirectWithToast('error', 'Production migration failed: '.$exception->getMessage());
+        }
+    })->name('deploy-migrate');
+
+    Route::post('/deploy/sync-permissions', function () use ($redirectWithToast) {
+        abort_unless(auth('admin')->user()?->can('settings.update'), 403);
+
+        try {
+            Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RolePermissionSeeder', '--force' => true]);
+            Artisan::call('permission:cache-reset');
+            return $redirectWithToast('success', 'Role permissions synchronized and permission cache reset successfully.');
+        } catch (\Throwable $exception) {
+            report($exception);
+            return $redirectWithToast('error', 'Permission sync failed: '.$exception->getMessage());
+        }
+    })->name('deploy-sync-permissions');
+
+    Route::post('/deploy/config-cache', function () use ($redirectWithToast) {
+        abort_unless(auth('admin')->user()?->can('settings.update'), 403);
+
+        try {
+            Artisan::call('config:cache');
+            return $redirectWithToast('success', 'Production configuration cache built successfully.');
+        } catch (\Throwable $exception) {
+            report($exception);
+            return $redirectWithToast('error', 'Config cache build failed: '.$exception->getMessage());
+        }
+    })->name('deploy-config-cache');
+
+    Route::post('/deploy/view-cache', function () use ($redirectWithToast) {
+        abort_unless(auth('admin')->user()?->can('settings.update'), 403);
+
+        try {
+            Artisan::call('view:cache');
+            return $redirectWithToast('success', 'Production Blade view cache built successfully.');
+        } catch (\Throwable $exception) {
+            report($exception);
+            return $redirectWithToast('error', 'View cache build failed: '.$exception->getMessage());
+        }
+    })->name('deploy-view-cache');
+
     Route::post('/migrate', function () use ($redirectWithToast) {
         abort_unless(auth('admin')->user()?->can('settings.update'), 403);
 

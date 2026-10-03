@@ -82,6 +82,36 @@
 
         <hr>
 
+        <h5 class="font-weight-bold mb-3"><i class="fas fa-cloud-upload-alt mr-1 text-primary"></i> cPanel Production Deployment</h5>
+
+        <div class="alert alert-warning border">
+            <i class="fas fa-exclamation-triangle mr-1"></i> Use these buttons only after uploading the new project files and configuring the production <code>.env</code>. These actions never run <code>migrate:fresh</code> and will not intentionally delete existing production data. Because this project uses Closure command routes, <code>route:cache</code> is intentionally not included.
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.deploy-migrate', ['return_to' => request()->getRequestUri()]) }}" onsubmit="return confirm('Run pending production migrations now?');">@csrf<button type="submit" class="btn btn-outline-success btn-block py-3"><i class="fas fa-database mr-1"></i> Run Production Migrations</button></form>
+                <small class="text-muted d-block mt-2">Runs <code>php artisan migrate --force</code>.</small>
+            </div>
+
+            <div class="col-lg-6 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.deploy-sync-permissions', ['return_to' => request()->getRequestUri()]) }}" onsubmit="return confirm('Sync ShopPilot roles and permissions on this server?');">@csrf<button type="submit" class="btn btn-outline-info btn-block py-3"><i class="fas fa-user-shield mr-1"></i> Sync Role Permissions</button></form>
+                <small class="text-muted d-block mt-2">Runs <code>RolePermissionSeeder</code> and resets the permission cache.</small>
+            </div>
+
+            <div class="col-lg-6 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.deploy-config-cache', ['return_to' => request()->getRequestUri()]) }}" onsubmit="return confirm('Build the production configuration cache? Make sure the server .env is correct first.');">@csrf<button type="submit" class="btn btn-outline-primary btn-block py-3"><i class="fas fa-cogs mr-1"></i> Build Config Cache</button></form>
+                <small class="text-muted d-block mt-2">Runs <code>php artisan config:cache</code>.</small>
+            </div>
+
+            <div class="col-lg-6 col-md-6 mb-3">
+                <form method="POST" action="{{ route('admin.command.deploy-view-cache', ['return_to' => request()->getRequestUri()]) }}">@csrf<button type="submit" class="btn btn-outline-primary btn-block py-3"><i class="fas fa-layer-group mr-1"></i> Build View Cache</button></form>
+                <small class="text-muted d-block mt-2">Runs <code>php artisan view:cache</code>.</small>
+            </div>
+        </div>
+
+        <hr>
+
         <h5 class="font-weight-bold mb-3"><i class="fas fa-database mr-1 text-success"></i> Local Database Commands</h5>
 
         @if(! $isLocal)
