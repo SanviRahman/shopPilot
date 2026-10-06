@@ -337,7 +337,7 @@ return [
         ],
         [
             'text'   => 'System Commands',
-            'route'  => 'command.index',
+            'route'  => 'admin.command.index',
             'icon'   => 'fas fa-fw fa-terminal',
             'active' => ['admin/command*'],
             'can'    => 'system_tools_manage',
