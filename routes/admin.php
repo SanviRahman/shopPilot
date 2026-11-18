@@ -18,6 +18,7 @@ use App\Http\Controllers\Backoffice\Admin\PaymentMethodController;
 use App\Http\Controllers\Backoffice\Admin\PaymentSubmissionController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\ProductController;
+use App\Http\Controllers\Backoffice\Admin\VendorController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
 use App\Http\Controllers\Backoffice\Admin\RoleController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
@@ -135,6 +136,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('{media}/force-delete', [MediaController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('media', MediaController::class)->only(['index', 'destroy']);
+
+        // Vendors
+        Route::prefix('vendors')->name('vendors.')->group(function () {
+            Route::get('/', [VendorController::class, 'index'])->name('index');
+            Route::get('{vendor}', [VendorController::class, 'show'])->whereNumber('vendor')->name('show');
+            Route::patch('{vendor}/approve', [VendorController::class, 'approve'])->whereNumber('vendor')->name('approve');
+            Route::patch('{vendor}/reject', [VendorController::class, 'reject'])->whereNumber('vendor')->name('reject');
+            Route::patch('{vendor}/suspend', [VendorController::class, 'suspend'])->whereNumber('vendor')->name('suspend');
+            Route::patch('{vendor}/reactivate', [VendorController::class, 'reactivate'])->whereNumber('vendor')->name('reactivate');
+            Route::get('{vendor}/documents/{document}/download', [VendorController::class, 'downloadDocument'])->whereNumber('vendor')->whereNumber('document')->name('documents.download');
+        });
 
         // Products
         Route::prefix('products')->name('products.')->group(function () {

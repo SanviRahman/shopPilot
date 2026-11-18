@@ -13,6 +13,7 @@
 
     <nav class="account-nav" aria-label="My account navigation">
         <a href="{{ route('website.account.dashboard') }}" class="{{ request()->routeIs('website.account.dashboard') ? 'active' : '' }}"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="{{ route('website.account.seller.apply') }}" class="{{ request()->routeIs('website.account.seller.*') ? 'active' : '' }}"><i class="fas fa-store"></i> Sell on ShopPilot</a>
         <a href="{{ route('website.account.orders') }}" class="{{ request()->routeIs('website.account.orders*') ? 'active' : '' }}"><i class="fas fa-box"></i> My Orders</a>
         <a href="{{ route('website.account.payments') }}" class="{{ request()->routeIs('website.account.payments*') ? 'active' : '' }}"><i class="fas fa-credit-card"></i> Payment Submissions</a>
         <a href="{{ route('website.account.wishlist') }}" class="{{ request()->routeIs('website.account.wishlist*') ? 'active' : '' }}"><i class="fas fa-heart"></i> Wishlist</a>

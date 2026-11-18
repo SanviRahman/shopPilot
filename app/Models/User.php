@@ -59,6 +59,13 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Order::class);
     }
 
+    public function vendors(): BelongsToMany
+    {
+        return $this->belongsToMany(Vendor::class, 'vendor_users')
+            ->withPivot(['role', 'status', 'permissions', 'joined_at'])
+            ->withTimestamps();
+    }
+
     public function wishlists(): HasMany
     {
         return $this->hasMany(Wishlist::class);

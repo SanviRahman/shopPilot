@@ -33,6 +33,7 @@ class RolePermissionSeeder extends Seeder
             'Media'           => [
                 'media.view', 'media.delete', 'media.restore', 'media.force-delete',
             ],
+            'Vendors'         => ['vendors.view', 'vendors.approve', 'vendors.reject', 'vendors.suspend', 'vendors.reactivate'],
             'Products'        => [
                 'products.view', 'products.create', 'products.update',
                 'products.delete', 'products.restore', 'products.force-delete',
@@ -104,7 +105,7 @@ class RolePermissionSeeder extends Seeder
         $superAdminRole->syncPermissions($allPermissionNames);
         $adminRole->syncPermissions($allPermissionNames);
         $managerRole->syncPermissions([
-            'dashboard.view', 'customers.view', 'products.view', 'products.create',
+            'dashboard.view', 'customers.view', 'vendors.view', 'products.view', 'products.create',
             'products.update', 'stock.view', 'stock.update', 'orders.view',
             'orders.update', 'orders.assign', 'payments.view', 'payments.verify',
             'reports.view',

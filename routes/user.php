@@ -17,6 +17,7 @@ use App\Http\Controllers\Website\ProductController;
 use App\Http\Controllers\Website\ShopController;
 use App\Http\Controllers\Website\TrackOrderController;
 use App\Http\Controllers\Website\WishlistController;
+use App\Http\Controllers\Website\VendorApplicationController;
 use Illuminate\Support\Facades\Route;
 
 Route::name('website.')->group(function () {
@@ -64,6 +65,9 @@ Route::name('website.')->group(function () {
     Route::get('/checkout/thank-you/{orderNumber}', [CheckoutController::class, 'thankYou'])->name('checkout.thank-you');
 
     Route::middleware(['auth:web', 'customer.active'])->prefix('account')->name('account.')->group(function () {
+        Route::get('/seller/apply', [VendorApplicationController::class, 'create'])->name('seller.apply');
+        Route::post('/seller/apply', [VendorApplicationController::class, 'store'])->name('seller.apply.store');
+        Route::get('/seller/application', [VendorApplicationController::class, 'show'])->name('seller.application');
         Route::get('/', [CustomerAccountController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [CustomerAccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{orderNumber}', [CustomerAccountController::class, 'order'])->name('orders.show');

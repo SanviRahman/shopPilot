@@ -19,6 +19,8 @@ class Product extends Model implements HasMedia
 
     protected $fillable = [
         'category_id',
+        'vendor_id',
+        'moderation_status',
         'name',
         'slug',
         'sku',
@@ -62,6 +64,11 @@ class Product extends Model implements HasMedia
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function orderItems(): HasMany

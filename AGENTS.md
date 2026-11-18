@@ -1,3 +1,18 @@
+# ACTIVE MULTI-VENDOR MIGRATION OVERRIDE — 2026-11-18
+
+> The project is being converted from the original single-vendor ShopPilot implementation into a genuine multi-vendor marketplace. The uploaded `Multi_Vendor_Ecommerce_Requirements_PRD_BN` is now the active product specification. This override takes precedence over older single-vendor statements below whenever they conflict.
+
+- Preserve the existing Laravel 13.34.0 architecture, `admin` / `web` guards, Spatie Permission, Media Library, Blade, Bootstrap, jQuery/AJAX and existing working modules.
+- Multi-vendor ownership, seller onboarding, store profiles, vendor-scoped catalog/inventory/orders, master orders with vendor suborders, financial ledger and payout isolation are marketplace requirements.
+- Product variants, including attributes such as Color and Size, variant SKU/price/media and variant-level inventory are required in the new marketplace scope. The old statement that variants are out of scope is obsolete.
+- A vendor-owned resource must be authorized through active `vendor_users` membership and record ownership. A global role by itself is not ownership proof.
+- Existing products with `vendor_id = NULL` are legacy platform-managed products until a data-ownership decision and migration are approved. Do not silently assign them to a seller.
+- Existing single-vendor checkout is not multi-vendor ready. Do not expose seller fulfillment or claim marketplace checkout is complete until master/suborder, reservation, payment and reconciliation work is implemented.
+- Merchant of record, gateway/COD provider, commission basis, tax, shipping ownership, payout policy and other `[CONFIRM]` decisions must not be guessed. See `docs/MULTI-VENDOR-IMPLEMENTATION-STATUS.md` and the marketplace PRD decision register.
+- The existing documents below remain useful for current Laravel conventions and legacy behavior only where they do not contradict the active marketplace PRD.
+
+---
+
 # AGENTS.md — ShopPilot E-commerce
 # AI Coding Agent Operating Contract
 

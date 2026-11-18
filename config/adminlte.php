@@ -196,16 +196,23 @@ return [
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',
-            'can'    => ['categories.view', 'products.view',
+            'can'    => ['categories.view', 'products.view', 'vendors.view',
                 'coupons.view', 'payment-methods.view'],
         ],
         [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
-            'can'     => ['categories.view', 'products.view',
+            'can'     => ['categories.view', 'products.view', 'vendors.view',
                 'coupons.view', 'payment-methods.view',
                 'orders.view', 'order-items.view', 'order-histories.view'],
             'submenu' => [
+                [
+                    'text'   => 'Vendors',
+                    'icon'   => 'fas fa-fw fa-store',
+                    'route'  => 'admin.vendors.index',
+                    'active' => ['admin/vendors*'],
+                    'can'    => 'vendors.view',
+                ],
                 [
                     'text'   => 'Categories',
                     'icon'   => 'fas fa-fw fa-tags',

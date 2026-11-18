@@ -10,6 +10,14 @@ ShopPilot is a medium-size, single-store e-commerce application designed to prac
 
 ---
 
+## Multi-Vendor Conversion Status
+
+ShopPilot is being converted into a multi-vendor marketplace using the `Multi_Vendor_Ecommerce_Requirements_PRD_BN` specification. The existing single-vendor modules are being preserved and migrated in phases.
+
+Current implementation milestone: **Phase 1 — Vendor Foundation**. This includes vendor applications, store profiles, vendor membership, private verification documents, admin review actions and product ownership fields. Product variants/inventory, vendor dashboards, master/suborders, commissions, payouts and seller fulfilment are subsequent phases and must not be considered complete yet.
+
+See `docs/MULTI-VENDOR-IMPLEMENTATION-STATUS.md` for the current implementation boundary and unresolved business decisions.
+
 ## Table of Contents
 
 1. [Project Goals](#project-goals)
