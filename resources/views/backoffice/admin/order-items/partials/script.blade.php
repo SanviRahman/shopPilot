@@ -26,34 +26,62 @@ $(function () {
         $('#item_line_total').val(lineTotal.toFixed(2));
     }
 
-    function syncProductPreview(updatePrice = true) {
+    function syncProductPreview(updatePrice = true, selectedVariantId = null) {
         const option = $('#product_id option:selected');
         const productId = option.val();
 
         if (!productId) {
             $('#product_name_preview').val('');
             $('#sku_preview').val('');
-            if (updatePrice) {
-                $('#unit_price').val('0.00');
-            }
+            $('#variantSelectContainer').addClass('d-none');
+            $('#product_variant_id').empty().append('<option value="">-- Choose Variation --</option>').prop('required', false);
+            if (updatePrice) $('#unit_price').val('0.00');
             calculateItemLineTotal();
             return;
         }
 
         $('#product_name_preview').val(option.data('name') || option.text().trim());
-        $('#sku_preview').val(option.data('sku') || '');
+        const variants = option.data('variants') || [];
+        const isVariable = option.data('productType') === 'variable';
+        const variantSelect = $('#product_variant_id');
+        variantSelect.empty().append('<option value="">-- Choose Variation --</option>');
 
-        if (updatePrice) {
-            const price = parseFloat(option.data('price')) || 0;
-            $('#unit_price').val(price.toFixed(2));
+        if (isVariable) {
+            variants.forEach((variant) => {
+                const label = `${variant.options} · ${variant.sku} · Stock ${variant.stock}`;
+                variantSelect.append($('<option>', {
+                    value: variant.id,
+                    text: label,
+                    'data-sku': variant.sku,
+                    'data-price': variant.price
+                }));
+            });
+            $('#variantSelectContainer').removeClass('d-none');
+            variantSelect.prop('required', true);
+            if (selectedVariantId) variantSelect.val(String(selectedVariantId));
+        } else {
+            $('#variantSelectContainer').addClass('d-none');
+            variantSelect.prop('required', false);
         }
 
+        const selectedVariant = variantSelect.find('option:selected');
+        $('#sku_preview').val(isVariable ? (selectedVariant.data('sku') || '') : (option.data('sku') || ''));
+        if (updatePrice) {
+            const price = parseFloat(isVariable ? selectedVariant.data('price') : option.data('price')) || 0;
+            $('#unit_price').val(price.toFixed(2));
+        }
         calculateItemLineTotal();
     }
 
     $(document).on('input', '.item-calc-field', calculateItemLineTotal);
     $(document).on('change', '#product_id', function () {
         syncProductPreview(true);
+    });
+    $(document).on('change', '#product_variant_id', function () {
+        const option = $(this).find('option:selected');
+        $('#sku_preview').val(option.data('sku') || '');
+        $('#unit_price').val((parseFloat(option.data('price')) || 0).toFixed(2));
+        calculateItemLineTotal();
     });
 
     function reloadTable(url = fetchUrl) {
@@ -121,6 +149,8 @@ $(function () {
         $('#orderSelectContainer').removeClass('d-none');
         $('#modal_order_id').prop('required', true);
         $('#product_id').val('');
+        $('#product_variant_id').val('').prop('required', false);
+        $('#variantSelectContainer').addClass('d-none');
         $('#product_name_preview').val('');
         $('#sku_preview').val('');
         $('#unit_price').val('0.00');
@@ -161,11 +191,27 @@ $(function () {
                         .attr('data-name', item.product_name)
                         .attr('data-sku', item.sku)
                         .attr('data-price', item.unit_price)
+                        .attr('data-product-type', item.product_type || 'simple')
+                        .attr('data-variants', JSON.stringify(item.product_variant_id ? [{ id: item.product_variant_id, sku: item.sku, price: item.unit_price, stock: 0, options: item.variant_name || 'Previously selected variation' }] : []))
                     );
                 }
 
                 $('#product_id').val(String(item.product_id));
-                syncProductPreview(false);
+                if (item.product_variant_id) {
+                    const productOption = $('#product_id option:selected');
+                    const variants = productOption.data('variants') || [];
+                    if (!variants.some((variant) => Number(variant.id) === Number(item.product_variant_id))) {
+                        variants.push({
+                            id: item.product_variant_id,
+                            sku: item.sku,
+                            price: parseFloat(item.unit_price || 0),
+                            stock: 0,
+                            options: item.variant_name || 'Previously selected variation'
+                        });
+                        productOption.data('variants', variants);
+                    }
+                }
+                syncProductPreview(false, item.product_variant_id);
                 $('#unit_price').val(parseFloat(item.unit_price || 0).toFixed(2));
                 $('#quantity').val(item.quantity);
                 calculateItemLineTotal();
@@ -234,6 +280,7 @@ $(function () {
                 $('#show-order-number').text(item.order_number);
                 $('#show-buyer-name').text(item.buyer_name);
                 $('#show-sku').text(item.sku);
+                $('#show-variant-name').text(item.variant_name || '').toggleClass('d-none', !item.variant_name);
                 $('#show-unit-price').text(item.unit_price);
                 $('#show-quantity').text(item.quantity);
                 $('#show-line-total').text(item.line_total);

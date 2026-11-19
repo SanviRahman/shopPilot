@@ -61,9 +61,10 @@ class OrderItemController extends Controller
             ->get(['id', 'order_number']);
 
         $products = Product::query()
-            ->where('status', 'active')
+            ->published()
+            ->with(['variants.inventoryBalance', 'variants.attributeValues.attribute'])
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'regular_price', 'sale_price']);
+            ->get(['id', 'name', 'sku', 'product_type', 'regular_price', 'sale_price']);
 
         return view('backoffice.admin.order-items.index', [
             'title' => 'Order Items Management',
@@ -138,6 +139,7 @@ class OrderItemController extends Controller
                     'buyer_name' => $orderItem->order?->buyer_name ?? 'N/A',
                     'product_name' => $orderItem->product_name,
                     'sku' => $orderItem->sku,
+                    'variant_name' => $orderItem->variant_name,
                     'unit_price' => number_format((float) $orderItem->unit_price, 2),
                     'quantity' => $orderItem->quantity,
                     'line_total' => number_format((float) $orderItem->line_total, 2),
@@ -153,6 +155,7 @@ class OrderItemController extends Controller
     {
         $orderItem->loadMissing('order');
         abort_unless($orderItem->order, 404);
+        abort_if($orderItem->vendor_order_id, 403, 'Marketplace order items are managed through seller fulfilment.');
         Gate::forUser($request->user('admin'))->authorize('update', $orderItem->order);
 
         return response()->json([
@@ -161,7 +164,10 @@ class OrderItemController extends Controller
                 'id' => $orderItem->id,
                 'order_id' => $orderItem->order_id,
                 'product_id' => $orderItem->product_id,
+                'product_variant_id' => $orderItem->product_variant_id,
+                'variant_name' => $orderItem->variant_name,
                 'product_name' => $orderItem->product_name,
+                'product_type' => $orderItem->product?->product_type ?? 'simple',
                 'sku' => $orderItem->sku,
                 'unit_price' => $orderItem->unit_price,
                 'quantity' => $orderItem->quantity,

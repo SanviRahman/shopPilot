@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Models\Product;
+use App\Models\ProductAttribute;
 use App\Services\ProductService;
+use App\Services\ProductModerationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,8 +18,10 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function __construct(private readonly ProductService $productService)
-    {
+    public function __construct(
+        private readonly ProductService $productService,
+        private readonly ProductModerationService $moderationService,
+    ) {
     }
 
     public function index(Request $request): View|JsonResponse
@@ -33,7 +37,10 @@ class ProductController extends Controller
             ->with('category')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
-                $query->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%");
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%");
+                });
             })
             ->latest('deleted_at')
             ->paginate(15)
@@ -77,7 +84,7 @@ class ProductController extends Controller
     public function show(Request $request, Product $product): View|JsonResponse
     {
         $this->authorizeAction('products.view');
-        $product->load('category');
+        $product->load(['category', 'variants.inventoryBalance', 'variants.attributeValues.attribute']);
 
         if ($request->ajax()) {
             return response()->json([
@@ -87,10 +94,18 @@ class ProductController extends Controller
                     'name' => $product->name,
                     'slug' => $product->slug,
                     'sku' => $product->sku,
+                    'product_type' => $product->product_type,
+                    'variant_count' => $product->variants->count(),
                     'category' => $product->category?->name,
                     'regular_price' => number_format($product->regular_price, 2),
                     'sale_price' => $product->sale_price ? number_format($product->sale_price, 2) : null,
                     'stock_quantity' => $product->stock_quantity,
+                    'variants' => $product->variants->map(fn ($variant) => [
+                        'sku' => $variant->sku,
+                        'price' => number_format((float) $variant->regular_price, 2),
+                        'stock' => $variant->available_quantity,
+                        'options' => $variant->attributeValues->map(fn ($value) => $value->attribute->name . ': ' . $value->label)->implode(' / '),
+                    ])->values(),
                     'description' => $product->description ?: 'No description provided.',
                     'status' => ucfirst($product->status),
                     'featured' => $product->featured,
@@ -120,6 +135,8 @@ class ProductController extends Controller
         $this->authorizeAction('products.update');
 
         if ($request->ajax()) {
+            $product->load(['variants.inventoryBalance', 'variants.attributeValues.attribute', 'variants.media']);
+
             return response()->json([
                 'success' => true,
                 'product' => [
@@ -128,6 +145,16 @@ class ProductController extends Controller
                     'name' => $product->name,
                     'slug' => $product->slug,
                     'sku' => $product->sku,
+                    'product_type' => $product->product_type,
+                    'variants' => $product->variants->map(fn ($variant) => [
+                        'id' => $variant->id,
+                        'sku' => $variant->sku,
+                        'regular_price' => $variant->regular_price,
+                        'sale_price' => $variant->sale_price,
+                        'stock_quantity' => $variant->inventoryBalance?->on_hand_quantity ?? 0,
+                        'image_url' => $variant->image_url,
+                        'attribute_value_ids' => $variant->attributeValues->pluck('id')->values(),
+                    ])->values(),
                     'short_description' => $product->short_description,
                     'description' => $product->description,
                     'regular_price' => $product->regular_price,
@@ -171,6 +198,24 @@ class ProductController extends Controller
         }
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
+    }
+
+    public function moderate(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorizeAction('products.update');
+        $validated = $request->validate([
+            'decision' => ['required', 'in:approve,reject,suspend'],
+            'reason' => ['nullable', 'required_if:decision,reject,suspend', 'string', 'max:1000'],
+        ]);
+
+        $this->moderationService->review(
+            $product,
+            auth('admin')->user(),
+            $validated['decision'],
+            $validated['reason'] ?? null,
+        );
+
+        return back()->with('success', 'Product moderation status updated.');
     }
 
     public function destroy(Request $request, Product $product): JsonResponse|RedirectResponse
@@ -263,11 +308,14 @@ class ProductController extends Controller
     {
         $this->authorizeAction('products.view');
 
-        $products = Product::with('category')
+        $products = Product::with(['category'])->withCount('variants')
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')->toString()))
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->toString();
-                $query->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%");
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%");
+                });
             })
             ->latest('id')
             ->paginate(15)
@@ -290,6 +338,12 @@ class ProductController extends Controller
             'formProduct' => $formProduct,
             'formMode' => $formProduct ? 'edit' : 'create',
             'openForm' => $openForm,
+            'productAttributes' => ProductAttribute::query()
+                ->where('is_active', true)
+                ->with(['values' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('id')])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 

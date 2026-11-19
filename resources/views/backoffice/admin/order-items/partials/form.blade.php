@@ -31,18 +31,37 @@
                         <select name="product_id" id="product_id" class="custom-select custom-select-sm" required>
                             <option value="">-- Choose Product --</option>
                             @foreach($products as $product)
-                                @php($currentPrice = $product->sale_price ?? $product->regular_price)
+                                @php
+                                    $currentPrice = $product->sale_price ?? $product->regular_price;
+                                    $variantOptions = $product->variants->where('is_active', true)->map(fn ($variant) => [
+                                        'id' => $variant->id,
+                                        'sku' => $variant->sku,
+                                        'price' => $variant->sale_price && $variant->sale_price < $variant->regular_price ? (float) $variant->sale_price : (float) $variant->regular_price,
+                                        'stock' => $variant->available_quantity,
+                                        'options' => $variant->attributeValues->map(fn ($value) => $value->attribute->name . ': ' . $value->label)->implode(' / '),
+                                    ])->values();
+                                @endphp
                                 <option
                                     value="{{ $product->id }}"
                                     data-name="{{ $product->name }}"
                                     data-sku="{{ $product->sku }}"
                                     data-price="{{ number_format((float) $currentPrice, 2, '.', '') }}"
+                                    data-product-type="{{ $product->product_type }}"
+                                    data-variants="{{ e(json_encode($variantOptions)) }}"
                                 >
                                     {{ $product->name }} ({{ $product->sku }})
                                 </option>
                             @endforeach
                         </select>
                         <div class="invalid-feedback d-block" id="err-product_id"></div>
+                    </div>
+
+                    <div class="form-group mb-3 d-none" id="variantSelectContainer">
+                        <label for="product_variant_id" class="font-weight-600">Product Variation <span class="text-danger">*</span></label>
+                        <select name="product_variant_id" id="product_variant_id" class="custom-select custom-select-sm">
+                            <option value="">-- Choose Variation --</option>
+                        </select>
+                        <div class="invalid-feedback d-block" id="err-product_variant_id"></div>
                     </div>
 
                     <div class="row">

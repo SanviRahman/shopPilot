@@ -19,7 +19,7 @@ class HomePageService
         $categories = Category::query()
             ->where('status', 'active')
             ->withCount([
-                'products as active_products_count' => fn (Builder $query) => $query->where('status', 'active'),
+                'products as active_products_count' => fn (Builder $query) => $query->published(),
             ])
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -80,7 +80,7 @@ class HomePageService
     private function baseProductQuery(): Builder
     {
         return Product::query()
-            ->where('status', 'active')
+            ->published()
             ->with('category');
     }
 

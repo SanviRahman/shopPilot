@@ -10,6 +10,7 @@ use App\Http\Controllers\Website\CustomerAuthController;
 use App\Http\Controllers\Website\CustomerPaymentController;
 use App\Http\Controllers\Website\CustomerPasswordController;
 use App\Http\Controllers\Website\CustomerProfileController;
+use App\Http\Controllers\Website\CustomerRefundController;
 use App\Http\Controllers\Website\HomeController;
 use App\Http\Controllers\Website\MetaPixelEventController;
 use App\Http\Controllers\Website\NewsletterController;
@@ -51,9 +52,9 @@ Route::name('website.')->group(function () {
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/items', [CartController::class, 'store'])->name('cart.items.store');
-    Route::patch('/cart/items/{productId}', [CartController::class, 'update'])->whereNumber('productId')->name('cart.items.update');
+    Route::patch('/cart/items/{cartItemKey}', [CartController::class, 'update'])->where('cartItemKey', '(?:p-[0-9]+|v-[0-9]+)')->name('cart.items.update');
     Route::delete('/cart/items/selected', [CartController::class, 'removeSelected'])->name('cart.items.remove-selected');
-    Route::delete('/cart/items/{productId}', [CartController::class, 'destroy'])->whereNumber('productId')->name('cart.items.destroy');
+    Route::delete('/cart/items/{cartItemKey}', [CartController::class, 'destroy'])->where('cartItemKey', '(?:p-[0-9]+|v-[0-9]+)')->name('cart.items.destroy');
     Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
     Route::post('/cart/coupon', [CartController::class, 'applyCoupon'])->name('cart.coupon.apply');
     Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->name('cart.coupon.remove');
@@ -71,6 +72,7 @@ Route::name('website.')->group(function () {
         Route::get('/', [CustomerAccountController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [CustomerAccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{orderNumber}', [CustomerAccountController::class, 'order'])->name('orders.show');
+        Route::post('/orders/{orderNumber}/vendor-orders/{vendorOrder}/refunds', [CustomerRefundController::class, 'store'])->name('orders.refunds.store');
         Route::get('/payments', [CustomerAccountController::class, 'payments'])->name('payments');
         Route::post('/payments', [CustomerPaymentController::class, 'store'])->middleware('throttle:8,1')->name('payments.store');
         Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist');

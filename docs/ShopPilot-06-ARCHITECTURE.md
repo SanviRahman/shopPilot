@@ -1,6 +1,9 @@
 # ShopPilot E-commerce — Architecture
 # শপপাইলট ই-কমার্স — আর্কিটেকচার
 
+> **Multi-vendor authority notice:** This document describes the original single-store architecture. For the active marketplace target, use `MULTI-VENDOR-ARCHITECTURE-AND-ADRS.md` and `MULTI-VENDOR-PHASE-3-DATA-DESIGN.md`. This file remains useful for unchanged Laravel implementation conventions only.
+
+
 > **Document:** System Architecture / সিস্টেম আর্কিটেকচার  
 > **Project:** ShopPilot E-commerce  
 > **Source Documents:**  

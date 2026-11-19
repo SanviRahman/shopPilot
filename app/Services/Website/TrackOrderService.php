@@ -14,6 +14,7 @@ class TrackOrderService
             ->where('order_number', $orderNumber)
             ->with([
                 'items.product.media',
+                'items.variant.media',
                 'paymentSubmission.paymentMethod',
                 'histories' => fn ($query) => $query->orderBy('created_at'),
             ])

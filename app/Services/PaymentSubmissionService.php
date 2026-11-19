@@ -9,16 +9,19 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentSubmissionService
 {
-    public function __construct(private readonly OrderHistoryService $orderHistoryService)
-    {
+    public function __construct(
+        private readonly OrderHistoryService $orderHistoryService,
+        private readonly MarketplaceOrderService $marketplaceOrderService,
+    ) {
     }
 
     public function verify(PaymentSubmission $paymentSubmission): PaymentSubmission
     {
         return DB::transaction(function () use ($paymentSubmission): PaymentSubmission {
+            $paymentSubmission = PaymentSubmission::query()->lockForUpdate()->findOrFail($paymentSubmission->id);
             $this->ensureSubmitted($paymentSubmission);
 
-            $order = $paymentSubmission->order()->firstOrFail();
+            $order = Order::query()->lockForUpdate()->findOrFail($paymentSubmission->order_id);
             $previousPaymentStatus = $order->payment_status;
 
             $paymentSubmission->update([
@@ -29,6 +32,7 @@ class PaymentSubmissionService
             ]);
 
             $order->update(['payment_status' => Order::PAYMENT_VERIFIED]);
+            $this->marketplaceOrderService->paymentVerified($order);
 
             $this->orderHistoryService->recordAdminEvent(
                 order: $order,
@@ -42,9 +46,10 @@ class PaymentSubmissionService
     public function reject(PaymentSubmission $paymentSubmission, string $note): PaymentSubmission
     {
         return DB::transaction(function () use ($paymentSubmission, $note): PaymentSubmission {
+            $paymentSubmission = PaymentSubmission::query()->lockForUpdate()->findOrFail($paymentSubmission->id);
             $this->ensureSubmitted($paymentSubmission);
 
-            $order = $paymentSubmission->order()->firstOrFail();
+            $order = Order::query()->lockForUpdate()->findOrFail($paymentSubmission->order_id);
             $previousPaymentStatus = $order->payment_status;
 
             $paymentSubmission->update([
@@ -55,6 +60,7 @@ class PaymentSubmissionService
             ]);
 
             $order->update(['payment_status' => Order::PAYMENT_REJECTED]);
+            $this->marketplaceOrderService->paymentRejected($order);
 
             $this->orderHistoryService->recordAdminEvent(
                 order: $order,

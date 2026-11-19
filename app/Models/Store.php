@@ -23,13 +23,14 @@ class Store extends Model implements HasMedia
         'address',
         'shipping_policy',
         'return_policy',
+        'shipping_fee',
         'status',
         'vacation_mode',
     ];
 
     protected function casts(): array
     {
-        return ['vacation_mode' => 'boolean'];
+        return ['vacation_mode' => 'boolean', 'shipping_fee' => 'decimal:2'];
     }
 
     public function vendor(): BelongsTo

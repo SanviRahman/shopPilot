@@ -70,7 +70,7 @@ class CheckoutController extends Controller
     {
         $order = Order::query()
             ->where('order_number', $orderNumber)
-            ->with(['items', 'paymentSubmission.paymentMethod'])
+            ->with(['items', 'vendorOrders.vendor.store', 'paymentSubmission.paymentMethod'])
             ->firstOrFail();
 
         abort_unless($this->checkoutService->canViewThankYou($order), 404);

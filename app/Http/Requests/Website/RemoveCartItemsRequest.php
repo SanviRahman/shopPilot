@@ -14,7 +14,9 @@ class RemoveCartItemsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_ids' => ['required', 'array', 'min:1'],
+            'item_keys' => ['required_without:product_ids', 'array', 'min:1'],
+            'item_keys.*' => ['required', 'string', 'distinct'],
+            'product_ids' => ['required_without:item_keys', 'array', 'min:1'],
             'product_ids.*' => ['required', 'integer', 'distinct'],
         ];
     }

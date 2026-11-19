@@ -23,3 +23,34 @@
 
 .product-wishlist-action.active{border-color:#ff9ab0!important;background:#fff2f6!important;color:#e9315b!important}.product-wishlist-action.active .fa-heart{color:#e9315b}
 .product-wishlist-action{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+
+/* Product option selector */
+.product-variant-options{display:grid;gap:18px;margin:22px 0 18px;padding:18px;border:1px solid #e7edf4;border-radius:14px;background:#fbfcfe}
+.product-variant-group{display:grid;gap:10px}
+.variant-group-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#263d57;font-size:12px}
+.variant-group-heading strong{font-size:12px;font-weight:800}
+.variant-group-heading span{color:#7e8da0;font-size:11px}
+.variant-option-list{display:flex;flex-wrap:wrap;gap:8px}
+.variant-option-button{min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 13px;border:1px solid #dfe7f0;border-radius:9px;background:#fff;color:#53677e;font-size:11px;font-weight:700;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease,box-shadow .18s ease}
+.variant-option-button:hover{border-color:#9dc4ed;color:#176bc4}
+.variant-option-button.active{border-color:#267bd2;background:#eef6ff;color:#176bc4;box-shadow:0 0 0 2px rgba(38,123,210,.08)}
+.variant-option-button.is-color{padding:7px 10px}
+.variant-color-swatch{width:17px;height:17px;display:inline-block;border:1px solid rgba(0,0,0,.13);border-radius:50%;background:var(--variant-color)}
+.variant-option-button.is-color.active .variant-color-swatch{outline:2px solid #fff;box-shadow:0 0 0 2px #267bd2}
+.variant-selection-message{margin:0;color:#7d8da0;font-size:10px;line-height:1.5}
+.variant-selection-message.is-error{color:#c74353}
+.product-price-block [data-product-saving]{display:inline-flex;align-items:center;padding:5px 8px;border-radius:7px;background:#eaf8f0;color:#218653;font-size:10px;font-weight:800}
+.product-price-block [data-product-regular-price]{color:#8c98a7;font-size:13px}
+.product-order-form .quantity-control input:disabled{opacity:.55}
+.product-order-form button:disabled{cursor:not-allowed;opacity:.55}
+@media(max-width:767.98px){
+    .product-variant-options{gap:15px;margin:17px 0;padding:14px;border-radius:12px}
+    .variant-option-list{gap:7px}
+    .variant-option-button{min-height:36px;padding:7px 11px;font-size:10px}
+    .variant-group-heading{font-size:11px}
+    .variant-group-heading strong{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.variant-option-button{transition:none}}
+.product-variant-select{max-width:260px;height:40px;border:1px solid #dfe7f0;border-radius:9px;color:#53677e;font-size:11px;box-shadow:none}
+.product-variant-select:focus{border-color:#267bd2;box-shadow:0 0 0 3px rgba(38,123,210,.08)}
+@media(max-width:767.98px){.product-variant-select{max-width:100%;width:100%}}

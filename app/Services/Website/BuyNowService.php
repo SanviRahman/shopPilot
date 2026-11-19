@@ -3,6 +3,7 @@
 namespace App\Services\Website;
 
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\CouponService;
 use Illuminate\Validation\ValidationException;
 
@@ -16,78 +17,72 @@ class BuyNowService
     {
     }
 
-    public function start(int $productId, int $quantity = 1): void
+    public function start(int $productId, int $quantity = 1, ?int $variantId = null): void
     {
         $product = $this->activeProduct($productId);
-        $stock = (int) $product->stock_quantity;
+        $variant = $this->resolveVariant($product, $variantId);
+        $stock = $variant ? $variant->available_quantity : (int) $product->stock_quantity;
         $quantity = max(1, $quantity);
 
-        if ($stock <= 0) {
+        if ($stock <= 0 || $quantity > $stock) {
             throw ValidationException::withMessages([
-                'product' => 'This product is currently out of stock.',
-            ]);
-        }
-
-        if ($quantity > $stock) {
-            throw ValidationException::withMessages([
-                'quantity' => "Only {$stock} unit(s) of {$product->name} are currently available.",
+                'quantity' => "Only {$stock} unit(s) of {$product->name} are currently available for this option.",
             ]);
         }
 
         session()->put(self::ITEM_SESSION_KEY, [
-            'product_id' => $product->getKey(),
+            'product_id' => $product->id,
+            'variant_id' => $variant?->id,
             'quantity' => $quantity,
         ]);
-
-        // A new direct-purchase intent must not inherit a coupon from an older one.
         session()->forget(self::COUPON_SESSION_KEY);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function summary(): array
     {
         $storedItem = session()->get(self::ITEM_SESSION_KEY);
-
-        if (! is_array($storedItem)) {
-            return $this->emptySummary();
-        }
+        if (! is_array($storedItem)) return $this->emptySummary();
 
         $productId = (int) ($storedItem['product_id'] ?? 0);
+        $variantId = isset($storedItem['variant_id']) ? (int) $storedItem['variant_id'] : null;
         $quantity = max(1, (int) ($storedItem['quantity'] ?? 1));
-
-        if ($productId <= 0) {
-            $this->clear();
-
-            return $this->emptySummary();
-        }
-
         $product = Product::query()
+            ->published()
             ->whereKey($productId)
-            ->where('status', 'active')
             ->with(['category', 'media'])
             ->first();
 
         if (! $product) {
             $this->clear();
-
             return $this->emptySummary();
         }
 
-        $stock = max(0, (int) $product->stock_quantity);
-        $regularPrice = (float) $product->regular_price;
-        $salePrice = $product->sale_price !== null ? (float) $product->sale_price : null;
+        try {
+            $variant = $this->resolveVariant($product, $variantId);
+        } catch (ValidationException) {
+            $this->clear();
+            return $this->emptySummary();
+        }
+
+        $stock = $variant ? $variant->available_quantity : max(0, (int) $product->stock_quantity);
+        $regularPrice = (float) ($variant?->regular_price ?? $product->regular_price);
+        $salePrice = $variant
+            ? ($variant->sale_price !== null ? (float) $variant->sale_price : null)
+            : ($product->sale_price !== null ? (float) $product->sale_price : null);
         $hasSale = $salePrice !== null && $salePrice > 0 && $salePrice < $regularPrice;
         $unitPrice = $hasSale ? $salePrice : $regularPrice;
         $lineTotal = round($unitPrice * $quantity, 2);
-        $discountPercent = $hasSale && $regularPrice > 0
-            ? (int) round((($regularPrice - $salePrice) / $regularPrice) * 100)
-            : 0;
+        $discountPercent = $hasSale && $regularPrice > 0 ? (int) round((($regularPrice - $salePrice) / $regularPrice) * 100) : 0;
+        $variantLabel = $variant?->attributeValues->map(fn ($value) => $value->attribute->name . ': ' . $value->label)->implode(' / ');
 
         $items = collect([[
             'product' => $product,
+            'variant' => $variant,
+            'variant_label' => $variantLabel,
+            'sku' => $variant?->sku ?? $product->sku,
+            'image_url' => $variant?->image_url ?: $product->thumbnail_url,
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'quantity' => $quantity,
             'stock_quantity' => $stock,
             'in_stock' => $stock > 0 && $quantity <= $stock,
@@ -99,7 +94,6 @@ class BuyNowService
         ]]);
 
         [$coupon, $discount, $couponInvalidMessage] = $this->resolveCoupon($lineTotal);
-        $grandTotal = round(max(0, $lineTotal - $discount), 2);
         $canCheckout = $stock > 0 && $quantity <= $stock;
 
         return [
@@ -111,57 +105,36 @@ class BuyNowService
             'couponInvalidMessage' => $couponInvalidMessage,
             'shipping' => null,
             'shippingLabel' => 'Calculated at checkout',
-            'grandTotal' => $grandTotal,
+            'grandTotal' => round(max(0, $lineTotal - $discount), 2),
             'hasUnavailableItems' => ! $canCheckout,
             'canCheckout' => $canCheckout,
         ];
     }
 
-    /**
-     * @return array<int, array{product_id:int,quantity:int}>
-     */
     public function checkoutItems(): array
     {
         $item = session()->get(self::ITEM_SESSION_KEY);
+        if (! is_array($item) || (int) ($item['product_id'] ?? 0) <= 0) return [];
 
-        if (! is_array($item)) {
-            return [];
-        }
-
-        $productId = (int) ($item['product_id'] ?? 0);
-        $quantity = max(1, (int) ($item['quantity'] ?? 1));
-
-        if ($productId <= 0) {
-            return [];
-        }
-
-        return [
-            $productId => [
-                'product_id' => $productId,
-                'quantity' => $quantity,
-            ],
-        ];
+        return [[
+            'product_id' => (int) $item['product_id'],
+            'variant_id' => isset($item['variant_id']) ? (int) $item['variant_id'] : null,
+            'quantity' => max(1, (int) ($item['quantity'] ?? 1)),
+        ]];
     }
 
     public function appliedCouponCode(): ?string
     {
         $code = session()->get(self::COUPON_SESSION_KEY);
-
-        return is_string($code) && trim($code) !== ''
-            ? strtoupper(trim($code))
-            : null;
+        return is_string($code) && trim($code) !== '' ? strtoupper(trim($code)) : null;
     }
 
     public function applyCoupon(string $code): void
     {
         $summary = $this->summary();
-
         if ($summary['items']->isEmpty()) {
-            throw ValidationException::withMessages([
-                'coupon_code' => 'Start a Buy Now checkout before applying a coupon.',
-            ]);
+            throw ValidationException::withMessages(['coupon_code' => 'Start a Buy Now checkout before applying a coupon.']);
         }
-
         $coupon = $this->couponService->resolveApplicableCoupon($code, (float) $summary['subtotal']);
         session()->put(self::COUPON_SESSION_KEY, $coupon->code);
     }
@@ -178,51 +151,50 @@ class BuyNowService
 
     private function activeProduct(int $productId): Product
     {
-        $product = Product::query()
-            ->whereKey($productId)
-            ->where('status', 'active')
-            ->first();
-
-        if (! $product) {
-            throw ValidationException::withMessages([
-                'product' => 'This product is not available for purchase.',
-            ]);
-        }
-
+        $product = Product::query()->published()->whereKey($productId)->first();
+        if (! $product) throw ValidationException::withMessages(['product' => 'This product is not available for purchase.']);
         return $product;
     }
 
-    /**
-     * @return array{0:mixed,1:float,2:?string}
-     */
+    private function resolveVariant(Product $product, ?int $variantId): ?ProductVariant
+    {
+        if ($product->product_type !== 'variable') {
+            if ($variantId) throw ValidationException::withMessages(['variant_id' => 'This product does not have selectable variations.']);
+            return null;
+        }
+
+        $variant = $variantId
+            ? ProductVariant::query()
+                ->whereKey($variantId)
+                ->where('product_id', $product->id)
+                ->where('is_active', true)
+                ->with(['inventoryBalance', 'attributeValues.attribute'])
+                ->first()
+            : null;
+
+        if (! $variant || ! $variant->inventoryBalance) {
+            throw ValidationException::withMessages(['variant_id' => 'Please select an available product variation.']);
+        }
+
+        return $variant;
+    }
+
     private function resolveCoupon(float $subtotal): array
     {
         $code = $this->appliedCouponCode();
-
-        if ($code === null || $subtotal <= 0) {
-            return [null, 0.0, null];
-        }
+        if ($code === null || $subtotal <= 0) return [null, 0.0, null];
 
         try {
             $coupon = $this->couponService->resolveApplicableCoupon($code, $subtotal);
             session()->put(self::COUPON_SESSION_KEY, $coupon->code);
-
-            return [
-                $coupon,
-                $this->couponService->calculateDiscount($coupon, $subtotal),
-                null,
-            ];
+            return [$coupon, $this->couponService->calculateDiscount($coupon, $subtotal), null];
         } catch (ValidationException $exception) {
-            session()->forget(self::COUPON_SESSION_KEY);
+            $this->removeCoupon();
             $messages = $exception->errors()['coupon_code'] ?? [];
-
             return [null, 0.0, $messages[0] ?? 'The applied coupon is no longer valid.'];
         }
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     private function emptySummary(): array
     {
         return [

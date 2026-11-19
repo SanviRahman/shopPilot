@@ -25,6 +25,14 @@
                 <div><span>Payment Method</span><strong>{{ $order->paymentSubmission?->paymentMethod?->name ?? 'Manual Payment' }}</strong></div>
             </div>
 
+            @if($order->vendorOrders->isNotEmpty())
+                <div class="thankyou-grid mt-3">
+                    @foreach($order->vendorOrders as $sellerOrder)
+                        <div><span>{{ $sellerOrder->vendor?->store?->name ?? 'ShopPilot Store' }}</span><strong>{{ $sellerOrder->suborder_number }}</strong><small class="d-block">{{ str_replace('_', ' ', ucfirst($sellerOrder->status)) }}</small></div>
+                    @endforeach
+                </div>
+            @endif
+
             <div class="thankyou-actions">
                 <a href="{{ route('website.shop') }}" class="checkout-secondary-button"><i class="fas fa-arrow-left"></i> Continue Shopping</a>
                 @if(auth('web')->check() && (int) $order->user_id === (int) auth('web')->id())

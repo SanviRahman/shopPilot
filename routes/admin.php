@@ -18,7 +18,9 @@ use App\Http\Controllers\Backoffice\Admin\PaymentMethodController;
 use App\Http\Controllers\Backoffice\Admin\PaymentSubmissionController;
 use App\Http\Controllers\Backoffice\Admin\PermissionController;
 use App\Http\Controllers\Backoffice\Admin\ProductController;
+use App\Http\Controllers\Backoffice\Admin\ProductAttributeController;
 use App\Http\Controllers\Backoffice\Admin\VendorController;
+use App\Http\Controllers\Backoffice\Admin\MarketplaceFinanceController;
 use App\Http\Controllers\Backoffice\Admin\ProfileController;
 use App\Http\Controllers\Backoffice\Admin\RoleController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
@@ -137,6 +139,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::resource('media', MediaController::class)->only(['index', 'destroy']);
 
+        // Marketplace Finance
+        Route::prefix('marketplace-finance')->name('marketplace-finance.')->group(function () {
+            Route::get('/', [MarketplaceFinanceController::class, 'index'])->name('index');
+            Route::put('commission', [MarketplaceFinanceController::class, 'updateCommission'])->name('commission.update');
+            Route::get('seller-orders', [MarketplaceFinanceController::class, 'sellerOrders'])->name('seller-orders');
+            Route::get('payouts', [MarketplaceFinanceController::class, 'payouts'])->name('payouts');
+            Route::patch('payout-accounts/{account}/verify', [MarketplaceFinanceController::class, 'verifyPayoutAccount'])->name('accounts.verify');
+            Route::patch('payouts/{payout}/approve', [MarketplaceFinanceController::class, 'approvePayout'])->name('payouts.approve');
+            Route::patch('payouts/{payout}/reject', [MarketplaceFinanceController::class, 'rejectPayout'])->name('payouts.reject');
+            Route::patch('payouts/{payout}/paid', [MarketplaceFinanceController::class, 'markPayoutPaid'])->name('payouts.paid');
+            Route::get('refunds', [MarketplaceFinanceController::class, 'refunds'])->name('refunds');
+            Route::patch('refunds/{refund}/approve', [MarketplaceFinanceController::class, 'approveRefund'])->name('refunds.approve');
+            Route::patch('refunds/{refund}/reject', [MarketplaceFinanceController::class, 'rejectRefund'])->name('refunds.reject');
+            Route::patch('refunds/{refund}/complete', [MarketplaceFinanceController::class, 'completeRefund'])->name('refunds.complete');
+            Route::patch('seller-orders/{vendorOrder}/delivered', [MarketplaceFinanceController::class, 'markDelivered'])->name('seller-orders.delivered');
+        });
+
         // Vendors
         Route::prefix('vendors')->name('vendors.')->group(function () {
             Route::get('/', [VendorController::class, 'index'])->name('index');
@@ -148,8 +167,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('{vendor}/documents/{document}/download', [VendorController::class, 'downloadDocument'])->whereNumber('vendor')->whereNumber('document')->name('documents.download');
         });
 
+        // Product Attributes
+        Route::get('product-attributes/modal', [ProductAttributeController::class, 'modal'])->name('product-attributes.modal');
+        Route::resource('product-attributes', ProductAttributeController::class)->except(['show', 'create', 'edit']);
+
         // Products
         Route::prefix('products')->name('products.')->group(function () {
+            Route::patch('{product}/moderation', [ProductController::class, 'moderate'])->name('moderate');
             Route::get('trash', [ProductController::class, 'trash'])->name('trash');
             Route::post('bulk-action', [ProductController::class, 'bulkAction'])->name('bulk-action');
             Route::patch('{product}/restore', [ProductController::class, 'restore'])->name('restore');

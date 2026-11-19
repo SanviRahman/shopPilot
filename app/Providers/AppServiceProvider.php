@@ -6,7 +6,11 @@ use App\Models\Admin;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\Store;
 use App\Policies\OrderPolicy;
+use App\Policies\VendorProductPolicy;
+use App\Policies\VendorStorePolicy;
 use App\Observers\AdminObserver;
 use App\Services\CartService;
 use App\Services\Website\WishlistService;
@@ -26,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
 
         Admin::observe(AdminObserver::class);
         Gate::policy(Order::class, OrderPolicy::class);
+        Gate::policy(Product::class, VendorProductPolicy::class);
+        Gate::policy(Store::class, VendorStorePolicy::class);
 
         View::composer('website.partials.header', function ($view) {
             $wishlistCount = 0;

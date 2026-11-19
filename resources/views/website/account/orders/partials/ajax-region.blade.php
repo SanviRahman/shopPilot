@@ -5,7 +5,7 @@
         </div>
         <div class="order-list" data-account-reveal>
             @forelse($orders as $order)
-                @php $firstItem = $order->items->first(); $image = $firstItem?->product?->thumbnail_url ?: asset('assets/website/images/product-placeholder.svg'); @endphp
+                @php $firstItem = $order->items->first(); $image = $firstItem?->variant?->image_url ?: ($firstItem?->product?->thumbnail_url ?: asset('assets/website/images/product-placeholder.svg')); @endphp
                 <article class="order-list-card">
                     <img src="{{ $image }}" alt="{{ $firstItem?->product_name ?? 'Order product' }}">
                     <div class="order-list-identity"><strong>#{{ $order->order_number }}</strong><span>{{ $order->created_at?->format('M d, Y') }}</span></div>

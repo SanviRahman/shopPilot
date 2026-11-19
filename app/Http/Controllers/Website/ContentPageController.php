@@ -14,7 +14,7 @@ class ContentPageController extends Controller
     {
         return view('website.pages.about', [
             'customerCount' => User::query()->count(),
-            'productCount' => Product::query()->where('status', 'active')->count(),
+            'productCount' => Product::query()->published()->count(),
             'categoryCount' => Category::query()->where('status', 'active')->count(),
         ]);
     }

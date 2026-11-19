@@ -25,7 +25,7 @@
             @forelse($orderItems as $item)
                 <tr>
                     <td class="text-center align-middle">
-                        <input type="checkbox" name="item_ids[]" value="{{ $item->id }}" data-row-checkbox>
+                        <input type="checkbox" name="item_ids[]" value="{{ $item->id }}" data-row-checkbox @disabled($item->vendor_order_id)>
                     </td>
                     <td class="align-middle">
                         @if($item->order)
@@ -38,6 +38,8 @@
                     </td>
                     <td class="align-middle">
                         <div class="font-weight-600 text-dark">{{ $item->product_name }}</div>
+                        @if($item->variant_name)<small class="text-muted">{{ $item->variant_name }}</small>@endif
+                        @if($item->vendor_order_id)<small class="d-block text-info">Marketplace seller order</small>@endif
                     </td>
                     <td class="align-middle">
                         <code>{{ $item->sku }}</code>
@@ -60,6 +62,7 @@
                     </td>
                     <td class="text-right align-middle text-nowrap">
                         @if($isTrash)
+                            @if(! $item->vendor_order_id)
                             @can('restore', $item->order)
                                 <button type="button" class="btn btn-outline-success btn-sm btn-action"
                                     data-url="{{ route('admin.order-items.restore', $item->id) }}"
@@ -80,6 +83,9 @@
                                     <i class="fas fa-times"></i>
                                 </button>
                             @endcan
+                            @else
+                                <span class="text-muted small">Marketplace item</span>
+                            @endif
                         @else
                             <div class="btn-group btn-group-sm">
                                 @can('view', $item->order)
@@ -87,6 +93,7 @@
                                         <i class="fas fa-eye text-info"></i>
                                     </button>
                                 @endcan
+                                @if(! $item->vendor_order_id)
                                 @can('update', $item->order)
                                     <button type="button" class="btn btn-default btn-edit-item" data-id="{{ $item->id }}" title="Edit Item">
                                         <i class="fas fa-pen text-primary"></i>
@@ -102,6 +109,9 @@
                                         <i class="fas fa-trash text-danger"></i>
                                     </button>
                                 @endcan
+                                @else
+                                    <span class="text-muted small px-2">Seller-managed</span>
+                                @endif
                             </div>
                         @endif
                     </td>

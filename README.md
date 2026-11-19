@@ -1,5 +1,8 @@
 # ShopPilot E-commerce
 
+> **Multi-vendor project notice:** ShopPilot is being converted from the original single-store application into a multi-vendor marketplace. The active requirements and target architecture are documented in `docs/MULTI-VENDOR-IMPLEMENTATION-STATUS.md` and the Phase 3 data-design documents. This README still describes legacy modules where not yet updated.
+
+
 > **Schema Alignment:** Documentation synchronized to `docs/ShopPilot-database-schema-v2.md` v2.0. Admin-side actors use `App\Models\Admin` / `admins` / `admin` guard; Customers use `App\Models\User` / `users` / `web` guard.
 
 > Role-Based Single-Store E-commerce & Order Operations System built as a Laravel full-stack practice project.
@@ -14,7 +17,16 @@ ShopPilot is a medium-size, single-store e-commerce application designed to prac
 
 ShopPilot is being converted into a multi-vendor marketplace using the `Multi_Vendor_Ecommerce_Requirements_PRD_BN` specification. The existing single-vendor modules are being preserved and migrated in phases.
 
-Current implementation milestone: **Phase 1 — Vendor Foundation**. This includes vendor applications, store profiles, vendor membership, private verification documents, admin review actions and product ownership fields. Product variants/inventory, vendor dashboards, master/suborders, commissions, payouts and seller fulfilment are subsequent phases and must not be considered complete yet.
+Current conversion status:
+
+- **Phase 1 — Vendor Foundation:** implementation present.
+- **Phase 2 — Product Variations & Inventory Foundation:** implementation present in source; runtime migration verification remains pending.
+- **Phase 3 — Data Design:** target ERD, table specifications, state machines and financial design prepared; owner/finance sign-off remains pending.
+- **Phase 4 — UI & Structure:** vendor portal layouts, navigation and responsive screen structure prepared.
+- **Phase 5A — Vendor Operations:** vendor routes, membership middleware, ownership Policies, dashboard, product CRUD, variations, inventory, store/account profile and product moderation implemented in source. Additive migration and feature tests included; local MySQL/browser verification remains required.
+- **Phase 5B — Marketplace Operations:** multi-vendor cart, master/suborders, payment, commission, ledger, payout, shipping and refunds remain pending business decisions and implementation.
+
+Master/suborders, seller fulfilment, commission, payouts and marketplace checkout are not operational in Phase 5A; they remain Phase 5B scope and require Phase 6 QA/UAT.
 
 See `docs/MULTI-VENDOR-IMPLEMENTATION-STATUS.md` for the current implementation boundary and unresolved business decisions.
 
@@ -1341,3 +1353,8 @@ README.md ✅
 ```
 
 ShopPilot's documentation baseline is now ready to guide implementation.
+
+
+## Marketplace Phase 5B
+
+See `docs/PHASE-5B-MARKETPLACE-OPERATIONS.md` for seller suborders, payment verification, shipping, commission, vendor ledger, payouts, refunds and migration instructions. Back up the database before applying the new additive migration.

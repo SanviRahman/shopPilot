@@ -25,8 +25,8 @@
             <div class="track-panel-title"><div><span><i class="fas fa-box-open"></i></span><div><h3>Order Summary</h3><p>{{ $order->items->sum('quantity') }} item(s) in this order</p></div></div></div>
             <div class="track-order-items">
                 @foreach($order->items as $item)
-                    @php $image = $item->product?->thumbnail_url ?: asset('assets/website/images/product-placeholder.svg'); @endphp
-                    <article><img src="{{ $image }}" alt="{{ $item->product_name }}"><div><strong>{{ $item->product_name }}</strong><small>Qty: {{ $item->quantity }}</small></div><b>৳{{ number_format((float) $item->line_total, 0) }}</b></article>
+                    @php $image = $item->variant?->image_url ?: ($item->product?->thumbnail_url ?: asset('assets/website/images/product-placeholder.svg')); @endphp
+                    <article><img src="{{ $image }}" alt="{{ $item->product_name }}"><div><strong>{{ $item->product_name }}</strong><small>{{ $item->variant_name ? $item->variant_name . ' · ' : '' }}Qty: {{ $item->quantity }}</small></div><b>৳{{ number_format((float) $item->line_total, 0) }}</b></article>
                 @endforeach
             </div>
             <div class="track-totals"><div><span>Subtotal</span><strong>৳{{ number_format((float) $order->subtotal, 0) }}</strong></div><div><span>Discount</span><strong class="discount">-৳{{ number_format((float) $order->discount, 0) }}</strong></div><div><span>Shipping Fee</span><strong>৳{{ number_format((float) $order->shipping, 0) }}</strong></div><div class="total"><span>Total Amount</span><strong>৳{{ number_format((float) $order->grand_total, 0) }}</strong></div></div>

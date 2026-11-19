@@ -24,7 +24,7 @@ class WishlistService
         $productIds = $items->pluck('product_id')->map(fn ($id) => (int) $id)->all();
 
         $recommendedProducts = Product::query()
-            ->where('status', 'active')
+            ->published()
             ->where('stock_quantity', '>', 0)
             ->when($productIds !== [], fn ($query) => $query->whereNotIn('id', $productIds))
             ->with(['category', 'media'])
@@ -94,10 +94,11 @@ class WishlistService
     {
         $products = Wishlist::query()
             ->where('user_id', $user->id)
+            ->whereHas('product', fn ($query) => $query->published())
             ->with('product')
             ->get()
             ->pluck('product')
-            ->filter(fn (?Product $product) => $product && $product->status === 'active' && (int) $product->stock_quantity > 0)
+            ->filter(fn (?Product $product) => $product && (int) $product->stock_quantity > 0)
             ->values();
 
         $added = 0;

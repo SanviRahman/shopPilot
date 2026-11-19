@@ -34,6 +34,8 @@ class RolePermissionSeeder extends Seeder
                 'media.view', 'media.delete', 'media.restore', 'media.force-delete',
             ],
             'Vendors'         => ['vendors.view', 'vendors.approve', 'vendors.reject', 'vendors.suspend', 'vendors.reactivate'],
+            'Marketplace Finance' => ['marketplace-finance.view', 'marketplace-finance.manage'],
+            'Product Attributes' => ['product-attributes.view', 'product-attributes.create', 'product-attributes.update', 'product-attributes.delete'],
             'Products'        => [
                 'products.view', 'products.create', 'products.update',
                 'products.delete', 'products.restore', 'products.force-delete',

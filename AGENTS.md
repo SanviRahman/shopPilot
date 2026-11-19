@@ -1,6 +1,6 @@
 # ACTIVE MULTI-VENDOR MIGRATION OVERRIDE — 2026-11-18
 
-> The project is being converted from the original single-vendor ShopPilot implementation into a genuine multi-vendor marketplace. The uploaded `Multi_Vendor_Ecommerce_Requirements_PRD_BN` is now the active product specification. This override takes precedence over older single-vendor statements below whenever they conflict.
+> The project is being converted from the original single-vendor ShopPilot implementation into a genuine multi-vendor marketplace. The uploaded `Multi_Vendor_Ecommerce_Requirements_PRD_BN` is now the active product specification. The Phase 3 documents `docs/MULTI-VENDOR-ARCHITECTURE-AND-ADRS.md`, `docs/MULTI-VENDOR-ERD.md`, `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md`, `docs/MULTI-VENDOR-STATE-MACHINES.md` and `docs/MULTI-VENDOR-FINANCIAL-DESIGN.md` define the marketplace target design. This override takes precedence over older single-vendor statements below whenever they conflict.
 
 - Preserve the existing Laravel 13.34.0 architecture, `admin` / `web` guards, Spatie Permission, Media Library, Blade, Bootstrap, jQuery/AJAX and existing working modules.
 - Multi-vendor ownership, seller onboarding, store profiles, vendor-scoped catalog/inventory/orders, master orders with vendor suborders, financial ledger and payout isolation are marketplace requirements.
@@ -9,6 +9,8 @@
 - Existing products with `vendor_id = NULL` are legacy platform-managed products until a data-ownership decision and migration are approved. Do not silently assign them to a seller.
 - Existing single-vendor checkout is not multi-vendor ready. Do not expose seller fulfillment or claim marketplace checkout is complete until master/suborder, reservation, payment and reconciliation work is implemented.
 - Merchant of record, gateway/COD provider, commission basis, tax, shipping ownership, payout policy and other `[CONFIRM]` decisions must not be guessed. See `docs/MULTI-VENDOR-IMPLEMENTATION-STATUS.md` and the marketplace PRD decision register.
+- Phase 4 vendor portal UI/structure is documented in `docs/MULTI-VENDOR-PHASE-4-UI-STRUCTURE.md`, `docs/MULTI-VENDOR-ROUTE-MAP.md` and `docs/MULTI-VENDOR-FOLDER-STRUCTURE.md`. The `resources/views/vendor-portal/` templates are presentation blueprints only until Phase 5 registers routes and implements controllers, `vendor.active` middleware, Policies, Services and tests.
+- Do not activate the vendor portal with placeholder routes or expose unscoped data. Vendor routes must use `auth:web`, `customer.active`, active `vendor_users` membership, approved vendor status and resource ownership checks.
 - The existing documents below remain useful for current Laravel conventions and legacy behavior only where they do not contradict the active marketplace PRD.
 
 ---
@@ -17,7 +19,7 @@
 # AI Coding Agent Operating Contract
 
 > **Project:** ShopPilot E-commerce  
-> **Project Type:** Role-Based Single-Store E-commerce & Order Operations System  
+> **Project Type:** Multi-Vendor E-commerce Marketplace (converted from the legacy single-store ShopPilot application)  
 > **Architecture:** Service-Oriented Modular Laravel Monolith  
 > **Backend:** PHP + Laravel  
 > **Frontend:** Laravel Blade  
@@ -26,9 +28,9 @@
 > **Media:** Spatie Laravel Media Library  
 > **Cart:** Laravel Session  
 > **Payment:** Manual bKash / Nagad / Rocket Submission  
-> **Primary Goal:** Complete, secure, practice-oriented 13-day Laravel build  
+> **Primary Goal:** Secure, maintainable, production-conscious multi-vendor marketplace development  
 > **Status:** Coding-Agent Instruction File  
-> **Schema Alignment:** Follow synchronized `docs/ShopPilot-08-DATABASE-SCHEMA.md` / `ShopPilot-database-schema-v2.md` v2.0. Staff identity is `Admin`/`admins`/`admin` guard; Customer identity is `User`/`users`/`web` guard.
+> **Schema Alignment:** `docs/ShopPilot-08-DATABASE-SCHEMA.md` and `ShopPilot-database-schema-v2.md` v2.0 are legacy single-vendor baselines. For the multi-vendor target, follow `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md`. Staff identity remains `Admin`/`admins`/`admin` guard; customer/vendor identity remains `User`/`users`/`web` guard.
 
 > **Applies To:** Claude Code, Codex, ChatGPT coding agents, IDE agents, and human contributors using AI assistance  
 > **Version:** 1.0  
@@ -214,6 +216,13 @@ The approved documentation set is:
 08-DATABASE-SCHEMA.md
 09-APPLICATION-FLOW.md
 10-FOLDER-STRUCTURE.md
+docs/MULTI-VENDOR-IMPLEMENTATION-STATUS.md
+docs/MULTI-VENDOR-PHASE-3-DATA-DESIGN.md
+docs/MULTI-VENDOR-ARCHITECTURE-AND-ADRS.md
+docs/MULTI-VENDOR-ERD.md
+docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md
+docs/MULTI-VENDOR-STATE-MACHINES.md
+docs/MULTI-VENDOR-FINANCIAL-DESIGN.md
 AGENTS.md
 README.md
 ```
@@ -272,11 +281,7 @@ Deny-by-default behavior
 
 ## Business Behavior
 
-Primary:
-
-```text
-05-BUSINESS-RULES.md
-```
+Use `05-BUSINESS-RULES.md` for existing approved ShopPilot behavior and the active Multi-Vendor PRD for marketplace requirements. Use `docs/MULTI-VENDOR-STATE-MACHINES.md` for current-versus-proposed marketplace transitions; proposed states remain unapproved until the related decision is confirmed.
 
 It defines:
 
@@ -292,11 +297,13 @@ Which behavior remains TBD
 
 ## Architecture
 
-Primary:
+For multi-vendor target architecture and decisions, primary:
 
 ```text
-06-ARCHITECTURE.md
+docs/MULTI-VENDOR-ARCHITECTURE-AND-ADRS.md
 ```
+
+`06-ARCHITECTURE.md` remains the legacy implementation reference for unchanged modules only.
 
 It defines:
 
@@ -314,11 +321,13 @@ Package boundaries
 
 ## Data Relationships
 
-Primary:
+For the multi-vendor target, primary:
 
 ```text
-07-DATABASE-ERD.md
+docs/MULTI-VENDOR-ERD.md
 ```
+
+Use `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md` for target ownership keys and constraints. `07-DATABASE-ERD.md` remains the legacy single-vendor baseline.
 
 It defines:
 
@@ -334,11 +343,13 @@ Historical relationship boundaries
 
 ## Physical Database
 
-Primary:
+For the multi-vendor target, primary design specification:
 
 ```text
-08-DATABASE-SCHEMA.md
+docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md
 ```
+
+Use `08-DATABASE-SCHEMA.md` for existing legacy columns until the target migrations are implemented and synchronized.
 
 It defines:
 
@@ -430,23 +441,13 @@ must be followed.
 
 ## If the question is about exact database columns
 
-```text
-08-DATABASE-SCHEMA.md
-```
-
-is authoritative unless it contradicts an approved Business Rule.
+For columns already implemented, inspect the current migration/model first and use `08-DATABASE-SCHEMA.md` as the legacy baseline. For the multi-vendor target, use `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md`. The target specification is not proof that a table/column already exists and does not authorize migrations while owner decisions remain open.
 
 ---
 
 ## If the question is about relationships
 
-```text
-07-DATABASE-ERD.md
-+
-08-DATABASE-SCHEMA.md
-```
-
-are authoritative.
+For multi-vendor target relationships use `docs/MULTI-VENDOR-ERD.md` plus `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md`. For the currently implemented legacy schema use `07-DATABASE-ERD.md` plus `08-DATABASE-SCHEMA.md` and verify against migrations.
 
 ---
 
@@ -553,7 +554,7 @@ Preserve TBD.
 
 # 8. Non-Negotiable Product Invariants
 
-These must never be broken.
+These invariants describe existing customer/staff behavior that must be preserved where applicable. Marketplace-specific ownership, vendor suborders, reservations, payment attempts, ledger and payout invariants are additionally defined in the Phase 3 documents. Where a legacy rule conflicts with the active Multi-Vendor PRD, the PRD and Phase 3 design take precedence.
 
 ## INV-001 — Guest Checkout Exists
 
@@ -668,9 +669,7 @@ Transaction ID submission is not provider verification.
 
 ## INV-011 — Manual Payment Verification
 
-Authorized staff manually verifies/rejects Payment Submission.
-
-No automatic provider API verification exists in P0.
+For the existing manual MFS submission flow, authorized staff manually verifies/rejects the submitted proof. This does not replace the PRD-required provider adapter, signed webhook and idempotent transaction verification for a gateway selected under D-03. Do not implement a provider until the provider decision is approved.
 
 ---
 
@@ -1758,7 +1757,10 @@ Do not use `FLOAT` / `DOUBLE` for authoritative money.
 
 ---
 
-# 36. Core Tables
+# 36. Legacy Single-Vendor Core Tables
+
+> This is the currently implemented legacy table baseline. The multi-vendor target table inventory is defined in `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md`.
+
 
 Application/authentication P0 tables:
 
@@ -1841,11 +1843,13 @@ orders.discount monetary snapshot
 
 ## PaymentSubmission Cardinality
 
-P0:
+Legacy manual-payment flow:
 
 ```text
 Order hasOne PaymentSubmission
 ```
+
+This one-to-one relation does not replace the future marketplace `payment_attempts`, `payment_transactions` and `webhook_inbox` records defined in the Phase 3 target design.
 
 Physical:
 
@@ -1879,7 +1883,9 @@ because global duplicate policy remains TBD.
 
 ---
 
-# 38. Money / Status / Timestamp Rules
+# 38. Legacy Money / Status / Timestamp Rules
+
+> The values below are the existing legacy order/payment statuses. Marketplace vendor suborder, payment attempt, shipment, refund and payout states are specified in `docs/MULTI-VENDOR-STATE-MACHINES.md`.
 
 Money:
 
@@ -2220,6 +2226,8 @@ Do not clear Cart before commit.
 ---
 
 # 49. Manual Payment Rules
+
+These rules describe the existing manual MFS path only. They do not prohibit PRD-required gateway/COD support after provider and collection decisions D-03/D-06 are approved.
 
 P0 methods:
 
@@ -3232,35 +3240,27 @@ Do not expose insecure predictable lookup.
 
 ---
 
-# 88. Explicitly Prohibited P0 Changes
+# 88. Legacy Scope Exclusions and Marketplace Guardrails
 
-Do not add:
+The original single-vendor exclusions below are superseded where the active Multi-Vendor PRD explicitly requires the capability. The following remain excluded or conditional unless the owner approves them:
 
 ```text
-Multi-Vendor
-Marketplace
-Multi-Tenancy
-Workspace model
-Real bKash API
-Real Nagad API
-Real Rocket API
-Automatic provider payment verification
-Courier API
-Complex Product Variants
+Multi-Tenancy / Workspace model
 Multi-Warehouse
-Advanced Inventory Ledger
-Automatic Refund Gateway
-Multi-Currency
+Shared cross-vendor catalog (D-01 pending)
+Automatic gateway split payout unless the selected provider supports it (D-03)
+Courier API integration before provider/contract confirmation (D-06)
+Multi-Currency before D-07 approval
 Multi-Language
 Native Mobile App
 Microservices
 AI module
-Accounting
-Affiliate
-Advanced Tax engine
+Affiliate / loyalty / subscriptions / promoted listings (later scope)
+General-purpose accounting/ERP beyond the approved vendor financial subledger
+Advanced tax engine before D-07 approval
 ```
 
-unless the user explicitly changes project scope.
+Multi-vendor ownership, Color/Size variants, stock reservation, provider payment verification, refunds, vendor ledger and payout are marketplace requirements; implement them only in the approved PRD sequence and never guess unresolved policy.
 
 ---
 
@@ -3484,7 +3484,10 @@ routes/agent.php
 
 ---
 
-# 97. Quick Reference — Critical Statuses
+# 97. Quick Reference — Legacy Critical Statuses
+
+> These are the current legacy status values. Marketplace state machines are in `docs/MULTI-VENDOR-STATE-MACHINES.md`.
+
 
 ## Order
 
@@ -3574,7 +3577,10 @@ Permission != ownership.
 
 ---
 
-# 99. Quick Reference — Critical Tables
+# 99. Quick Reference — Legacy Critical Tables
+
+> These are the current legacy tables. The multi-vendor target table set is in `docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md`.
+
 
 ```text
 admins
@@ -3626,7 +3632,7 @@ payment_submissions.verified_by_admin_id
 
 Every coding agent working on ShopPilot must preserve this contract:
 
-> **Build only the approved ShopPilot scope. Guest and logged-in Customers must both be able to purchase. Guest Checkout must never require registration. Guest Orders may use nullable `user_id`, while every Order preserves buyer/shipping snapshots. Cart remains session-based. Price, discount, stock, payment state, order state, permission, assignment, and ownership are server-authoritative. Manual MFS Transaction ID submission creates `submitted`, not `verified`. Authorized staff verify/reject payments. Customer sees only own Orders. Agent processes only assigned Orders by default. Controllers stay thin; Services own workflows; Form Requests validate input; Policies enforce resource authorization; Custom Rules remain focused; Enums own status values; Eloquent/MySQL own persistence. Checkout critical writes are atomic. Historical Order data is preserved. Undefined rules remain TBD. Out-of-scope enterprise modules must not be introduced without explicit approval.**
+> **Build the approved ShopPilot Multi-Vendor scope while preserving working legacy behavior. Guest and logged-in Customers may purchase according to the approved D-12 decision. Cart remains session-based initially. Reprice products, variants, discounts, shipping, tax and fees on the server. A vendor-owned resource requires active `vendor_users` membership plus matching resource ownership; a global role is not ownership proof. One customer-facing master order splits into vendor suborders; each seller sees only its own suborders and related items, shipments, returns and ledger. Stock reservation and payment/webhook processing are idempotent and transaction-safe. Keep order, payment, shipment, refund and payout states separate. Manual MFS submission remains `submitted` until staff verification; gateway payment requires signed provider evidence after D-03 approval. Vendor earnings use an append-only ledger; payout is not paid until transfer evidence is verified. Controllers stay thin; Services own workflows; Form Requests validate input; Policies enforce authorization; MySQL is the business source of truth. Historical order and financial records are preserved. Undefined policies remain blocked until owner confirmation.**
 
 When uncertain:
 
@@ -3648,10 +3654,27 @@ Preserve the approved invariants.
 04-USER-ROLES-AND-PERMISSIONS.md ✅
 05-BUSINESS-RULES.md ✅
 06-ARCHITECTURE.md ✅
-07-DATABASE-ERD.md ✅
-08-DATABASE-SCHEMA.md ✅
+07-DATABASE-ERD.md (legacy baseline)
+08-DATABASE-SCHEMA.md (legacy baseline)
+docs/MULTI-VENDOR-PHASE-3-DATA-DESIGN.md
+docs/MULTI-VENDOR-ARCHITECTURE-AND-ADRS.md
+docs/MULTI-VENDOR-ERD.md
+docs/MULTI-VENDOR-TABLE-SPECIFICATIONS.md
+docs/MULTI-VENDOR-STATE-MACHINES.md
+docs/MULTI-VENDOR-FINANCIAL-DESIGN.md
 09-APPLICATION-FLOW.md ✅
 10-FOLDER-STRUCTURE.md ✅
 AGENTS.md ✅
 README.md ← NEXT
 ```
+
+
+## Marketplace Phase 5B invariants
+
+- Keep seller order totals and commission snapshots immutable after checkout.
+- Do not edit or delete posted vendor ledger entries.
+- Payment verification consumes active stock reservations exactly once.
+- Seller fulfilment is scoped to the authenticated vendor.
+- Vendor earnings become available only after Admin delivery confirmation.
+- Manual payout/refund transfers require a recorded transfer reference.
+- Do not enable COD, gateway APIs, tax or arbitrary finance defaults without an approved business decision.

@@ -30,7 +30,7 @@ class ShopPageService
             ->where('status', 'active')
             ->with('media')
             ->withCount([
-                'products as active_products_count' => fn (Builder $query) => $query->where('status', 'active'),
+                'products as active_products_count' => fn (Builder $query) => $query->published(),
             ])
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -58,7 +58,7 @@ class ShopPageService
         $featuredOnly = $request->boolean('featured');
 
         $globalMaxPrice = (float) (Product::query()
-            ->where('status', 'active')
+            ->published()
             ->selectRaw('MAX(COALESCE(NULLIF(sale_price, 0), regular_price)) as max_price')
             ->value('max_price') ?? 0);
         $globalMaxPrice = max(1000, (int) (ceil($globalMaxPrice / 500) * 500));
@@ -79,7 +79,7 @@ class ShopPageService
         $effectivePriceSql = 'COALESCE(NULLIF(sale_price, 0), regular_price)';
 
         $query = Product::query()
-            ->where('status', 'active')
+            ->published()
             ->with(['category', 'media']);
 
         if ($searchTerm !== '') {

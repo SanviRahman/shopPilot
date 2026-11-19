@@ -22,8 +22,8 @@ class ProductDetailsService
     {
         $product = Product::query()
             ->where('slug', $slug)
-            ->where('status', 'active')
-            ->with(['category', 'media'])
+            ->published()
+            ->with(['category', 'media', 'variants.inventoryBalance', 'variants.attributeValues.attribute', 'variants.media'])
             ->withSum([
                 'orderItems as sold_quantity' => function (Builder $query) {
                     $query->whereHas('order', function (Builder $orderQuery) {
@@ -34,7 +34,7 @@ class ProductDetailsService
             ->firstOrFail();
 
         $relatedProducts = Product::query()
-            ->where('status', 'active')
+            ->published()
             ->where('id', '!=', $product->getKey())
             ->when(
                 $product->category_id,
@@ -50,7 +50,7 @@ class ProductDetailsService
             $fallbackIds = $relatedProducts->pluck('id')->push($product->id);
 
             $fallbackProducts = Product::query()
-                ->where('status', 'active')
+                ->published()
                 ->whereNotIn('id', $fallbackIds)
                 ->with(['category', 'media'])
                 ->orderByDesc('featured')
@@ -64,8 +64,33 @@ class ProductDetailsService
         return [
             'product' => $product,
             'galleryImages' => $this->galleryImages($product),
+            'variantOptions' => $product->product_type === 'variable' ? $this->variantOptions($product) : [],
             'relatedProducts' => $relatedProducts->values(),
         ];
+    }
+
+    private function variantOptions(Product $product): array
+    {
+        return $product->variants
+            ->where('is_active', true)
+            ->map(fn ($variant) => [
+                'id' => $variant->id,
+                'sku' => $variant->sku,
+                'regular_price' => (float) $variant->regular_price,
+                'sale_price' => $variant->sale_price !== null ? (float) $variant->sale_price : null,
+                'stock_quantity' => $variant->available_quantity,
+                'image_url' => $variant->image_url,
+                'attributes' => $variant->attributeValues->map(fn ($value) => [
+                    'attribute_id' => $value->product_attribute_id,
+                    'attribute_name' => $value->attribute->name,
+                    'display_type' => $value->attribute->display_type,
+                    'value_id' => $value->id,
+                    'value' => $value->label,
+                    'color_code' => $value->color_code,
+                ])->values()->all(),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

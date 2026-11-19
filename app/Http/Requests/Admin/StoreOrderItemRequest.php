@@ -35,6 +35,7 @@ class StoreOrderItemRequest extends FormRequest
                 'integer',
                 Rule::exists('products', 'id')->whereNull('deleted_at'),
             ],
+            'product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'unit_price' => ['required', 'numeric', 'min:0'],
             'quantity' => ['required', 'integer', 'min:1', 'max:10000'],
         ];

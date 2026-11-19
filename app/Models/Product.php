@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasSEO;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,7 @@ class Product extends Model implements HasMedia
         'name',
         'slug',
         'sku',
+        'product_type',
         'short_description',
         'description',
         'regular_price',
@@ -71,6 +73,21 @@ class Product extends Model implements HasMedia
         return $this->belongsTo(Vendor::class);
     }
 
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function inventoryBalance(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(InventoryBalance::class);
+    }
+
+    public function moderationHistories(): HasMany
+    {
+        return $this->hasMany(ProductModerationHistory::class)->latest('created_at');
+    }
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -84,6 +101,21 @@ class Product extends Model implements HasMedia
     public function wishlistedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'wishlists')->withTimestamps();
+    }
+
+    public function scopePublished(Builder $query): Builder
+    {
+        $requireModeration = (bool) config('shop.vendor_products.require_moderation', true);
+
+        return $query->where('status', 'active')
+            ->where(fn (Builder $builder) => $builder->whereNull('vendor_id')->orWhere(function (Builder $vendorQuery) use ($requireModeration) {
+                if ($requireModeration) {
+                    $vendorQuery->where('moderation_status', 'approved');
+                }
+
+                $vendorQuery->whereHas('vendor', fn (Builder $vendor) => $vendor->where('status', 'approved')
+                    ->whereHas('store', fn (Builder $store) => $store->where('status', 'active')->where('vacation_mode', false)));
+            }));
     }
 
     public function isActive(): bool

@@ -78,6 +78,26 @@ class Vendor extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(VendorOrder::class);
+    }
+
+    public function payoutAccounts(): HasMany
+    {
+        return $this->hasMany(VendorPayoutAccount::class);
+    }
+
+    public function payoutRequests(): HasMany
+    {
+        return $this->hasMany(PayoutRequest::class);
+    }
+
+    public function financialEntries(): HasMany
+    {
+        return $this->hasMany(VendorFinancialLedger::class);
+    }
+
     public function canTransitionTo(string $status): bool
     {
         $transitions = [
@@ -95,4 +115,14 @@ class Vendor extends Model
     {
         return $this->status === self::STATUS_APPROVED;
     }
+    public function vendorOrders(): HasMany
+    {
+        return $this->hasMany(VendorOrder::class);
+    }
+
+    public function financialLedger(): HasMany
+    {
+        return $this->hasMany(VendorFinancialLedger::class);
+    }
+
 }

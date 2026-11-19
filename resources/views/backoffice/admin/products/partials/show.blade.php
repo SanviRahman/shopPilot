@@ -24,6 +24,11 @@
                     </div>
                 </div>
 
+                <div id="showProdVariants" class="card card-outline card-primary mb-3 shadow-none border d-none">
+                    <div class="card-header bg-white py-2"><span class="font-weight-bold text-dark small"><i class="fas fa-layer-group text-primary mr-1"></i> Product Variations</span></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Options</th><th>SKU</th><th>Price</th><th>Available</th></tr></thead><tbody id="showProdVariantsRows"></tbody></table></div></div>
+                </div>
+
                 <div class="card card-outline card-secondary mb-3 shadow-none border">
                     <div class="card-header bg-white py-2">
                         <span class="font-weight-600 text-dark small text-uppercase"><i class="fas fa-globe text-primary mr-1"></i> Search Engine (SEO) Preview</span>

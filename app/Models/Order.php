@@ -116,6 +116,16 @@ class Order extends Model
         return $this->hasOne(PaymentSubmission::class)->withTrashed();
     }
 
+    public function vendorOrders(): HasMany
+    {
+        return $this->hasMany(VendorOrder::class);
+    }
+
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
     public function isGuest(): bool
     {
         return $this->user_id === null;

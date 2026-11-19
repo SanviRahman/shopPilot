@@ -14,7 +14,7 @@
 @endphp
 
 @section('content')
-<section class="checkout-page" data-checkout-root data-initial-step="{{ $initialStep }}">
+<section class="checkout-page" data-currency-symbol="{{ config('shop.marketplace.currency_symbol') }}" data-checkout-root data-initial-step="{{ $initialStep }}">
     <div class="container">
         <nav class="checkout-breadcrumb" aria-label="Breadcrumb" data-checkout-reveal>
             <a href="{{ route('website.home') }}">Home</a>
@@ -153,7 +153,7 @@
                                         <span class="delivery-radio"></span>
                                         <span class="delivery-icon"><i class="fas {{ $method['icon'] ?? 'fa-truck' }}"></i></span>
                                         <span class="delivery-copy"><strong>{{ $method['label'] }}</strong><small>{{ $method['description'] }}</small></span>
-                                        <span class="delivery-fee">{{ (float) $method['fee'] > 0 ? '৳'.number_format((float) $method['fee'], 0) : 'Free' }}</span>
+                                        <span class="delivery-fee">{{ (float) $method['fee'] > 0 ? config('shop.marketplace.currency_symbol').number_format((float) $method['fee'], 0) : 'Free' }}</span>
                                     </label>
                                 @endforeach
                             </div>
@@ -246,11 +246,11 @@
 
                             <div class="checkout-summary-items">
                                 @foreach($items as $item)
-                                    @php $product = $item['product']; $image = $product->thumbnail_url ?: asset('assets/website/images/product-placeholder.svg'); @endphp
+                                    @php $product = $item['product']; $image = $item['image_url'] ?: asset('assets/website/images/product-placeholder.svg'); @endphp
                                     <article class="checkout-summary-item">
                                         <div class="summary-item-image">@if($item['discount_percent'] > 0)<span>-{{ $item['discount_percent'] }}%</span>@endif<img src="{{ $image }}" alt="{{ $product->name }}"></div>
-                                        <div><strong>{{ $product->name }}</strong><small>{{ $product->category?->name ?? 'ShopPilot' }} · Qty: {{ $item['quantity'] }}</small></div>
-                                        <div class="summary-item-price"><strong>৳{{ number_format($item['line_total'], 0) }}</strong>@if($item['has_sale'])<del>৳{{ number_format($item['regular_price'] * $item['quantity'], 0) }}</del>@endif</div>
+                                        <div><strong>{{ $product->name }}</strong><small>{{ $item['variant_label'] ?: ($product->category?->name ?? 'ShopPilot') }} · Qty: {{ $item['quantity'] }}</small></div>
+                                        <div class="summary-item-price"><strong>{{ config('shop.marketplace.currency_symbol') }}{{ number_format($item['line_total'], 0) }}</strong>@if($item['has_sale'])<del>{{ config('shop.marketplace.currency_symbol') }}{{ number_format($item['regular_price'] * $item['quantity'], 0) }}</del>@endif</div>
                                     </article>
                                 @endforeach
                             </div>
@@ -259,7 +259,7 @@
                                 <button type="button" class="checkout-coupon-toggle" data-checkout-coupon-toggle aria-expanded="{{ $coupon ? 'true' : 'false' }}"><span><i class="fas fa-ticket-alt"></i> Have a Coupon Code?</span><i class="fas fa-chevron-down"></i></button>
                                 <div class="checkout-coupon-body {{ $coupon ? 'open' : '' }}" data-checkout-coupon-body>
                                     <div class="checkout-coupon-applied {{ $coupon ? '' : 'hidden' }}" data-coupon-applied>
-                                        <p><span>Applied</span><strong data-coupon-code>{{ $coupon?->code }}</strong><small>You saved ৳<b data-coupon-saving>{{ number_format($discount, 0) }}</b></small></p>
+                                        <p><span>Applied</span><strong data-coupon-code>{{ $coupon?->code }}</strong><small>You saved {{ config('shop.marketplace.currency_symbol') }}<b data-coupon-saving>{{ number_format($discount, 0) }}</b></small></p>
                                         <button type="button" data-coupon-remove>Remove</button>
                                     </div>
                                     <div class="checkout-coupon-form {{ $coupon ? 'hidden' : '' }}" data-coupon-form>
@@ -270,13 +270,14 @@
                                 </div>
                             </div>
 
-                            <div class="checkout-totals" data-subtotal="{{ $subtotal }}" data-discount="{{ $discount }}">
-                                <div><span>Subtotal ({{ $count }} items)</span><strong data-total-subtotal>৳{{ number_format($subtotal, 0) }}</strong></div>
-                                <div class="discount"><span>Discount</span><strong data-total-discount>-৳{{ number_format($discount, 0) }}</strong></div>
+                            <div class="checkout-totals" data-subtotal="{{ $subtotal }}" data-discount="{{ $discount }}" data-seller-count="{{ $shippingSellerCount }}" data-vendor-shipping="{{ $vendorShippingTotal }}">
+                                <div><span>Subtotal ({{ $count }} items)</span><strong data-total-subtotal>{{ config('shop.marketplace.currency_symbol') }}{{ number_format($subtotal, 0) }}</strong></div>
+                                <div class="discount"><span>Discount</span><strong data-total-discount>-{{ config('shop.marketplace.currency_symbol') }}{{ number_format($discount, 0) }}</strong></div>
                                 <div><span>Shipping Fee</span><strong data-total-shipping>—</strong></div>
-                                <div class="checkout-grand-total"><span>Total Amount</span><strong data-total-grand>৳{{ number_format($grandTotal, 0) }}</strong></div>
+                                <small class="checkout-shipping-note">Delivery is calculated separately for each seller.</small>
+                                <div class="checkout-grand-total"><span>Total Amount</span><strong data-total-grand>{{ config('shop.marketplace.currency_symbol') }}{{ number_format($grandTotal, 0) }}</strong></div>
                             </div>
-                            <div class="checkout-savings {{ $discount > 0 ? '' : 'hidden' }}" data-savings-line><i class="fas fa-check-circle"></i> You save ৳<strong data-savings>{{ number_format($discount, 0) }}</strong> on this order</div>
+                            <div class="checkout-savings {{ $discount > 0 ? '' : 'hidden' }}" data-savings-line><i class="fas fa-check-circle"></i> You save {{ config('shop.marketplace.currency_symbol') }}<strong data-savings>{{ number_format($discount, 0) }}</strong> on this order</div>
                         </div>
                     </section>
 

@@ -110,6 +110,67 @@
         padding-top: .25rem;
     }
 
+    /* Product and nested attribute modals use a fixed viewport frame. */
+    #productFormModal .modal-dialog,
+    #productAttributeModal .modal-dialog {
+        width: calc(100% - 2rem);
+        height: calc(100vh - 2rem) !important;
+        max-height: calc(100vh - 2rem);
+        margin: 1rem auto;
+    }
+
+    #productFormModal .modal-dialog {
+        max-width: 1040px;
+    }
+
+    #productAttributeModal .modal-dialog {
+        max-width: 1180px;
+    }
+
+    #productFormModal .modal-content,
+    #productAttributeModal .modal-content {
+        height: 100% !important;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #productFormModal .modal-content > form {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+    }
+
+    #productFormModal .modal-header,
+    #productFormModal .modal-footer,
+    #productAttributeModal .modal-header,
+    #productAttributeModal .modal-footer {
+        flex: 0 0 auto;
+    }
+
+    #productFormModal .modal-body,
+    #productAttributeModal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 0;
+        max-height: none !important;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #productFormModal .modal-footer,
+    #productAttributeModal .modal-footer {
+        position: relative;
+        z-index: 5;
+        background: #f8f9fa !important;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, .06);
+    }
+
     /* Smaller cards only on the Media index/trash listing. */
     .media-card .media-preview {
         height: 140px;
@@ -143,15 +204,31 @@
             padding-right: 1rem !important;
         }
 
-        #categoryFormModal .modal-dialog {
+        #categoryFormModal .modal-dialog,
+        #productFormModal .modal-dialog,
+        #productAttributeModal .modal-dialog {
             width: calc(100% - 1rem);
             height: calc(100vh - 1rem) !important;
+            max-height: calc(100vh - 1rem);
             margin: .5rem auto;
+        }
+
+        #categoryFormModal .modal-dialog,
+        #productFormModal .modal-dialog,
+        #productAttributeModal .modal-dialog {
+            height: calc(100dvh - 1rem) !important;
+            max-height: calc(100dvh - 1rem);
         }
 
         #categoryFormModal .modal-header,
         #categoryFormModal .modal-body,
-        #categoryFormModal .modal-footer {
+        #categoryFormModal .modal-footer,
+        #productFormModal .modal-header,
+        #productFormModal .modal-body,
+        #productFormModal .modal-footer,
+        #productAttributeModal .modal-header,
+        #productAttributeModal .modal-body,
+        #productAttributeModal .modal-footer {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
         }

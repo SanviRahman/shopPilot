@@ -47,7 +47,8 @@ class CustomerAccountService
         $search = trim((string) $search);
 
         $query = $user->orders()
-            ->with(['items.product.media', 'paymentSubmission.paymentMethod'])
+            ->with(['items.product.media',
+                'items.variant.media', 'paymentSubmission.paymentMethod'])
             ->latest();
 
         if ($status !== null) {
@@ -78,9 +79,14 @@ class CustomerAccountService
             ->where('order_number', $orderNumber)
             ->with([
                 'items.product.media',
+                'items.variant.media',
                 'coupon',
                 'paymentSubmission.paymentMethod',
                 'histories' => fn ($query) => $query->orderBy('created_at'),
+                'vendorOrders.vendor.store',
+                'vendorOrders.items.product.media',
+                'vendorOrders.items.variant.media',
+                'vendorOrders.refunds.items',
             ])
             ->firstOrFail();
     }

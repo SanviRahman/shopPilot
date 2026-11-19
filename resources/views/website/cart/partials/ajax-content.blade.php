@@ -58,14 +58,14 @@
                         @foreach($items as $index => $item)
                             @php
                                 $product = $item['product'];
-                                $image = $product->thumbnail_url ?: asset('assets/website/images/product-placeholder.svg');
+                                $image = $item['image_url'] ?: asset('assets/website/images/product-placeholder.svg');
                             @endphp
                             <article class="cart-item" data-cart-item data-cart-reveal style="--cart-delay: {{ min($index * 65, 320) }}ms">
                                 <label class="cart-item-check" aria-label="Select {{ $product->name }}">
                                     <input
                                         type="checkbox"
-                                        name="product_ids[]"
-                                        value="{{ $product->id }}"
+                                        name="item_keys[]"
+                                        value="{{ $item['key'] }}"
                                         form="cartRemoveSelectedForm"
                                         data-cart-item-check
                                         checked
@@ -84,12 +84,15 @@
                                     <span>{{ $product->category?->name ?? 'ShopPilot Product' }}</span>
                                     <h2><a href="{{ route('website.products.show', $product->slug) }}">{{ $product->name }}</a></h2>
                                     <div class="cart-item-meta">
-                                        <span><i class="fas fa-barcode"></i> {{ $product->sku }}</span>
+                                        <span><i class="fas fa-barcode"></i> {{ $item['sku'] }}</span>
                                         <span class="{{ $item['in_stock'] ? 'available' : 'unavailable' }}">
                                             <i class="fas {{ $item['in_stock'] ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
                                             {{ $item['in_stock'] ? 'In Stock' : 'Out of Stock' }}
                                         </span>
                                     </div>
+                                    @if($item['variant_label'])
+                                        <small class="cart-variant-label">{{ $item['variant_label'] }}</small>
+                                    @endif
                                     @if($item['in_stock'] && $item['stock_quantity'] <= 5)
                                         <small class="cart-low-stock">Only {{ $item['stock_quantity'] }} left in stock</small>
                                     @endif
@@ -104,7 +107,7 @@
                                 </div>
 
                                 <form
-                                    action="{{ route('website.cart.items.update', $product->id) }}"
+                                    action="{{ route('website.cart.items.update', $item['key']) }}"
                                     method="POST"
                                     class="cart-quantity-form"
                                     data-cart-quantity-form
@@ -139,7 +142,7 @@
                                         <a href="{{ route('website.login') }}" class="cart-heart" aria-label="Login to save {{ $product->name }}"><i class="far fa-heart"></i></a>
                                     @endauth
                                     <form
-                                        action="{{ route('website.cart.items.destroy', $product->id) }}"
+                                        action="{{ route('website.cart.items.destroy', $item['key']) }}"
                                         method="POST"
                                         data-confirm-form="Remove {{ $product->name }} from your cart?"
                                         data-confirm-title="Remove this item?"

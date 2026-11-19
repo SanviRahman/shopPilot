@@ -1,6 +1,9 @@
 # ShopPilot E-commerce — Database ERD
 # শপপাইলট ই-কমার্স — ডেটাবেজ ERD
 
+> **Multi-vendor authority notice:** This is the legacy single-vendor ERD. For the active marketplace target, use `MULTI-VENDOR-ERD.md` and `MULTI-VENDOR-TABLE-SPECIFICATIONS.md`. Existing implemented relationships must still be verified against migrations.
+
+
 > **Document:** Logical Database ERD / লজিক্যাল ডেটাবেজ রিলেশনশিপ
 > **Project:** ShopPilot E-commerce
 > **Source of Truth:** `ShopPilot-database-schema-v2.md` v2.0 and synchronized `ShopPilot-08-DATABASE-SCHEMA.md`

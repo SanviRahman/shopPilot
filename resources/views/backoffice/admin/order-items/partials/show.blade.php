@@ -16,6 +16,7 @@
                     </div>
                     <h5 class="font-weight-bold mb-1" id="show-product-name"></h5>
                     <p class="text-muted small mb-0">SKU: <code id="show-sku"></code></p>
+                    <p class="text-muted small mb-0 d-none" id="show-variant-name"></p>
                 </div>
 
                 <ul class="list-group list-group-flush border rounded">

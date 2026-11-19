@@ -1,5 +1,5 @@
 <div class="modal fade" id="categoryFormModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="categoryFormModalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content border-0 shadow">
             <form id="categoryAjaxForm" action="" method="POST" enctype="multipart/form-data" autocomplete="off">
                 @csrf

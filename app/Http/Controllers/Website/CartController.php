@@ -43,6 +43,7 @@ class CartController extends Controller
         $data = $request->validated();
         $productId = (int) $data['product_id'];
         $quantity = (int) ($data['quantity'] ?? 1);
+        $variantId = isset($data['variant_id']) ? (int) $data['variant_id'] : null;
 
         $purchaseMode = ($data['purchase_mode'] ?? 'cart') === 'buy_now'
             || ($data['redirect_to'] ?? 'back') === 'checkout'
@@ -50,7 +51,7 @@ class CartController extends Controller
             : 'cart';
 
         if ($purchaseMode === 'buy_now') {
-            $this->buyNowService->start($productId, $quantity);
+            $this->buyNowService->start($productId, $quantity, $variantId);
 
             $metaEvent = [
                 'name' => 'InitiateCheckout',
@@ -80,7 +81,7 @@ class CartController extends Controller
                 ->with('meta_event', $metaEvent);
         }
 
-        $this->cartService->add($productId, $quantity);
+        $this->cartService->add($productId, $quantity, $variantId);
 
         $metaEvent = [
             'name' => 'AddToCart',
@@ -112,9 +113,9 @@ class CartController extends Controller
         return back()->with('success', 'Product added to your cart.')->with('meta_event', $metaEvent);
     }
 
-    public function update(UpdateCartItemRequest $request, int $productId): JsonResponse|RedirectResponse
+    public function update(UpdateCartItemRequest $request, string $cartItemKey): JsonResponse|RedirectResponse
     {
-        $this->cartService->update($productId, (int) $request->validated('quantity'));
+        $this->cartService->update($cartItemKey, (int) $request->validated('quantity'));
 
         if ($this->wantsJson($request)) {
             return response()->json([
@@ -127,9 +128,9 @@ class CartController extends Controller
         return redirect()->route('website.cart.index')->with('success', 'Cart quantity updated.');
     }
 
-    public function destroy(Request $request, int $productId): JsonResponse|RedirectResponse
+    public function destroy(Request $request, string $cartItemKey): JsonResponse|RedirectResponse
     {
-        $this->cartService->remove($productId);
+        $this->cartService->remove($cartItemKey);
 
         if ($this->wantsJson($request)) {
             return response()->json([
@@ -144,7 +145,8 @@ class CartController extends Controller
 
     public function removeSelected(RemoveCartItemsRequest $request): JsonResponse|RedirectResponse
     {
-        $removed = $this->cartService->removeMany($request->validated('product_ids'));
+        $data = $request->validated();
+        $removed = $this->cartService->removeMany($data['item_keys'] ?? $data['product_ids']);
         $message = $removed === 1 ? 'Selected product removed.' : "{$removed} selected products removed.";
 
         if ($this->wantsJson($request)) {

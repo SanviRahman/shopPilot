@@ -15,8 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private readonly OrderHistoryService $orderHistoryService)
-    {
+    public function __construct(
+        private readonly OrderHistoryService $orderHistoryService,
+        private readonly MarketplaceOrderService $marketplaceOrderService,
+    ) {
     }
 
     public function create(array $data): Order
@@ -69,6 +71,13 @@ class OrderService
         return DB::transaction(function () use ($order, $data): Order {
             $currentAdmin = auth('admin')->user();
             $requestedStatus = (string) ($data['order_status'] ?? $order->order_status);
+            $isMarketplaceOrder = $order->vendorOrders()->exists();
+            if ($isMarketplaceOrder && $requestedStatus !== $order->order_status && $requestedStatus !== Order::STATUS_CANCELLED) {
+                throw ValidationException::withMessages(['order_status' => 'Marketplace master order status is derived from seller orders. Update the seller order instead.']);
+            }
+            if ($isMarketplaceOrder) {
+                unset($data['subtotal'], $data['discount'], $data['shipping'], $data['grand_total'], $data['coupon_id'], $data['coupon_code']);
+            }
             $previousStatus = $order->order_status;
             $previousAgentId = $order->assigned_agent_id;
 
@@ -105,6 +114,10 @@ class OrderService
             $order->update($data);
             $order->refresh();
 
+            if ($requestedStatus === Order::STATUS_CANCELLED && $previousStatus !== Order::STATUS_CANCELLED && $order->vendorOrders()->exists()) {
+                $this->marketplaceOrderService->cancelUnpaidOrder($order, 'Cancelled by marketplace administration.');
+            }
+
             if ($order->assigned_agent_id !== $previousAgentId) {
                 $this->orderHistoryService->recordAdminEvent(
                     order: $order,
@@ -127,6 +140,9 @@ class OrderService
 
     public function delete(Order $order): void
     {
+        if ($order->vendorOrders()->exists()) {
+            throw ValidationException::withMessages(['order' => 'Marketplace orders cannot be moved to trash while seller orders and financial records exist.']);
+        }
         $order->delete();
     }
 

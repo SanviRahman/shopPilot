@@ -196,13 +196,13 @@ return [
         // E-COMMERCE MANAGEMENT
         [
             'header' => 'E-COMMERCE MANAGEMENT',
-            'can'    => ['categories.view', 'products.view', 'vendors.view',
+            'can'    => ['categories.view', 'products.view', 'product-attributes.view', 'vendors.view',
                 'coupons.view', 'payment-methods.view'],
         ],
         [
             'text'    => 'Ecommerce',
             'icon'    => 'fas fa-fw fa-shopping-bag',
-            'can'     => ['categories.view', 'products.view', 'vendors.view',
+            'can'     => ['categories.view', 'products.view', 'product-attributes.view', 'vendors.view',
                 'coupons.view', 'payment-methods.view',
                 'orders.view', 'order-items.view', 'order-histories.view'],
             'submenu' => [
@@ -226,6 +226,13 @@ return [
                     'route'  => 'admin.products.index',
                     'active' => ['admin/products*'],
                     'can'    => 'products.view',
+                ],
+                [
+                    'text'   => 'Attributes',
+                    'icon'   => 'fas fa-fw fa-sliders-h',
+                    'route'  => 'admin.product-attributes.index',
+                    'active' => ['admin/product-attributes*'],
+                    'can'    => 'product-attributes.view',
                 ],
                 [
                     'text'   => 'Coupons',
@@ -258,6 +265,40 @@ return [
                     'can'    => 'orders.view',
                 ],
             ],
+        ],
+
+        // MARKETPLACE FINANCE
+        [
+            'header' => 'MARKETPLACE FINANCE',
+            'can' => 'marketplace-finance.view',
+        ],
+        [
+            'text' => 'Finance Overview',
+            'icon' => 'fas fa-fw fa-chart-line',
+            'route' => 'admin.marketplace-finance.index',
+            'active' => ['admin/marketplace-finance'],
+            'can' => 'marketplace-finance.view',
+        ],
+        [
+            'text' => 'Seller Orders',
+            'icon' => 'fas fa-fw fa-boxes',
+            'route' => 'admin.marketplace-finance.seller-orders',
+            'active' => ['admin/marketplace-finance/seller-orders'],
+            'can' => 'marketplace-finance.view',
+        ],
+        [
+            'text' => 'Vendor Payouts',
+            'icon' => 'fas fa-fw fa-wallet',
+            'route' => 'admin.marketplace-finance.payouts',
+            'active' => ['admin/marketplace-finance/payouts'],
+            'can' => 'marketplace-finance.view',
+        ],
+        [
+            'text' => 'Vendor Refunds',
+            'icon' => 'fas fa-fw fa-undo',
+            'route' => 'admin.marketplace-finance.refunds',
+            'active' => ['admin/marketplace-finance/refunds'],
+            'can' => 'marketplace-finance.view',
         ],
 
         // PAYMENT MANAGEMENT

@@ -80,9 +80,13 @@
 
     @include('backoffice.admin.products.partials.form')
     @include('backoffice.admin.products.partials.show')
+    @include('backoffice.admin.products.partials.attribute-manager-modal')
 
 @endsection
 
 @push('js')
     @include('backoffice.admin.products.partials.script', ['fetchUrl' => route('admin.products.index')])
+@endpush
+@push('css')
+<link rel="stylesheet" href="{{ asset('assets/admin/css/product-management.css') }}">
 @endpush

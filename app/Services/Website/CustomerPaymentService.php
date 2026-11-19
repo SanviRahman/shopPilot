@@ -69,6 +69,7 @@ class CustomerPaymentService
 
             $previousStatus = $order->payment_status;
             $order->update(['payment_status' => Order::PAYMENT_SUBMITTED]);
+            $order->vendorOrders()->update(['payment_status' => Order::PAYMENT_SUBMITTED]);
 
             $this->orderHistoryService->recordCustomerEvent(
                 order: $order,

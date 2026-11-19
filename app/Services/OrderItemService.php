@@ -14,15 +14,22 @@ class OrderItemService
     public function create(array $data): OrderItem
     {
         return DB::transaction(function () use ($data): OrderItem {
-            $product = Product::query()->findOrFail((int) $data['product_id']);
+            $order = Order::query()->findOrFail((int) $data['order_id']);
+            if ($order->vendorOrders()->exists()) {
+                throw ValidationException::withMessages(['order_id' => 'Marketplace order items are managed through seller fulfilment and refund workflows.']);
+            }
+
+            $product = Product::query()
+                ->with(['variants.inventoryBalance', 'variants.attributeValues.attribute'])
+                ->findOrFail((int) $data['product_id']);
+            $snapshot = $this->productSnapshot($product, isset($data['product_variant_id']) ? (int) $data['product_variant_id'] : null);
             $unitPrice = round((float) $data['unit_price'], 2);
             $quantity = (int) $data['quantity'];
 
             $orderItem = OrderItem::create([
                 'order_id' => (int) $data['order_id'],
                 'product_id' => $product->id,
-                'product_name' => $product->name,
-                'sku' => $product->sku,
+                ...$snapshot,
                 'unit_price' => $unitPrice,
                 'quantity' => $quantity,
                 'line_total' => round($unitPrice * $quantity, 2),
@@ -30,29 +37,39 @@ class OrderItemService
 
             $this->syncOrderTotals($orderItem->order_id);
 
-            return $orderItem->load(['order', 'product']);
+            return $orderItem->load(['order', 'product', 'variant']);
         });
     }
 
     public function update(OrderItem $orderItem, array $data): OrderItem
     {
         return DB::transaction(function () use ($orderItem, $data): OrderItem {
+            if ($orderItem->vendor_order_id) {
+                throw ValidationException::withMessages(['order_item' => 'Marketplace order items cannot be edited directly.']);
+            }
+
             $productId = (int) $data['product_id'];
+            $variantId = array_key_exists('product_variant_id', $data)
+                ? ($data['product_variant_id'] ? (int) $data['product_variant_id'] : null)
+                : $orderItem->product_variant_id;
             $unitPrice = round((float) $data['unit_price'], 2);
             $quantity = (int) $data['quantity'];
-
             $snapshot = [
                 'product_id' => $orderItem->product_id,
+                'product_variant_id' => $orderItem->product_variant_id,
                 'product_name' => $orderItem->product_name,
                 'sku' => $orderItem->sku,
+                'variant_name' => $orderItem->variant_name,
+                'variant_attributes' => $orderItem->variant_attributes,
             ];
 
-            if ($productId !== (int) $orderItem->product_id) {
-                $product = Product::query()->findOrFail($productId);
+            if ($productId !== (int) $orderItem->product_id || $variantId !== $orderItem->product_variant_id) {
+                $product = Product::query()
+                    ->with(['variants.inventoryBalance', 'variants.attributeValues.attribute'])
+                    ->findOrFail($productId);
                 $snapshot = [
                     'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'sku' => $product->sku,
+                    ...$this->productSnapshot($product, $variantId),
                 ];
             }
 
@@ -65,13 +82,58 @@ class OrderItemService
 
             $this->syncOrderTotals($orderItem->order_id);
 
-            return $orderItem->refresh()->load(['order', 'product']);
+            return $orderItem->refresh()->load(['order', 'product', 'variant']);
         });
+    }
+
+    private function productSnapshot(Product $product, ?int $variantId): array
+    {
+        if ($product->vendor_id && config('shop.vendor_products.require_moderation', true) && $product->moderation_status !== 'approved') {
+            throw ValidationException::withMessages(['product_id' => 'This vendor product has not been approved by the marketplace.']);
+        }
+
+        if ($product->product_type !== 'variable') {
+            if ($variantId) {
+                throw ValidationException::withMessages(['product_variant_id' => 'A simple product does not have variations.']);
+            }
+
+            return [
+                'product_variant_id' => null,
+                'product_name' => $product->name,
+                'sku' => $product->sku,
+                'variant_name' => null,
+                'variant_attributes' => null,
+            ];
+        }
+
+        $variant = $variantId
+            ? $product->variants->firstWhere('id', $variantId)
+            : null;
+
+        if (! $variant || ! $variant->is_active) {
+            throw ValidationException::withMessages(['product_variant_id' => 'Choose an active variation for this product.']);
+        }
+
+        $attributes = $variant->attributeValues->map(fn ($value) => [
+            'attribute' => $value->attribute->name,
+            'value' => $value->label,
+        ])->values()->all();
+
+        return [
+            'product_variant_id' => $variant->id,
+            'product_name' => $product->name,
+            'sku' => $variant->sku,
+            'variant_name' => collect($attributes)->map(fn ($item) => $item['attribute'] . ': ' . $item['value'])->implode(' / '),
+            'variant_attributes' => $attributes,
+        ];
     }
 
     public function delete(OrderItem $orderItem): void
     {
         DB::transaction(function () use ($orderItem): void {
+            if ($orderItem->vendor_order_id) {
+                throw ValidationException::withMessages(['order_item' => 'Marketplace order items cannot be deleted directly.']);
+            }
             $orderId = $orderItem->order_id;
             $orderItem->delete();
             $this->syncOrderTotals($orderId);
@@ -81,6 +143,9 @@ class OrderItemService
     public function restore(OrderItem $orderItem): void
     {
         DB::transaction(function () use ($orderItem): void {
+            if ($orderItem->vendor_order_id) {
+                throw ValidationException::withMessages(['order_item' => 'Marketplace order items cannot be restored directly.']);
+            }
             $orderItem->restore();
             $this->syncOrderTotals($orderItem->order_id);
         });
@@ -89,6 +154,9 @@ class OrderItemService
     public function forceDelete(OrderItem $orderItem): void
     {
         DB::transaction(function () use ($orderItem): void {
+            if ($orderItem->vendor_order_id) {
+                throw ValidationException::withMessages(['order_item' => 'Marketplace order items cannot be permanently deleted.']);
+            }
             $orderId = $orderItem->order_id;
             $orderItem->forceDelete();
             $this->syncOrderTotals($orderId);
@@ -116,13 +184,16 @@ class OrderItemService
                     'delete' => 'delete',
                     'restore' => 'restore',
                     'force-delete' => 'forceDelete',
-                    default => throw ValidationException::withMessages([
-                        'action' => 'Invalid bulk action.',
-                    ]),
+                    default => throw ValidationException::withMessages(['action' => 'Invalid bulk action.']),
                 };
 
                 $admin = auth('admin')->user();
                 if (! $admin || ! $orderItem->order || Gate::forUser($admin)->denies($ability, $orderItem->order)) {
+                    $skipped++;
+                    continue;
+                }
+
+                if ($orderItem->vendor_order_id) {
                     $skipped++;
                     continue;
                 }
@@ -149,21 +220,17 @@ class OrderItemService
         });
     }
 
-    /**
-     * Keep the parent Order commercial totals synchronized with active OrderItems.
-     */
     public function syncOrderTotals(int $orderId): void
     {
         $order = Order::query()->find($orderId);
 
-        if (! $order) {
+        if (! $order || $order->vendorOrders()->exists()) {
             return;
         }
 
         $newSubtotal = round((float) OrderItem::query()
             ->where('order_id', $orderId)
             ->sum('line_total'), 2);
-
         $discount = (float) $order->discount;
         $shipping = (float) $order->shipping;
 

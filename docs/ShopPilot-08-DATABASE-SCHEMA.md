@@ -1,6 +1,9 @@
 # ShopPilot E-commerce — Database Schema
 # শপপাইলট ই-কমার্স — ডেটাবেজ স্কিমা
 
+> **Multi-vendor authority notice:** This is the legacy single-vendor physical schema. For the active marketplace target, use `MULTI-VENDOR-TABLE-SPECIFICATIONS.md`. The target document distinguishes existing columns from proposed future tables and does not authorize migrations before open business decisions are approved.
+
+
 > **Document:** Physical Database Schema / ফিজিক্যাল ডেটাবেজ স্কিমা  
 > **Project:** ShopPilot E-commerce  
 > **Database:** MySQL / InnoDB / utf8mb4  

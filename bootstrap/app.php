@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'customer.active' => \App\Http\Middleware\EnsureCustomerIsActive::class,
+            'vendor.active' => \App\Http\Middleware\EnsureVendorIsActive::class,
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin') || $request->is('admin/*')

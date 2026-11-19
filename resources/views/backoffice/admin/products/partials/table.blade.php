@@ -16,8 +16,9 @@
                     <th>Deleted At</th>
                 @else
                     <th>Status</th>
+                    <th>Moderation</th>
                 @endif
-                <th width="150" class="text-right">Actions</th>
+                <th width="190" class="text-right">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -40,6 +41,11 @@
                                 @if($product->featured)
                                     <span class="badge badge-warning text-xs ml-1">Featured</span>
                                 @endif
+                                @if(($product->product_type ?? 'simple') === 'variable')
+                                    <span class="badge badge-info text-xs ml-1">Variable · {{ $product->variants_count ?? $product->variants()->count() }} options</span>
+                                @else
+                                    <span class="badge badge-light border text-xs ml-1">Simple</span>
+                                @endif
                             </div>
                         </div>
                     </td>
@@ -47,10 +53,10 @@
                     <td class="align-middle">{{ $product->category?->name ?? 'N/A' }}</td>
                     <td class="align-middle">
                         @if($product->sale_price)
-                            <span class="text-success font-weight-bold">${{ number_format($product->sale_price, 2) }}</span>
-                            <small class="text-muted text-strike ml-1"><s>${{ number_format($product->regular_price, 2) }}</s></small>
+                            <span class="text-success font-weight-bold">৳{{ number_format($product->sale_price, 2) }}</span>
+                            <small class="text-muted text-strike ml-1"><s>৳{{ number_format($product->regular_price, 2) }}</s></small>
                         @else
-                            <span class="font-weight-bold">${{ number_format($product->regular_price, 2) }}</span>
+                            <span class="font-weight-bold">৳{{ number_format($product->regular_price, 2) }}</span>
                         @endif
                     </td>
                     <td class="align-middle">
@@ -67,6 +73,15 @@
                             @endif
                         @endif
                     </td>
+                    @unless($isTrash)
+                        <td class="align-middle">
+                            @if($product->vendor_id)
+                                <span class="badge badge-{{ $product->moderation_status === 'approved' ? 'success' : ($product->moderation_status === 'pending_review' ? 'warning' : ($product->moderation_status === 'rejected' ? 'danger' : 'secondary')) }}">{{ str_replace('_', ' ', ucfirst($product->moderation_status ?? 'approved')) }}</span>
+                            @else
+                                <span class="badge badge-light border">Platform product</span>
+                            @endif
+                        </td>
+                    @endunless
                     <td class="text-right align-middle text-nowrap">
                         @if($isTrash)
                             @can('products.restore')
@@ -90,6 +105,14 @@
                                 </button>
                             @endcan
                         @else
+                            @if($product->vendor_id && $product->moderation_status === 'pending_review' && auth('admin')->user()?->can('products.update'))
+                                <div class="d-flex flex-column align-items-end mb-2" style="gap:4px;">
+                                    <form method="POST" action="{{ route('admin.products.moderate', $product) }}">@csrf @method('PATCH')<input type="hidden" name="decision" value="approve"><button class="btn btn-success btn-xs" type="submit"><i class="fas fa-check mr-1"></i>Approve</button></form>
+                                    <form method="POST" action="{{ route('admin.products.moderate', $product) }}" class="d-flex" style="gap:4px;">@csrf @method('PATCH')<input type="hidden" name="decision" value="reject"><input class="form-control form-control-sm" style="width:110px;" name="reason" placeholder="Reason" required><button class="btn btn-outline-danger btn-xs" type="submit">Reject</button></form>
+                                </div>
+                            @elseif($product->vendor_id && $product->moderation_status === 'approved' && auth('admin')->user()?->can('products.update'))
+                                <form method="POST" action="{{ route('admin.products.moderate', $product) }}" class="d-flex justify-content-end mb-2" style="gap:4px;">@csrf @method('PATCH')<input type="hidden" name="decision" value="suspend"><input class="form-control form-control-sm" style="width:110px;" name="reason" placeholder="Reason" required><button class="btn btn-outline-warning btn-xs" type="submit">Suspend</button></form>
+                            @endif
                             <div class="btn-group btn-group-sm">
                                 @can('products.view')
                                     <button type="button" class="btn btn-default btn-view-product" data-id="{{ $product->id }}" title="View Details">
@@ -117,7 +140,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ $isTrash ? 7 : 8 }}" class="text-center text-muted py-5">
+                    <td colspan="{{ $isTrash ? 8 : 9 }}" class="text-center text-muted py-5">
                         <i class="fas fa-box fa-3x text-light mb-3 d-block"></i>
                         {{ $isTrash ? 'Trash bin is completely empty.' : 'No products found.' }}
                     </td>
