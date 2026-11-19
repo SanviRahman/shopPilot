@@ -23,7 +23,7 @@ All routes use `auth:web`, `customer.active` and `vendor.active` middleware.
 
 | Method | Route | Name |
 |---|---|---|
-| GET | `/vendor` | `vendor.dashboard` |
+| GET | `/vendor/dashboard` | `vendor.dashboard` |
 | GET | `/vendor/products` | `vendor.products.index` |
 | GET/POST | `/vendor/products/create` / `/vendor/products` | `vendor.products.create` / `vendor.products.store` |
 | GET/PUT/PATCH/DELETE | `/vendor/products/{product}` | `vendor.products.edit` / `vendor.products.update` / `vendor.products.destroy` |

@@ -45,7 +45,7 @@ vendor.active
 
 The routes below are implemented in `routes/vendor.php` and included by `routes/web.php`. All require `auth:web`, `customer.active` and `vendor.active`.
 
-- `GET /vendor` — `vendor.dashboard`
+- `GET /vendor/dashboard` — `vendor.dashboard`
 - `Route::resource('products', ...)->except(['show'])` — `vendor.products.*`
 - `PATCH /vendor/products/{product}/submit-review` — `vendor.products.submit-review`
 - `PATCH /vendor/products/{product}/publish` — `vendor.products.publish`

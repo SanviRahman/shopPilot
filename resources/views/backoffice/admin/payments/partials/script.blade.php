@@ -7,7 +7,7 @@ $(function () {
             Swal.fire({
                 toast: true,
                 position: 'top-end',
-                icon: type,
+                type: type === 'danger' ? 'error' : type,
                 title: message,
                 showConfirmButton: false,
                 timer: 3000
@@ -106,13 +106,13 @@ $(function () {
         Swal.fire({
             title: 'Verify Payment?',
             text: "This will approve the payment and update order status.",
-            icon: 'warning',
+            type: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#28a745',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Yes, Verify!'
         }).then((result) => {
-            if (result.isConfirmed) {
+            if (result.value) {
                 $.ajax({
                     url: url,
                     method: 'PATCH',

@@ -7,12 +7,17 @@
         <div class="card-header bg-white"><h3 class="card-title font-weight-bold">Refund requests</h3><div class="card-tools"><form method="GET"><select name="status" class="form-control form-control-sm" onchange="this.form.submit()"><option value="">All statuses</option>@foreach(['requested','approved','rejected','succeeded'] as $status)<option value="{{ $status }}" @selected(request('status') === $status)>{{ ucfirst($status) }}</option>@endforeach</select></form></div></div>
         <div class="card-body p-0 table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Refund</th><th>Order / Seller</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th style="min-width:280px">Action</th></tr></thead><tbody>
             @forelse($refunds as $refund)
+                @php
+                    $displayAmount = in_array($refund->status, ['approved', 'succeeded'], true)
+                        ? $refund->approved_amount
+                        : $refund->requested_amount;
+                @endphp
                 <tr>
                     <td>#{{ $refund->id }}<small class="d-block text-muted">{{ $refund->created_at?->format('d M Y') }}</small><small class="d-block text-muted">{{ $refund->reason }}</small></td>
                     <td>{{ $refund->order?->order_number }}<small class="d-block text-muted">{{ $refund->vendorOrder?->suborder_number }}</small><small class="d-block text-muted">{{ $refund->vendorOrder?->vendor?->business_name ?? 'Marketplace' }}</small></td>
                     <td>{{ $refund->order?->buyer_name }}</td>
                     <td>@foreach($refund->items as $item)<small class="d-block">{{ $item->orderItem?->product_name }} × {{ $item->quantity }}</small>@endforeach</td>
-                    <td><strong>{{ config('shop.marketplace.currency_symbol') }}{{ number_format((float) ($refund->approved_amount ?: $refund->requested_amount), 2) }}</strong></td>
+                    <td><strong>{{ config('shop.marketplace.currency_symbol') }}{{ number_format((float) $displayAmount, 2) }}</strong></td>
                     <td><span class="badge badge-{{ $refund->status === 'succeeded' ? 'success' : ($refund->status === 'rejected' ? 'danger' : 'warning') }}">{{ ucfirst($refund->status) }}</span></td>
                     <td>
                         @if($refund->status === 'requested')

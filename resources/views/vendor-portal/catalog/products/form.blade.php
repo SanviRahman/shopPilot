@@ -8,6 +8,20 @@
         $selectedValueIds = collect($variantInput)->pluck('attribute_value_ids')->flatten()->map(fn ($id) => (int) $id);
     }
     $selectedAttributeIds = $attributes->filter(fn ($attribute) => $attribute->values->contains(fn ($value) => $selectedValueIds->contains((int) $value->id)))->pluck('id')->map(fn ($id) => (int) $id);
+    $productAttributePayload = $attributes->map(function ($attribute) {
+        return [
+            'id' => $attribute->id,
+            'name' => $attribute->name,
+            'values' => $attribute->values->map(function ($value) {
+                return [
+                    'id' => $value->id,
+                    'label' => $value->label,
+                    'slug' => $value->slug,
+                    'color_code' => $value->color_code,
+                ];
+            })->values(),
+        ];
+    })->values();
 @endphp
 
 @section('title', $isEditing ? 'Edit product' : 'Add product')
@@ -108,6 +122,6 @@
         </aside>
     </form>
 
-    <script type="application/json" data-vp-product-attributes>@json($attributes->map(fn ($attribute) => ['id' => $attribute->id, 'name' => $attribute->name, 'values' => $attribute->values->map(fn ($value) => ['id' => $value->id, 'label' => $value->label, 'slug' => $value->slug, 'color_code' => $value->color_code])->values()])->values())</script>
+    <script type="application/json" data-vp-product-attributes>@json($productAttributePayload)</script>
     <script type="application/json" data-vp-initial-variants>@json($variantInput)</script>
 @endsection

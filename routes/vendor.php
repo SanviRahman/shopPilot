@@ -10,7 +10,7 @@ use App\Http\Controllers\Vendor\StoreController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('vendor')->name('vendor.')->middleware(['auth:web', 'customer.active', 'vendor.active'])->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{vendorOrder}', [OrderController::class, 'show'])->name('orders.show');
