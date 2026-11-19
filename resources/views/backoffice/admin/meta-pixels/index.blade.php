@@ -54,42 +54,40 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-5">
-            <div class="card shadow-sm">
-                <div class="card-header"><h3 class="card-title font-weight-bold">Event Summary</h3></div>
-                <div class="card-body">
-                    @forelse($eventCounts as $name => $count)
-                        <div class="d-flex justify-content-between border-bottom py-2">
-                            <span>{{ $name }}</span>
-                            <span class="badge badge-primary">{{ number_format($count) }}</span>
-                        </div>
-                    @empty
-                        <p class="text-muted mb-0">No tracked events yet.</p>
-                    @endforelse
-                </div>
-            </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="card-title font-weight-bold mb-0 text-primary">
+                <i class="fab fa-facebook mr-2"></i> Meta Pixel + Conversions API (CAPI) Integration
+            </h5>
         </div>
-        <div class="col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-header"><h3 class="card-title font-weight-bold">Recent Tracking Events</h3></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <thead><tr><th>Event</th><th>User</th><th>Status</th><th>Occurred</th></tr></thead>
-                            <tbody>
-                                @forelse($events as $event)
-                                    <tr>
-                                        <td><code>{{ $event->event_name }}</code></td>
-                                        <td>{{ $event->user_id ? '#'.$event->user_id : 'Guest' }}</td>
-                                        <td><span class="badge badge-info">{{ $event->delivery_status }}</span></td>
-                                        <td><small>{{ $event->occurred_at?->format('d M, H:i:s') }}</small></td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="4" class="text-center text-muted py-4">No events captured.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="p-3 bg-light rounded border">
+                        <small class="text-uppercase text-muted font-weight-bold d-block">Tracking Architecture</small>
+                        <h6 class="font-weight-bold mt-1 text-dark">Browser Pixel + Server CAPI</h6>
+                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Active Dual Dispatch</span>
+                        <p class="small text-muted mt-2 mb-0">Browser Pixel and Server CAPI send matching <code>event_id</code> for automatic Meta deduplication.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="p-3 bg-light rounded border">
+                        <small class="text-uppercase text-muted font-weight-bold d-block">Database Footprint</small>
+                        <h6 class="font-weight-bold mt-1 text-dark">Zero DB Writes</h6>
+                        <span class="badge badge-info"><i class="fas fa-database mr-1"></i> No Database Bloat</span>
+                        <p class="small text-muted mt-2 mb-0">Events are dispatched directly via Meta Graph API without storing bulky event logs in the MySQL database.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded border">
+                        <small class="text-uppercase text-muted font-weight-bold d-block">Conversions API Configuration</small>
+                        <h6 class="font-weight-bold mt-1 text-dark">{{ config('meta-pixel.capi.api_version', 'v21.0') }}</h6>
+                        @if(filled(config('meta-pixel.capi.access_token')))
+                            <span class="badge badge-success"><i class="fas fa-key mr-1"></i> Access Token Set</span>
+                        @else
+                            <span class="badge badge-warning"><i class="fas fa-exclamation-triangle mr-1"></i> Token in .env (META_CAPI_ACCESS_TOKEN)</span>
+                        @endif
+                        <p class="small text-muted mt-2 mb-0">Inspect and debug live events in real-time in your <a href="https://business.facebook.com/events_manager" target="_blank" rel="noopener">Meta Events Manager <i class="fas fa-external-link-alt"></i></a>.</p>
                     </div>
                 </div>
             </div>

@@ -41,6 +41,19 @@
                                     <div class="invalid-feedback d-block" id="err-name"></div>
                                 </div>
                                 <div class="form-group col-md-6 mb-3">
+                                    <label for="cat-parent-id" class="font-weight-600">Parent Category</label>
+                                    <select id="cat-parent-id" name="parent_id" class="custom-select custom-select-sm">
+                                        <option value="">None (Top Level / Root Category)</option>
+                                        @if(isset($treeOptions))
+                                            @foreach($treeOptions as $opt)
+                                                <option value="{{ $opt['id'] }}" data-depth="{{ $opt['depth'] }}">{{ $opt['indent'] }}{{ $opt['name'] }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <small class="form-text text-muted">Select a parent to create a sub-category.</small>
+                                    <div class="invalid-feedback d-block" id="err-parent_id"></div>
+                                </div>
+                                <div class="form-group col-md-6 mb-3">
                                     <label for="cat-slug" class="font-weight-600">Slug (URL)</label>
                                     <input type="text" id="cat-slug" name="slug" class="form-control form-control-sm" placeholder="auto-generated-if-blank">
                                     <div class="invalid-feedback d-block" id="err-slug"></div>

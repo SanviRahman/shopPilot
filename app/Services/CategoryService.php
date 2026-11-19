@@ -18,6 +18,10 @@ class CategoryService
                 ? Str::slug($data['name'])
                 : Str::slug($data['slug']);
 
+            if (array_key_exists('parent_id', $data)) {
+                $data['parent_id'] = blank($data['parent_id']) ? null : (int) $data['parent_id'];
+            }
+
             if (! isset($data['sort_order'])) {
                 $data['sort_order'] = (Category::max('sort_order') ?? 0) + 1;
             }
@@ -35,6 +39,10 @@ class CategoryService
             $data['slug'] = blank($data['slug'] ?? null)
                 ? Str::slug($data['name'])
                 : Str::slug($data['slug']);
+
+            if (array_key_exists('parent_id', $data)) {
+                $data['parent_id'] = blank($data['parent_id']) ? null : (int) $data['parent_id'];
+            }
 
             $category->update($this->withoutMediaFields($data));
             $this->handleMediaUploads($category, $data);

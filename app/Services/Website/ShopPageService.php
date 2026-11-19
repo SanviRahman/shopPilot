@@ -4,6 +4,7 @@ namespace App\Services\Website;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductAttributeValue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -50,6 +51,24 @@ class ShopPageService
             ->filter(fn ($slug) => $availableCategorySlugs->contains($slug))
             ->values();
 
+        $availableColors = ProductAttributeValue::query()
+            ->whereHas('attribute', fn ($q) => $q->where('slug', 'color')->orWhere('display_type', 'color'))
+            ->where('is_active', true)
+            ->withCount([
+                'variants as active_products_count' => fn ($q) => $q->whereHas('product', fn ($pq) => $pq->published()),
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get();
+
+        $rawColors = $request->input('color', []);
+        $rawColors = is_array($rawColors) ? $rawColors : [$rawColors];
+        $selectedColors = collect($rawColors)
+            ->filter(fn ($color) => is_string($color) && $color !== '')
+            ->map(fn ($color) => trim($color))
+            ->unique()
+            ->values();
+
         $searchTerm = $request->string('q')->trim()->toString();
         $availability = collect($request->input('availability', []))
             ->filter(fn ($value) => in_array($value, ['in_stock', 'out_of_stock'], true))
@@ -88,12 +107,23 @@ class ShopPageService
                     ->where('name', 'like', "%{$searchTerm}%")
                     ->orWhere('sku', 'like', "%{$searchTerm}%")
                     ->orWhere('short_description', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', "%{$searchTerm}%"));
+                    ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', "%{$searchTerm}%"))
+                    ->orWhereHas('variants.attributeValues', function (Builder $attrQuery) use ($searchTerm) {
+                        $attrQuery->where('label', 'like', "%{$searchTerm}%")
+                            ->orWhere('slug', 'like', "%{$searchTerm}%");
+                    });
             });
         }
 
         if ($selectedCategorySlugs->isNotEmpty()) {
             $query->whereHas('category', fn (Builder $categoryQuery) => $categoryQuery->whereIn('slug', $selectedCategorySlugs));
+        }
+
+        if ($selectedColors->isNotEmpty()) {
+            $query->whereHas('variants.attributeValues', function (Builder $attrQuery) use ($selectedColors) {
+                $attrQuery->whereIn('slug', $selectedColors)
+                    ->orWhereIn('label', $selectedColors);
+            });
         }
 
         $query
@@ -141,6 +171,7 @@ class ShopPageService
             ->values();
 
         $activeFilterCount = $selectedCategorySlugs->count()
+            + $selectedColors->count()
             + $availability->count()
             + ($featuredOnly ? 1 : 0)
             + ($minPrice > 0 || $maxPrice < $globalMaxPrice ? 1 : 0)
@@ -165,6 +196,8 @@ class ShopPageService
             'products' => $products,
             'selectedCategorySlugs' => $selectedCategorySlugs,
             'selectedCategories' => $selectedCategories,
+            'availableColors' => $availableColors,
+            'selectedColors' => $selectedColors,
             'searchTerm' => $searchTerm,
             'availability' => $availability,
             'featuredOnly' => $featuredOnly,

@@ -54,8 +54,8 @@
                                     <label for="prod-category" class="font-weight-bold">Category <span class="text-danger">*</span></label>
                                     <select id="prod-category" name="category_id" class="custom-select" required>
                                         <option value="">Select Category</option>
-                                        @foreach(\App\Models\Category::where('status', 'active')->get() as $cat)
-                                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                        @foreach(\App\Models\Category::getTreeSelectOptions(null, true) as $cat)
+                                            <option value="{{ $cat['id'] }}">{{ $cat['indent'] }}{{ $cat['name'] }}</option>
                                         @endforeach
                                     </select>
                                     <div class="invalid-feedback d-block" id="err-category_id"></div>

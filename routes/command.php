@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\MetaPixelEvent;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -180,25 +179,6 @@ Route::prefix('command')->name('command.')->middleware(['auth:admin', 'role:admi
             return $redirectWithToast('error', 'Optimize clear failed: '.$exception->getMessage());
         }
     })->name('optimize-clear');
-
-    Route::post('/clear-meta-pixel-events', function () use ($redirectWithToast) {
-        abort_unless(auth('admin')->user()?->can('settings.update'), 403);
-
-        try {
-            $eventCount = MetaPixelEvent::query()->count();
-
-            if ($eventCount === 0) {
-                return $redirectWithToast('success', 'Meta Pixel event log is already empty.');
-            }
-
-            MetaPixelEvent::query()->delete();
-
-            return $redirectWithToast('success', number_format($eventCount).' Meta Pixel event log(s) cleared successfully.');
-        } catch (\Throwable $exception) {
-            report($exception);
-            return $redirectWithToast('error', 'Meta Pixel event clear failed: '.$exception->getMessage());
-        }
-    })->name('clear-meta-pixel-events');
 
     Route::post('/storage-link', function () use ($redirectWithToast, $repairMediaStorage) {
         abort_unless(auth('admin')->user()?->can('settings.update'), 403);

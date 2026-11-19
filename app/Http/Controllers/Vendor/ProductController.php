@@ -138,7 +138,7 @@ class ProductController extends Controller
         return view('vendor-portal.catalog.products.form', [
             'vendor' => $vendor,
             'product' => $product,
-            'categories' => Category::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'categories' => Category::getTreeSelectOptions(null, true),
             'attributes' => $attributes,
             'initialVariants' => $initialVariants,
         ]);

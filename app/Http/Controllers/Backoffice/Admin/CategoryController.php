@@ -88,6 +88,9 @@ class CategoryController extends Controller
                 'success' => true,
                 'category' => [
                     'id' => $category->id,
+                    'parent_id' => $category->parent_id,
+                    'parent_name' => $category->parent?->name ?? 'None (Top Level / Root)',
+                    'tree_options' => Category::getTreeSelectOptions($category->id),
                     'name' => $category->name,
                     'slug' => $category->slug,
                     'description' => $category->description ?: 'No description provided.',
@@ -125,6 +128,9 @@ class CategoryController extends Controller
                 'success' => true,
                 'category' => [
                     'id' => $category->id,
+                    'parent_id' => $category->parent_id,
+                    'parent_name' => $category->parent?->name ?? 'None (Top Level / Root)',
+                    'tree_options' => Category::getTreeSelectOptions($category->id),
                     'name' => $category->name,
                     'slug' => $category->slug,
                     'description' => $category->description,
@@ -279,6 +285,7 @@ class CategoryController extends Controller
         $hasProductCategoryColumn = $this->hasProductCategoryRelation();
 
         $categories = Category::query()
+            ->with('parent')
             ->when($hasProductCategoryColumn, fn ($q) => $q->withCount('products'))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')->toString()))
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -304,6 +311,7 @@ class CategoryController extends Controller
             'title' => 'Category Management',
             'breadcrumb' => [['text' => 'Categories', 'url' => null]],
             'categories' => $categories,
+            'treeOptions' => Category::getTreeSelectOptions(),
             'formCategory' => $formCategory,
             'formMode' => $formCategory ? 'edit' : 'create',
             'openForm' => $openForm,

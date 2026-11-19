@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Models\MetaPixel;
-use App\Models\MetaPixelEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class MetaPixelService
@@ -86,6 +86,7 @@ class MetaPixelService
                         'track_ecommerce',
                         'starts_at',
                         'ends_at',
+                        'settings',
                     ])
                     ->map(static fn (MetaPixel $pixel): array => [
                         'id' => $pixel->id,
@@ -101,6 +102,7 @@ class MetaPixelService
                         'track_ecommerce' => (bool) $pixel->track_ecommerce,
                         'starts_at' => $pixel->starts_at?->toIso8601String(),
                         'ends_at' => $pixel->ends_at?->toIso8601String(),
+                        'settings' => (array) ($pixel->settings ?? []),
                     ])
                     ->all()
             );
@@ -125,26 +127,170 @@ class MetaPixelService
             ->all();
     }
 
-    public function captureEvent(Request $request, array $data): MetaPixelEvent
+    /**
+     * Dispatch event directly to Meta Conversions API (CAPI) without saving to database.
+     *
+     * @param Request $request
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function sendConversionApiEvent(Request $request, array $data): array
     {
-        return DB::transaction(function () use ($request, $data): MetaPixelEvent {
-            $payload = $data['payload'] ?? [];
+        $activePixels = $this->activeForFrontend();
+        if ($activePixels->isEmpty()) {
+            return ['dispatched' => false, 'reason' => 'no_active_pixels'];
+        }
 
-            return MetaPixelEvent::create([
-                'user_id' => auth('web')->id(),
-                'session_id' => $request->hasSession() ? $request->session()->getId() : null,
-                'event_name' => $data['event_name'],
-                'event_id' => $data['event_id'] ?? (string) Str::uuid(),
-                'page_url' => $data['page_url'] ?? null,
-                'referrer' => $data['referrer'] ?? null,
-                'pixel_ids' => $this->activePixelIds(),
-                'payload' => is_array($payload) ? $payload : [],
-                'delivery_status' => $data['delivery_status'] ?? 'captured',
-                'ip_hash' => $request->ip() ? hash('sha256', $request->ip().'|'.config('app.key')) : null,
-                'user_agent' => Str::limit((string) $request->userAgent(), 1000, ''),
-                'occurred_at' => now(),
-            ]);
-        });
+        $capiConfig = (array) config('meta-pixel.capi', []);
+        $globalCapiEnabled = (bool) ($capiConfig['enabled'] ?? true);
+        $globalAccessToken = trim((string) ($capiConfig['access_token'] ?? ''));
+        $apiVersion = trim((string) ($capiConfig['api_version'] ?? 'v21.0'));
+        $globalTestEventCode = trim((string) ($capiConfig['test_event_code'] ?? ''));
+
+        $eventName = (string) ($data['event_name'] ?? 'PageView');
+        $eventId = (string) ($data['event_id'] ?? Str::uuid()->toString());
+        $pageUrl = (string) ($data['page_url'] ?? $request->fullUrl());
+        $payload = is_array($data['payload'] ?? null) ? $data['payload'] : [];
+
+        // Build User Data according to Meta CAPI specification
+        $userData = [
+            'client_ip_address' => $request->ip(),
+            'client_user_agent' => (string) $request->userAgent(),
+        ];
+
+        // Match with authenticated user or payload data if available
+        $user = auth('web')->user();
+        $email = $user?->email ?? ($payload['email'] ?? null);
+        if ($email) {
+            $userData['em'] = [hash('sha256', strtolower(trim((string) $email)))];
+        }
+
+        $phone = $user?->phone ?? ($payload['phone'] ?? null);
+        if ($phone) {
+            $normalizedPhone = preg_replace('/[^0-9]/', '', (string) $phone);
+            if ($normalizedPhone) {
+                $userData['ph'] = [hash('sha256', $normalizedPhone)];
+            }
+        }
+
+        // Meta cookies for maximum event match quality
+        if ($request->hasCookie('_fbp')) {
+            $userData['fbp'] = $request->cookie('_fbp');
+        }
+        if ($request->hasCookie('_fbc')) {
+            $userData['fbc'] = $request->cookie('_fbc');
+        } elseif ($request->filled('fbclid')) {
+            $userData['fbc'] = 'fb.1.' . time() . '.' . $request->query('fbclid');
+        }
+
+        // Custom data formatting
+        $customData = [];
+        if (isset($payload['value'])) {
+            $customData['value'] = (float) $payload['value'];
+        }
+        if (isset($payload['currency'])) {
+            $customData['currency'] = (string) $payload['currency'];
+        }
+        if (isset($payload['content_name'])) {
+            $customData['content_name'] = (string) $payload['content_name'];
+        }
+        if (isset($payload['content_type'])) {
+            $customData['content_type'] = (string) $payload['content_type'];
+        }
+        if (isset($payload['content_ids']) && is_array($payload['content_ids'])) {
+            $customData['content_ids'] = array_map('strval', $payload['content_ids']);
+        }
+        if (isset($payload['contents']) && is_array($payload['contents'])) {
+            $customData['contents'] = $payload['contents'];
+        }
+        if (isset($payload['search_string'])) {
+            $customData['search_string'] = (string) $payload['search_string'];
+        }
+
+        $eventPayload = [
+            'event_name' => $eventName,
+            'event_time' => time(),
+            'event_id' => $eventId,
+            'event_source_url' => $pageUrl,
+            'action_source' => 'website',
+            'user_data' => $userData,
+            'custom_data' => $customData,
+        ];
+
+        $results = [];
+        $anyDispatched = false;
+
+        foreach ($activePixels as $pixelConfig) {
+            $pixelIds = (array) ($pixelConfig->pixel_ids ?? []);
+            $pixelSettings = (array) ($pixelConfig->settings ?? []);
+
+            $isCapiEnabled = array_key_exists('capi_enabled', $pixelSettings)
+                ? (bool) $pixelSettings['capi_enabled']
+                : $globalCapiEnabled;
+
+            if (! $isCapiEnabled) {
+                continue;
+            }
+
+            $token = filled($pixelSettings['capi_token'] ?? null)
+                ? trim((string) $pixelSettings['capi_token'])
+                : $globalAccessToken;
+
+            if ($token === '') {
+                continue;
+            }
+
+            $testCode = filled($pixelSettings['test_event_code'] ?? null)
+                ? trim((string) $pixelSettings['test_event_code'])
+                : $globalTestEventCode;
+
+            $requestBody = ['data' => [$eventPayload]];
+            if ($testCode !== '') {
+                $requestBody['test_event_code'] = $testCode;
+            }
+
+            foreach ($pixelIds as $pixelId) {
+                try {
+                    $endpoint = "https://graph.facebook.com/{$apiVersion}/{$pixelId}/events";
+                    $response = Http::timeout(3)
+                        ->asJson()
+                        ->post($endpoint . '?access_token=' . urlencode($token), $requestBody);
+
+                    $results[$pixelId] = [
+                        'status' => $response->status(),
+                        'success' => $response->successful(),
+                    ];
+                    $anyDispatched = true;
+                } catch (\Throwable $e) {
+                    Log::warning('Meta Conversions API dispatch failed: ' . $e->getMessage(), [
+                        'pixel_id' => $pixelId,
+                        'event_name' => $eventName,
+                        'event_id' => $eventId,
+                    ]);
+
+                    $results[$pixelId] = [
+                        'status' => 500,
+                        'success' => false,
+                        'error' => $e->getMessage(),
+                    ];
+                }
+            }
+        }
+
+        if (! $anyDispatched) {
+            return [
+                'dispatched' => false,
+                'reason' => 'access_token_not_configured_or_capi_disabled',
+                'browser_pixel_active' => true,
+            ];
+        }
+
+        return [
+            'dispatched' => true,
+            'event_id' => $eventId,
+            'event_name' => $eventName,
+            'results' => $results,
+        ];
     }
 
     public function flushFrontendCache(): void
@@ -176,6 +322,14 @@ class MetaPixelService
         $data['full_script'] = collect($entries)
             ->pluck('script')
             ->first(fn ($script) => filled($script)) ?: null;
+
+        $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
+        if (array_key_exists('capi_enabled', $data) || array_key_exists('capi_token', $data) || array_key_exists('test_event_code', $data)) {
+            $settings['capi_enabled'] = ! empty($data['capi_enabled']);
+            $settings['capi_token'] = trim((string) ($data['capi_token'] ?? ''));
+            $settings['test_event_code'] = trim((string) ($data['test_event_code'] ?? ''));
+        }
+        $data['settings'] = $settings;
 
         return $data;
     }

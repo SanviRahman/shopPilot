@@ -59,6 +59,9 @@ class StoreMetaPixelRequest extends FormRequest
             'full_script' => $firstScript ?: null,
             'track_page_view' => $this->boolean('track_page_view'),
             'track_ecommerce' => $this->boolean('track_ecommerce'),
+            'capi_enabled' => $this->boolean('capi_enabled'),
+            'capi_token' => trim((string) $this->input('capi_token', '')),
+            'test_event_code' => trim((string) $this->input('test_event_code', '')),
         ]);
     }
 
@@ -75,6 +78,9 @@ class StoreMetaPixelRequest extends FormRequest
             'lifecycle_status' => ['required', Rule::in(MetaPixel::LIFECYCLE)],
             'track_page_view' => ['boolean'],
             'track_ecommerce' => ['boolean'],
+            'capi_enabled' => ['nullable', 'boolean'],
+            'capi_token' => ['nullable', 'string', 'max:5000'],
+            'test_event_code' => ['nullable', 'string', 'max:100'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ];

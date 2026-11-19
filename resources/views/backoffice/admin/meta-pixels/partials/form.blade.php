@@ -30,6 +30,41 @@
                                     </small>
                                 </div>
                             </div>
+
+                            <div class="card card-outline card-success shadow-none border mb-3">
+                                <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                                    <h3 class="card-title font-weight-bold mb-0 text-success">
+                                        <i class="fas fa-server mr-2"></i>Conversions API (CAPI) Settings
+                                    </h3>
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" id="metaPixelCapiEnabled" name="capi_enabled" value="1" checked>
+                                        <label class="custom-control-label font-weight-bold" for="metaPixelCapiEnabled">Enable Server CAPI</label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group mb-3">
+                                        <label for="metaPixelCapiToken" class="font-weight-bold">
+                                            Conversions API Access Token
+                                        </label>
+                                        <textarea id="metaPixelCapiToken" name="capi_token" rows="3" class="form-control font-monospace" placeholder="Paste your Meta Conversions API Access Token (e.g. EAAB...) here..."></textarea>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle mr-1"></i> Generated in <strong>Meta Events Manager</strong> &rarr; Pixel Settings &rarr; <em>Conversions API</em> &rarr; <strong>"Generate access token"</strong>.
+                                        </small>
+                                        <div class="invalid-feedback d-block" id="err-capi_token"></div>
+                                    </div>
+
+                                    <div class="form-group mb-0">
+                                        <label for="metaPixelTestEventCode" class="font-weight-bold">
+                                            Test Event Code <span class="text-muted font-weight-normal">(Optional for testing)</span>
+                                        </label>
+                                        <input type="text" id="metaPixelTestEventCode" name="test_event_code" class="form-control" placeholder="e.g. TEST12345" maxlength="50">
+                                        <small class="form-text text-muted">
+                                            Use the code from Meta Events Manager &rarr; <strong>"Test events"</strong> tab to verify server-side events live. Leave blank for production.
+                                        </small>
+                                        <div class="invalid-feedback d-block" id="err-test_event_code"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-lg-4">

@@ -34,14 +34,13 @@
                         </div>
 
                         <div class="card shadow-none border mb-0">
-                            <div class="card-header bg-white"><h3 class="card-title font-weight-bold">Recent Events</h3></div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-sm mb-0">
-                                        <thead><tr><th>Event</th><th>Status</th><th>Time</th></tr></thead>
-                                        <tbody id="showMetaPixelEvents"></tbody>
-                                    </table>
-                                </div>
+                            <div class="card-header bg-white"><h3 class="card-title font-weight-bold"><i class="fas fa-server text-success mr-1"></i> Conversions API (CAPI)</h3></div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-5">CAPI Status</dt><dd class="col-7" id="showMetaPixelCapiStatus"></dd>
+                                    <dt class="col-5">Access Token</dt><dd class="col-7" id="showMetaPixelCapiToken"></dd>
+                                    <dt class="col-5">Test Code</dt><dd class="col-7" id="showMetaPixelTestCode"></dd>
+                                </dl>
                             </div>
                         </div>
                     </div>

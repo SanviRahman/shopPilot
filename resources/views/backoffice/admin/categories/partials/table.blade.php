@@ -11,6 +11,7 @@
                     <input type="checkbox" data-select-all="#{{ $isTrash ? 'trash-categories-list' : 'categories-list' }}">
                 </th>
                 <th>Category</th>
+                <th>Parent</th>
                 <th>Slug</th>
                 <th>Products</th>
                 <th>Sort Order</th>
@@ -49,6 +50,15 @@
                                 @endif
                             </div>
                         </div>
+                    </td>
+                    <td class="align-middle">
+                        @if($category->parent)
+                            <span class="badge badge-light border text-primary">
+                                <i class="fas fa-level-up-alt fa-rotate-90 mr-1 text-muted"></i>{{ $category->parent->name }}
+                            </span>
+                        @else
+                            <span class="text-muted small"><i class="fas fa-folder text-warning mr-1"></i>Root</span>
+                        @endif
                     </td>
                     <td class="align-middle">
                         <code>{{ $category->slug }}</code>

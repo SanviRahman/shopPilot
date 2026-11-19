@@ -19,6 +19,27 @@ class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
+            'parent_id' => [
+                'nullable',
+                'integer',
+                'exists:categories,id',
+                function ($attribute, $value, $fail) use ($category) {
+                    if (blank($value) || ! $category) {
+                        return;
+                    }
+                    $parentId = (int) $value;
+                    $categoryId = (int) $category->getKey();
+
+                    if ($parentId === $categoryId) {
+                        $fail('A category cannot be its own parent.');
+                        return;
+                    }
+
+                    if (in_array($parentId, $category->allDescendantIds(), true)) {
+                        $fail('A child / descendant category cannot be selected as parent (circular tree reference).');
+                    }
+                },
+            ],
             'name' => ['required', 'string', 'max:150'],
             'slug' => [
                 'nullable',

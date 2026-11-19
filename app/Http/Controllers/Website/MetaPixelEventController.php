@@ -25,7 +25,12 @@ class MetaPixelEventController extends Controller
             'delivery_status' => ['nullable', Rule::in(['captured', 'dispatched'])],
         ]);
 
-        $service->captureEvent($request, $validated);
-        return response()->json(['captured' => true], 201);
+        $result = $service->sendConversionApiEvent($request, $validated);
+
+        return response()->json([
+            'success' => true,
+            'dispatched' => $result['dispatched'] ?? false,
+            'event_id' => $result['event_id'] ?? ($validated['event_id'] ?? null),
+        ], 200);
     }
 }

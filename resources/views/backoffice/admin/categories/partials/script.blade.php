@@ -115,6 +115,8 @@ $(function () {
         $('#categoryFormMethod').val('POST');
         $('#categoryAjaxForm').attr('action', '{{ route("admin.categories.store") }}');
         $('#categoryFormModalTitle span').text('Create Category');
+        $('#cat-parent-id option').prop('disabled', false);
+        $('#cat-parent-id').val('');
         $('#categoryFormModal').modal('show');
     });
 
@@ -142,6 +144,19 @@ $(function () {
                     $('#cat-status').val(c.status);
                     $('#cat-sort-order').val(c.sort_order);
                     $('#cat-description').val(c.description);
+
+                    if (Array.isArray(c.tree_options)) {
+                        const parentSelect = $('#cat-parent-id').empty();
+                        parentSelect.append('<option value="">None (Top Level / Root Category)</option>');
+                        c.tree_options.forEach(opt => {
+                            const disabledAttr = opt.disabled ? ' disabled' : '';
+                            const selectedAttr = (c.parent_id && Number(c.parent_id) === Number(opt.id)) ? ' selected' : '';
+                            const note = opt.disabled ? ' (Disabled - cannot select self or sub-node)' : '';
+                            parentSelect.append(`<option value="${opt.id}"${disabledAttr}${selectedAttr}>${opt.indent}${opt.name}${note}</option>`);
+                        });
+                    } else {
+                        $('#cat-parent-id').val(c.parent_id || '');
+                    }
 
                     window.mediaPicker?.setPreview('cat-image', c.image_url || null, c.image_media_name || '');
 

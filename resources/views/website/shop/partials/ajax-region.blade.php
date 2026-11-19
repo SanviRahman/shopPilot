@@ -42,10 +42,10 @@
                         <div class="filter-title">Categories</div>
                         <div class="filter-options category-filter-options">
                             @foreach($categories as $category)
-                                <label class="filter-check">
+                                <label class="filter-check" @if($category->parent_id) style="padding-left: 1.25rem;" @endif>
                                     <input type="checkbox" name="category[]" value="{{ $category->slug }}" @checked($selectedCategorySlugs->contains($category->slug))>
                                     <span class="custom-check"><i class="fas fa-check"></i></span>
-                                    <span class="filter-label">{{ $category->name }}</span>
+                                    <span class="filter-label">@if($category->parent_id)<span class="text-muted mr-1">↳</span>@endif{{ $category->name }}</span>
                                     <small>({{ $category->active_products_count }})</small>
                                 </label>
                             @endforeach
@@ -79,6 +79,25 @@
                             <span class="filter-label">Out of Stock</span>
                         </label>
                     </div>
+
+                    @if(isset($availableColors) && $availableColors->isNotEmpty())
+                        <div class="filter-group">
+                            <div class="filter-title">Color</div>
+                            <div class="filter-options color-filter-options">
+                                @foreach($availableColors as $colorVal)
+                                    <label class="filter-check color-filter-item">
+                                        <input type="checkbox" name="color[]" value="{{ $colorVal->slug }}" @checked($selectedColors->contains($colorVal->slug) || $selectedColors->contains($colorVal->label))>
+                                        <span class="custom-check"><i class="fas fa-check"></i></span>
+                                        <span class="color-swatch-circle" style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background-color: {{ $colorVal->color_code ?: '#94a3b8' }}; border: 1px solid rgba(0,0,0,0.2); margin-right: 6px; vertical-align: middle;"></span>
+                                        <span class="filter-label">{{ $colorVal->label }}</span>
+                                        @if($colorVal->active_products_count > 0)
+                                            <small>({{ $colorVal->active_products_count }})</small>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="filter-group">
                         <div class="filter-title">Highlights</div>
@@ -120,6 +139,7 @@
                             <span>
                                 @if($searchTerm !== '') Search: <strong>“{{ $searchTerm }}”</strong>@endif
                                 @if($selectedCategorySlugs->isNotEmpty()) <strong>{{ $selectedCategorySlugs->count() }}</strong> categor{{ $selectedCategorySlugs->count() === 1 ? 'y' : 'ies' }} selected @endif
+                                @if(isset($selectedColors) && $selectedColors->isNotEmpty()) <strong>{{ $selectedColors->count() }}</strong> color{{ $selectedColors->count() === 1 ? '' : 's' }} selected @endif
                             </span>
                         </div>
                         <a href="{{ route('website.shop') }}">Reset filters <i class="fas fa-times"></i></a>

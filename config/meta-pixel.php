@@ -16,6 +16,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Conversions API (CAPI)
+    |--------------------------------------------------------------------------
+    |
+    | Server-side Conversions API integration. Events are dispatched directly to
+    | Meta's Graph API with deduplication event_id matching the browser pixel.
+    | No events are written to the local database.
+    |
+    */
+    'capi' => [
+        'enabled' => env('META_CAPI_ENABLED', true),
+        'access_token' => env('META_CAPI_ACCESS_TOKEN', ''),
+        'test_event_code' => env('META_CAPI_TEST_EVENT_CODE', null),
+        'api_version' => env('META_CAPI_API_VERSION', 'v21.0'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Frontend Cache
     |--------------------------------------------------------------------------
     |

@@ -31,6 +31,11 @@
                     <td>
                         <strong class="d-block text-dark">{{ $pixel->name }}</strong>
                         <small class="text-muted">#{{ $pixel->id }}</small>
+                        @if(!empty($pixel->settings['capi_enabled']) && !empty($pixel->settings['capi_token']))
+                            <span class="badge badge-success text-xs mt-1" title="Conversions API Active"><i class="fas fa-server mr-1"></i>CAPI</span>
+                        @elseif(!empty($pixel->settings['capi_enabled']))
+                            <span class="badge badge-light border text-xs mt-1" title="CAPI Enabled (Fallback .env)"><i class="fas fa-server mr-1"></i>CAPI (.env)</span>
+                        @endif
                     </td>
                     <td>
                         @foreach($entries as $entry)

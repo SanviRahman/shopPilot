@@ -111,6 +111,9 @@ $(function () {
         $('#meta-pixel-lifecycle').val('draft');
         $('#metaPixelTrackPageView').prop('checked', true);
         $('#metaPixelTrackEcommerce').prop('checked', true);
+        $('#metaPixelCapiEnabled').prop('checked', true);
+        $('#metaPixelCapiToken').val('');
+        $('#metaPixelTestEventCode').val('');
         $('#metaPixelEntriesContainer').empty();
         pixelEntryIndex = 0;
         addPixelEntry();
@@ -127,6 +130,9 @@ $(function () {
         $('#meta-pixel-ends-at').val(pixel.ends_at || '');
         $('#metaPixelTrackPageView').prop('checked', Boolean(pixel.track_page_view));
         $('#metaPixelTrackEcommerce').prop('checked', Boolean(pixel.track_ecommerce));
+        $('#metaPixelCapiEnabled').prop('checked', Boolean(pixel.capi_enabled));
+        $('#metaPixelCapiToken').val(pixel.capi_token || '');
+        $('#metaPixelTestEventCode').val(pixel.test_event_code || '');
 
         $('#metaPixelEntriesContainer').empty();
         pixelEntryIndex = 0;
@@ -165,19 +171,7 @@ $(function () {
     }
 
     function renderShowEvents(events) {
-        const body = $('#showMetaPixelEvents').empty();
-        if (!Array.isArray(events) || events.length === 0) {
-            body.append('<tr><td colspan="3" class="text-center text-muted py-3">No recent events.</td></tr>');
-            return;
-        }
-
-        events.forEach(event => {
-            const row = $('<tr>');
-            row.append($('<td>').append($('<code>').text(event.event_name || '')));
-            row.append($('<td>').text(event.delivery_status || ''));
-            row.append($('<td>').append($('<small>').text(event.occurred_at || '')));
-            body.append(row);
-        });
+        // Events are sent directly to Meta CAPI; no database records stored
     }
 
     $('#meta-pixel-search').on('input', function () {
@@ -320,6 +314,9 @@ $(function () {
                 $('#showMetaPixelEcommerce').text(pixel.track_ecommerce ? 'Enabled' : 'Disabled');
                 $('#showMetaPixelStarts').text(pixel.starts_at || 'Immediately');
                 $('#showMetaPixelEnds').text(pixel.ends_at || 'No expiry');
+                $('#showMetaPixelCapiStatus').html(pixel.capi_enabled ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Disabled</span>');
+                $('#showMetaPixelCapiToken').text(pixel.capi_token ? (pixel.capi_token.substring(0, 12) + '...') : @json(filled(config('meta-pixel.capi.access_token')) ? 'Configured in .env' : 'Not Configured'));
+                $('#showMetaPixelTestCode').text(pixel.test_event_code || 'None (Live)');
                 renderShowEntries(pixel.pixel_entries || []);
                 renderShowEvents(res.events || []);
                 $('#metaPixelShowModal').modal('show');

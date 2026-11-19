@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MetaPixel\StoreMetaPixelRequest;
 use App\Http\Requests\MetaPixel\UpdateMetaPixelRequest;
 use App\Models\MetaPixel;
-use App\Models\MetaPixelEvent;
 use App\Services\MetaPixelService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -41,20 +40,10 @@ class MetaPixelController extends Controller
             return $this->tableResponse($pixels, false);
         }
 
-        $events = MetaPixelEvent::query()->latest('occurred_at')->limit(20)->get();
-        $eventCounts = MetaPixelEvent::query()
-            ->selectRaw('event_name, COUNT(*) AS total')
-            ->groupBy('event_name')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->pluck('total', 'event_name');
-
         return view('backoffice.admin.meta-pixels.index', [
             'title' => 'Meta Pixel Tracking',
             'breadcrumb' => [['text' => 'Meta Pixel', 'url' => null]],
             'pixels' => $pixels,
-            'events' => $events,
-            'eventCounts' => $eventCounts,
         ]);
     }
 
@@ -95,7 +84,6 @@ class MetaPixelController extends Controller
             return response()->json([
                 'success' => true,
                 'pixel' => $this->pixelPayload($metaPixel),
-                'events' => $this->recentEventsFor($metaPixel),
             ]);
         }
 
@@ -225,6 +213,9 @@ class MetaPixelController extends Controller
             'lifecycle_status' => 'draft',
             'track_page_view' => true,
             'track_ecommerce' => true,
+            'capi_enabled' => true,
+            'capi_token' => '',
+            'test_event_code' => '',
             'starts_at' => null,
             'ends_at' => null,
         ];
@@ -233,6 +224,8 @@ class MetaPixelController extends Controller
     /** @return array<string, mixed> */
     private function pixelPayload(MetaPixel $pixel): array
     {
+        $settings = (array) ($pixel->settings ?? []);
+
         return [
             'id' => $pixel->getKey(),
             'name' => $pixel->name,
@@ -241,39 +234,14 @@ class MetaPixelController extends Controller
             'lifecycle_status' => $pixel->lifecycle_status,
             'track_page_view' => (bool) $pixel->track_page_view,
             'track_ecommerce' => (bool) $pixel->track_ecommerce,
+            'capi_enabled' => array_key_exists('capi_enabled', $settings) ? (bool) $settings['capi_enabled'] : true,
+            'capi_token' => (string) ($settings['capi_token'] ?? ''),
+            'test_event_code' => (string) ($settings['test_event_code'] ?? ''),
             'starts_at' => $pixel->starts_at?->format('Y-m-d\TH:i'),
             'ends_at' => $pixel->ends_at?->format('Y-m-d\TH:i'),
             'created_at' => $pixel->created_at?->format('d M Y, h:i A'),
             'updated_at' => $pixel->updated_at?->format('d M Y, h:i A'),
         ];
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function recentEventsFor(MetaPixel $pixel): array
-    {
-        $pixelIds = collect($pixel->pixel_ids)->filter()->map(fn ($id) => (string) $id)->values();
-
-        if ($pixelIds->isEmpty()) {
-            return [];
-        }
-
-        return MetaPixelEvent::query()
-            ->where(function ($query) use ($pixelIds) {
-                foreach ($pixelIds as $pixelId) {
-                    $query->orWhereJsonContains('pixel_ids', $pixelId);
-                }
-            })
-            ->latest('occurred_at')
-            ->limit(20)
-            ->get()
-            ->map(fn (MetaPixelEvent $event) => [
-                'event_name' => $event->event_name,
-                'page_url' => $event->page_url,
-                'delivery_status' => $event->delivery_status,
-                'occurred_at' => $event->occurred_at?->format('d M Y, h:i:s A'),
-            ])
-            ->values()
-            ->all();
     }
 
     private function authorizeAction(string $permission): void
